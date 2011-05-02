@@ -1,0 +1,2 @@
+
+class UnsupportedOuputFormat(Exception): pass
