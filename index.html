@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'>
+
+  <title>jiaaro/pydub @ GitHub</title>
+
+  <style type="text/css">
+    body {
+      margin-top: 1.0em;
+      background-color: #fefdf1;
+      font-family: Helvetica, Arial, FreeSans, san-serif;
+      color: #000000;
+    }
+    #container {
+      margin: 0 auto;
+      width: 700px;
+    }
+    h1 { font-size: 3.8em; color: #01020e; margin-bottom: 3px; }
+    h1 .small { font-size: 0.4em; }
+    h1 a { text-decoration: none }
+    h2 { font-size: 1.5em; color: #01020e; }
+    h3 { text-align: center; color: #01020e; }
+    a { color: #01020e; }
+    .description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;}
+    .download { float: right; }
+    pre { background: #000; color: #fff; padding: 15px;}
+    hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
+    .footer { text-align:center; padding-top:30px; font-style: italic; }
+  </style>
+</head>
+
+<body>
+  <a href="http://github.com/jiaaro/pydub"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
+
+  <div id="container">
+
+    <div class="download">
+      <a href="http://github.com/jiaaro/pydub/zipball/master">
+        <img border="0" width="90" src="http://github.com/images/modules/download/zip.png"></a>
+      <a href="http://github.com/jiaaro/pydub/tarball/master">
+        <img border="0" width="90" src="http://github.com/images/modules/download/tar.png"></a>
+    </div>
+
+    <h1><a href="http://github.com/jiaaro/pydub">pyDub</a>
+      <span class="small">by <a href="http://github.com/jiaaro">jiaaro</a></span></h1>
+
+    <div class="description">
+      Manipulate audio with an simple and easy high level interface
+    </div>
+
+    <p># Example Use
+
+	from pydub import AudioSegment
+
+	song = AudioSegment.from_mp3(song_mp3_file)
+	dj_intro = AudioSegment.from_mp3(some_mp3_of_a_dj)
+	
+	# let's just include the first 30 seconds of the song in the
+	# promotional clip (slicing is done by milliseconds)
+	beginning_of_song = song[:30*1000]
+
+	# We don't want an abrupt stop at the end, so let's do a 5 second fadeout
+	beginning_of_song = beginning_of_song.fade_out(5 * 1000)
+
+	# 50 ms crossfade to eliminate pops
+	promo_clip = dj_intro.append(beginning_of_song, crossfade=50)
+	
+	# hmm I wonder how long it is... ( len(audio_segment) returns milliseconds )
+	promo_length = len(promo_clip) / 1000
+	
+	# lets save it!
+	out_f = open("%s_second_promo_clip.mp3" % promo_length, 'wb')
+	shout.export(out_f, format='mp3')
+</p><h2>Dependencies</h2>
+<p>lame (http://lame.sourceforge.net/)</p>
+<h2>Install</h2>
+<p>copy the pydub director into your python path 
+
+-OR-
+
+  pip install pydub</p>
+<h2>License</h2>
+<p>Copyright (c) 2011 James Robert, http://jiaaro.com
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+<h2>Authors</h2>
+<p>James Robert (jiaaro@gmail.com)<br/><br/>      </p>
+<h2>Contact</h2>
+<p>James Robert (jiaaro@gmail.com)<br/>      </p>
+
+
+    <h2>Download</h2>
+    <p>
+      You can download this project in either
+      <a href="http://github.com/jiaaro/pydub/zipball/master">zip</a> or
+      <a href="http://github.com/jiaaro/pydub/tarball/master">tar</a> formats.
+    </p>
+    <p>You can also clone the project with <a href="http://git-scm.com">Git</a>
+      by running:
+      <pre>$ git clone git://github.com/jiaaro/pydub</pre>
+    </p>
+
+    <div class="footer">
+      get the source code on GitHub : <a href="http://github.com/jiaaro/pydub">jiaaro/pydub</a>
+    </div>
+
+  </div>
+
+  <script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+var pageTracker = _gat._getTracker("UA-1898350-12");
+pageTracker._trackPageview();
+} catch(err) {}</script>
+</body>
+</html>
