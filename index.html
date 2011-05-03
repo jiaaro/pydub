@@ -53,47 +53,37 @@
 
 <code><pre>
 
+from glob import glob
 from pydub import AudioSegment
 
+playlist_songs = [AudioSegment.from_mp3(mp3_file) for mp3_file in glob("*.mp3")]
 
+first_song = playlist_songs.pop(0)
 
-song = AudioSegment.from_mp3(song_mp3_file)
+# let's just include the first 30 seconds of the first song (slicing 
+# is done by milliseconds)
 
-dj_intro = AudioSegment.from_mp3(some_mp3_of_a_dj)
+beginning_of_song = first_song[:30*1000]
 
+playlist = beginning_of_song
+for song in playlist_songs:
 
+	# We don't want an abrupt stop at the end, so let's do a 10 second crossfades
+	playlist.append(song, crossfade=(10 * 1000))
 
-# let's just include the first 30 seconds of the song in the
+# let's fade out the end of the last song
 
-# promotional clip (slicing is done by milliseconds)
-
-beginning_of_song = song[:30*1000]
-
-
-
-# We don't want an abrupt stop at the end, so let's do a 5 second fadeout
-
-beginning_of_song = beginning_of_song.fade_out(5 * 1000)
-
-
-
-# 50 ms crossfade to eliminate pops
-
-promo_clip = dj_intro.append(beginning_of_song, crossfade=50)
-
-
+playlist = playlist.fade_out(30)
 
 # hmm I wonder how long it is... ( len(audio_segment) returns milliseconds )
 
-promo_length = len(promo_clip) / 1000
-
-
+playlist_length = len(playlist) / (1000*60)
 
 # lets save it!
 
-out_f = open("%s_second_promo_clip.mp3" % promo_length, 'wb')
+out_f = open("%s_minute_playlist.mp3" % playlist_length, 'wb')
 
-shout.export(out_f, format='mp3')
+playlist.export(out_f, format='mp3')
 	
 </pre></code>
 </p><h2>Dependencies</h2>
