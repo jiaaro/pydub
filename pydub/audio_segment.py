@@ -161,12 +161,13 @@ class AudioSegment(object):
         if format != 'mp3':
             raise UnsupportedOuputFormat("Only mp3 is supported at present")
         
-        if out_f is not None:
-            out_f = open(out_f, 'wb') if isinstance(out_f, basestring) else out_f
-        else:
-            out_f = TemporaryFile()
+        out_f = _fd_or_path_or_tempfile(out_f, 'wb')
         
-        subprocess.call(['lame', '-rh', '-', '-'], stdin=self._data, stdout=out_f)
+        data = TemporaryFile()
+        data.write(self._data)
+        data.seek(0)
+        
+        subprocess.call(['lame', '-rh', '-', '-'], stdin=data, stdout=out_f)
         out_f.seek(0)
         
         return out_f

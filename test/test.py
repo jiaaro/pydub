@@ -78,9 +78,22 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertTrue(expected[0] < len(seg) < expected[1])
         
         
-    def test_overlay_with_multiply(self):
-        seg = self.seg1 * self.seg2
-        self.assertEqual(len(seg), len(self.seg1))
+    def test_overlay(self):
+        seg_mult = self.seg1 * self.seg2
+        seg_over = self.seg1.overlay(self.seg2, loop=True)
+        
+        self.assertEqual(len(seg_mult), len(seg_over))
+        self.assertEqual(len(seg_mult), len(self.seg1))
+        self.assertEqual(len(seg_over), len(self.seg1))
+        
+        
+    def test_export(self):
+        seg = self.seg1 + self.seg2
+        
+        exported_mp3 = seg.export()
+        
+        exported = AudioSegment.from_mp3(exported_mp3)
+        self.assertWithinTolerance(len(exported), len(seg), percentage=0.05)
 
 
 if __name__ == "__main__":
