@@ -238,13 +238,15 @@ class AudioSegment(object):
         
         if channels == 2 and self.channels == 1:
             fn = 'tostereo'
+            frame_width = self.frame_width * 2
         elif channels == 1 and self.channels == 2:
             fn = 'tomono'
+            frame_width = self.frame_width / 2
             
         fn = getattr(audioop, fn)
-        converted = fn(self._data, self.frame_width, 1, 1)
+        converted = fn(self._data, self.sample_width, 1, 1)
 
-        return self._spawn(data=converted, overrides={'channels': channels})
+        return self._spawn(data=converted, overrides={'channels': channels, 'frame_width': frame_width})
     
     
     @property

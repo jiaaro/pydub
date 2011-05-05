@@ -121,6 +121,16 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertTrue(short._data == rebuilt2._data)
         
         
+    def test_set_channels(self):
+        mono = self.seg1.set_channels(1)
+        stereo = mono.set_channels(2)
+        
+        self.assertEqual(len(self.seg1), len(mono))
+        self.assertEqual(len(self.seg1), len(stereo))
+        
+        merged = mono + stereo
+        self.assertWithinTolerance(len(merged), len(self.seg1)*2, tolerance=1)
+        
         
     def test_export(self):
         seg = self.seg1 + self.seg2
