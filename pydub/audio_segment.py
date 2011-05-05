@@ -5,7 +5,7 @@ import wave
 import audioop
 
 from .utils import _fd_or_path_or_tempfile, db_to_float
-from .exceptions import UnsupportedOuputFormat
+from .exceptions import UnsupportedOuputFormat, TooManyMissingFrames
 
 
 
@@ -32,10 +32,11 @@ class AudioSegment(object):
             raw = wave.open(StringIO(data), 'rb')
             
             raw.rewind()
+            self.channels = raw.getnchannels()
             self.sample_width = raw.getsampwidth() 
             self.frame_rate = raw.getframerate()
-            self.frame_width = len(raw.readframes(1))
-            self.channels = raw.getnchannels()
+            self.frame_width = self.channels * self.sample_width
+            
             
             raw.rewind()
             self._data = raw.readframes(float('inf'))
@@ -47,19 +48,33 @@ class AudioSegment(object):
         """
         returns the length of this audio segment in milliseconds
         """
-        return 1000.0 * self.frame_count() / self.frame_rate
+        return round(1000 * (self.frame_count() / self.frame_rate))
     
+    
+    def __iter__(self):
+        return (self[i] for i in xrange(len(self)))
     
     def __getitem__(self, millisecond):
         if isinstance(millisecond, slice):
-            start = self._parse_position(millisecond.start or 0)
-            end = self._parse_position(millisecond.stop or self.frame_count())
-            data = self._data[start:end]
+            start = millisecond.start if millisecond.start is not None else 0
+            end = millisecond.stop if millisecond.stop is not None else len(self)
         else:
-            start = self._parse_position(millisecond)
-            end = start + self.frame_count(ms=1)
-            data = self._data[start:end]
-            
+            start = millisecond
+            end = millisecond + 1
+        
+        start = self._parse_position(start) * self.frame_width
+        end = self._parse_position(end) * self.frame_width
+        data = self._data[start:end]
+        
+        # ensure the output is as long as the requester is expecting
+        expected_length = end - start
+        missing_frames = (expected_length - len(data)) / self.frame_width
+        if missing_frames:
+            if missing_frames > self.frame_count(ms=2):
+                raise TooManyMissingFrames("You should never be filling in more than 1 ms with silence here")
+            silence = audioop.mul(data[:self.frame_width], self.sample_width, 0)
+            data += (silence * missing_frames)
+        
         return self._spawn(data)
 
 
@@ -136,11 +151,10 @@ class AudioSegment(object):
     
     
     def _parse_position(self, val):
-        if val == float("inf"): return self.frame_count()
-        val = self.frame_count(val)
         if val < 0:
-            val = self.frame_count() - abs(val)
-        return val
+            val = len(self) - abs(val)
+        val = self.frame_count(ms=len(self)) if val == float("inf") else self.frame_count(ms=val)
+        return int(val)
     
     
     @classmethod
@@ -185,9 +199,9 @@ class AudioSegment(object):
             if not specified, the number of frames in the whole AudioSegment
         """
         if ms is not None:
-            return ms * self.frame_rate / 1000
+            return ms * (self.frame_rate / 1000.0)
         else:
-            return len(self._data) / self.frame_width
+            return float(len(self._data) / self.frame_width)
     
     
     def set_frame_rate(self, frame_rate):
@@ -229,28 +243,28 @@ class AudioSegment(object):
         frame_width = seg1.frame_width
         spawn = seg1._spawn
         
-        start = seg1._parse_position(position)
-        output.write(seg1[:start]._data)
+        output.write(seg1[:position]._data)
         
         # drop down to the raw data
-        seg1 = seg1[start:]._data
+        seg1 = seg1[position:]._data
         seg2 = seg2._data
-        index = 0
-        seg2_len = len(seg2)
+        pos = 0
         seg1_len = len(seg1)
+        seg2_len = len(seg2)
         while True:
-            remaining = max(0, seg1_len - (index * seg2_len))            
+            remaining = max(0, seg1_len - pos)            
             if seg2_len >= remaining:
                 seg2 = seg2[:remaining]
+                seg2_len = remaining
                 loop = False
             
-            pos = index * seg2_len
+            
             output.write(audioop.add(seg1[pos:pos+seg2_len], seg2, frame_width))
-            index += 1
+            pos += seg2_len
             
             if not loop: break
             
-        output.write(seg1[index*seg2_len:])
+        output.write(seg1[pos:])
         
         return spawn(data=output)
 
@@ -261,11 +275,10 @@ class AudioSegment(object):
         seg1, seg2 = AudioSegment._sync(self, seg)
         
         if not crossfade_ms:
-            return seg1._spawn(data=seg1._data + seg2._data)
+            return seg1._spawn(seg1._data + seg2._data)
         
-        seg1 = seg1.fade_out(duration=crossfade_ms)
-        seg2 = seg2.fade_in(duration=crossfade_ms)
-        crossfade = seg1[-crossfade_ms:] * seg2[:crossfade_ms]
+        crossfade = seg1[-crossfade_ms:].fade(to_gain=-120, start=0, end=float('inf'))
+        crossfade *= seg1[:crossfade_ms].fade(from_gain=-120, start=0, end=float('inf'))
         
         output.write(seg1[:-crossfade_ms]._data)
         output.write(crossfade._data)
@@ -301,31 +314,38 @@ class AudioSegment(object):
         
         frames = self.frame_count()
         
+        start = min(len(self), start)
+        end = min(len(self), end)
+        
         if duration:
-            duration = self.frame_count(duration)
-        
-        start = self._parse_position(start)
-        end = self._parse_position(end)
-            
+            if start is not None:
+                end = start + duration
+            elif end is not None:
+                start = end - duration
+        else:
+            duration = end - start
+                    
+        from_power = db_to_float(from_gain)
+                    
         output = []
-        
+                    
         # original data - up until the crossfade portion, as is
-        before_fade = self._data[: (start) * self.frame_width ]
+        before_fade = self[:start]._data
         if from_gain != 0:
-            before_fade = audioop.mul(before_fade, self.sample_width, db_to_float(from_gain))
+            before_fade = audioop.mul(before_fade, self.sample_width, from_power)
         output.append(before_fade)
         
-        scale_step = db_to_float(to_gain)/frames
+        scale_step = db_to_float(to_gain)/duration
         
         for i in range(0, duration):
-            volume_change = db_to_float(from_gain) + (scale_step * i)
-            sample = self.get_sample(start + i)
-            sample = audioop.mul(sample, self.sample_width, volume_change)
+            volume_change = from_power + (scale_step * i)
+            chunk = self[start + i]
+            chunk = audioop.mul(chunk._data, self.sample_width, volume_change)
             
-            output.append(sample)
+            output.append(chunk)
             
         # original data after the crossfade portion, at the new volume
-        after_fade = self._data[: (end) * self.frame_width ]
+        after_fade = self[end:]._data
         if to_gain != 0:
             after_fade = audioop.mul(after_fade, self.sample_width, db_to_float(to_gain))
         output.append(after_fade)

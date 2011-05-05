@@ -35,12 +35,15 @@ class FileAccessTests(unittest.TestCase):
         self.assertTrue(seg1._data == seg2._data)
 
 
-
+test1 = test2 = None
 class AudioSegmentTests(unittest.TestCase):
         
     def setUp(self):
-        self.seg1 = AudioSegment.from_mp3(os.path.join(data_dir, 'test1.mp3'))
-        self.seg2 = AudioSegment.from_mp3(os.path.join(data_dir, 'test2.mp3'))
+        global test1, test2
+        if not test1:
+            test1 = AudioSegment.from_mp3(os.path.join(data_dir, 'test1.mp3'))
+            test2 = AudioSegment.from_mp3(os.path.join(data_dir, 'test2.mp3'))
+        self.seg1, self.seg2 = test1, test2 
 
 
     def assertWithinRange(self, val, lower_bound, upper_bound):
@@ -79,12 +82,44 @@ class AudioSegmentTests(unittest.TestCase):
         
         
     def test_overlay(self):
-        seg_mult = self.seg1 * self.seg2
-        seg_over = self.seg1.overlay(self.seg2, loop=True)
+        seg_mult = self.seg1[:5000] * self.seg2[:3000]
+        seg_over = self.seg1[:5000].overlay(self.seg2[:3000], loop=True)
         
         self.assertEqual(len(seg_mult), len(seg_over))
-        self.assertEqual(len(seg_mult), len(self.seg1))
-        self.assertEqual(len(seg_over), len(self.seg1))
+        self.assertTrue(seg_mult._data == seg_over._data)
+        
+        self.assertEqual(len(seg_mult), 5000)
+        self.assertEqual(len(seg_over), 5000)
+        
+        
+    def test_slicing(self):
+        empty = self.seg1[:0]
+        second_long_slice = self.seg1[:1000]
+        remainder = self.seg1[1000:]
+        
+        self.assertEqual(len(empty), 0)
+        self.assertEqual(len(second_long_slice), 1000)
+        self.assertEqual(len(remainder), len(self.seg1) - 1000)
+        
+        last_5_seconds = self.seg1[-5000:]
+        before = self.seg1[:-5000]
+        
+        self.assertEqual(len(last_5_seconds), 5000)
+        self.assertEqual(len(before), len(self.seg1) - 5000)
+        
+    
+    def test_indexing(self):
+        short = self.seg1[:100]
+
+        rebuilt1 = self.seg1[:0]
+        for part in short:
+            rebuilt1 += part
+            
+        rebuilt2 = sum([part for part in short], short[:0])
+        
+        self.assertTrue(short._data == rebuilt1._data)
+        self.assertTrue(short._data == rebuilt2._data)
+        
         
         
     def test_export(self):
@@ -93,7 +128,11 @@ class AudioSegmentTests(unittest.TestCase):
         exported_mp3 = seg.export()
         
         exported = AudioSegment.from_mp3(exported_mp3)
-        self.assertWithinTolerance(len(exported), len(seg), percentage=0.05)
+        self.assertWithinTolerance(len(exported), len(seg), percentage=0.01)
+
+
+
+
 
 
 if __name__ == "__main__":
