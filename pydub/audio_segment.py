@@ -162,11 +162,17 @@ class AudioSegment(object):
         file = _fd_or_path_or_tempfile(file, 'r', tempfile=False)
         file.seek(0)
         
+        input = NamedTemporaryFile(mode='wb')
+        input.write(file.read())
+        input.seek(0)
+        
         output = TemporaryFile()
         
         # read stdin / write stdout
-        subprocess.call(['lame', '--silent', '--mp3input', '--resample', '44.1', '--decode', '-', '-'], stdin=file, stdout=output)
-        output.seek(0)    
+        subprocess.call(['lame', '--silent', '--mp3input', '--decode', input.name, '-'], stdout=output)
+        
+        input.close()
+        output.seek(0)
         
         return cls(data=output)
     
