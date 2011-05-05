@@ -181,7 +181,14 @@ class AudioSegment(object):
         data.write(self._data)
         data.seek(0)
         
-        subprocess.call(['lame', '-rh', '-', '-'], stdin=data, stdout=out_f)
+        sample_rate = "%s" % (self.frame_rate / 1000.0)
+        sample_rate = sample_rate.rstrip(".0")
+        
+        subprocess.call(['lame', '-r', 
+                         '-s', sample_rate, 
+                         '--bitwidth', str(self.sample_width * 8),
+                         '-m', 'm' if self.channels == 1 else "s",
+                         '-', '-'], stdin=data, stdout=out_f)
         out_f.seek(0)
         
         return out_f
