@@ -128,8 +128,16 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(len(self.seg1), len(mono))
         self.assertEqual(len(self.seg1), len(stereo))
         
-        merged = mono + stereo
-        self.assertWithinTolerance(len(merged), len(self.seg1)*2, tolerance=1)
+        mono = self.seg2.set_channels(1)
+        mono = mono.set_frame_rate(22050)
+        
+        self.assertEqual(len(mono), len(self.seg2))
+        
+        monomp3 = AudioSegment.from_mp3(mono.export())
+        self.assertWithinTolerance(len(monomp3), len(self.seg2), percentage=0.01)
+        
+        merged = monomp3.append(stereo, crossfade_ms=100)
+        self.assertWithinTolerance(len(merged), len(self.seg1)+len(self.seg2)-100, tolerance=1)
         
         
     def test_export(self):

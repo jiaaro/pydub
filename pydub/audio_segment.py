@@ -139,13 +139,18 @@ class AudioSegment(object):
     
     @classmethod
     def _sync(cls, seg1, seg2):
-        frame_rate = max(seg1.frame_rate, seg2.frame_rate)
-        seg1 = seg1.set_frame_rate(frame_rate)
-        seg2 = seg2.set_frame_rate(frame_rate)
+        s1_len, s2_len = len(seg1), len(seg2)
         
         channels = max(seg1.channels, seg2.channels)
         seg1 = seg1.set_channels(channels)
         seg2 = seg2.set_channels(channels)
+        
+        frame_rate = max(seg1.frame_rate, seg2.frame_rate)
+        seg1 = seg1.set_frame_rate(frame_rate)
+        seg2 = seg2.set_frame_rate(frame_rate)
+        
+        assert(len(seg1) == s1_len)
+        assert(len(seg2) == s2_len)
         
         return seg1, seg2
     
@@ -228,7 +233,7 @@ class AudioSegment(object):
         if frame_rate == self.frame_rate:
             return self
         
-        converted, _ = audioop.ratecv(self._data, self.frame_width/self.channels, self.channels, self.frame_rate, frame_rate, None)
+        converted, _ = audioop.ratecv(self._data, self.sample_width, self.channels, self.frame_rate, frame_rate, None)
         return self._spawn(data=converted, overrides={'frame_rate': frame_rate})
     
     
