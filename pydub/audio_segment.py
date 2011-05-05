@@ -1,5 +1,5 @@
 import subprocess
-from tempfile import TemporaryFile
+from tempfile import TemporaryFile, NamedTemporaryFile
 from StringIO import StringIO
 import wave
 import audioop
@@ -177,9 +177,17 @@ class AudioSegment(object):
         
         out_f = _fd_or_path_or_tempfile(out_f, 'wb')
         
-        data = TemporaryFile()
-        data.write(self._data)
-        data.seek(0)
+        data = NamedTemporaryFile(mode="wb", delete=False)
+        wave_data = wave.open(data)
+        
+        wave_data.setnchannels(self.channels)
+        wave_data.setsampwidth(self.sample_width)
+        wave_data.setframerate(self.frame_rate)
+        wave_data.setnframes(self.frame_count())
+        wave_data.writeframesraw(self._data)
+        wave_data.close()
+        
+        wave_data = open(data.name, 'rb')
         
         sample_rate = "%s" % (self.frame_rate / 1000.0)
         sample_rate = sample_rate.rstrip(".0")
@@ -187,8 +195,11 @@ class AudioSegment(object):
         subprocess.call(['lame', '-r', 
                          '-s', sample_rate, 
                          '--bitwidth', str(self.sample_width * 8),
-                         '-m', 'm' if self.channels == 1 else "s",
-                         '-', '-'], stdin=data, stdout=out_f)
+                         '-', '-'], stdin=wave_data, stdout=out_f)
+        
+        wave_data.close()
+        data.unlink(data.name)
+        
         out_f.seek(0)
         
         return out_f
