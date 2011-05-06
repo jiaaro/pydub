@@ -187,10 +187,10 @@ class AudioSegment(object):
     
     
     def export(self, out_f=None, format='mp3'):
-        if format != 'mp3':
+        if format not in ('mp3', 'wav'):
             raise UnsupportedOuputFormat("Only mp3 is supported at present")
         
-        out_f = _fd_or_path_or_tempfile(out_f, 'wb')
+        out_f = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
         
         data = NamedTemporaryFile(mode="wb", delete=False)
@@ -203,16 +203,14 @@ class AudioSegment(object):
         wave_data.writeframesraw(self._data)
         wave_data.close()
         
-        sample_rate = "%s" % (self.frame_rate / 1000.0)
-        sample_rate = sample_rate.rstrip(".0")
-        
-        subprocess.call(['lame', '--silent',
-                         data.name, '-'], stdout=out_f)
+        if format == 'mp3':
+            subprocess.call(['lame', '--silent',
+                             data.name, '-'], stdout=out_f)
+        elif format == 'wav':
+            out_f.write(open(data.name).read())
         
         data.unlink(data.name)
-        
         out_f.seek(0)
-        
         return out_f
         
         
