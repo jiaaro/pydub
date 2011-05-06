@@ -169,7 +169,6 @@ class AudioSegment(object):
         
         input = NamedTemporaryFile(mode='wb')
         input.write(file.read())
-        input.seek(0)
         
         output = TemporaryFile()
         
@@ -177,9 +176,14 @@ class AudioSegment(object):
         subprocess.call(['lame', '--silent', '--mp3input', '--decode', input.name, '-'], stdout=output)
         
         input.close()
-        output.seek(0)
-        
-        return cls(data=output)
+        return cls.from_wav(output)
+    
+    
+    @classmethod
+    def from_wav(cls, file):
+        file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
+        file.seek(0)
+        return cls(data=file)
     
     
     def export(self, out_f=None, format='mp3'):

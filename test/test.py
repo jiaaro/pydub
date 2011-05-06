@@ -33,6 +33,7 @@ class FileAccessTests(unittest.TestCase):
         
         self.assertEqual(len(seg1), len(seg2))
         self.assertTrue(seg1._data == seg2._data)
+        self.assertTrue(len(seg1) > 0)
 
 
 test1 = test2 = test3 = None
