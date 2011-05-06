@@ -156,6 +156,20 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertWithinTolerance(len(exported), len(seg), percentage=0.01)
 
 
+    def test_fades(self):
+        # 1 ms difference in the position of the end of the fade out
+        inf_end = self.seg1.fade(start=0, end=float('inf'), to_gain=-120)
+        negative_end = self.seg1.fade(start=0, end=-1, to_gain=-120)
+        
+        self.assertWithinTolerance(inf_end.rms, negative_end.rms, percentage=0.001)
+        self.assertTrue(inf_end.rms < negative_end.rms)
+        self.assertTrue(inf_end.rms < self.seg1.rms)
+        self.assertEqual(len(inf_end), len(self.seg1))
+        
+        self.assertTrue(-3 < ratio_to_db(inf_end.rms, self.seg1.rms) < -2)
+        
+        
+        
 
 
 

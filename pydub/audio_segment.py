@@ -344,6 +344,9 @@ class AudioSegment(object):
         start = min(len(self), start)
         end = min(len(self), end)
         
+        if start < 0: start += len(self)
+        if end < 0: end += len(self)
+        
         if duration:
             if start is not None:
                 end = start + duration
@@ -362,10 +365,11 @@ class AudioSegment(object):
             before_fade = audioop.mul(before_fade, self.sample_width, from_power)
         output.append(before_fade)
         
-        scale_step = db_to_float(to_gain)/duration
+        gain_delta = db_to_float(to_gain) - db_to_float(from_gain)
+        scale_step = gain_delta / duration
         
         for i in range(0, duration):
-            volume_change = from_power + (scale_step * i)
+            volume_change = scale_step * i
             chunk = self[start + i]
             chunk = audioop.mul(chunk._data, self.sample_width, volume_change)
             
