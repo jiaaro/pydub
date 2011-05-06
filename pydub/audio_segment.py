@@ -368,11 +368,11 @@ class AudioSegment(object):
             before_fade = audioop.mul(before_fade, self.sample_width, from_power)
         output.append(before_fade)
         
-        gain_delta = db_to_float(to_gain) - db_to_float(from_gain)
+        gain_delta = db_to_float(to_gain) - from_power
         scale_step = gain_delta / duration
         
-        for i in range(0, duration):
-            volume_change = scale_step * i
+        for i in range(duration):
+            volume_change = from_power + (scale_step * i)
             chunk = self[start + i]
             chunk = audioop.mul(chunk._data, self.sample_width, volume_change)
             

@@ -157,25 +157,36 @@ class AudioSegmentTests(unittest.TestCase):
 
 
     def test_fades(self):
+        seg = self.seg1[:10000]
         # 1 ms difference in the position of the end of the fade out
-        inf_end = self.seg1.fade(start=0, end=float('inf'), to_gain=-120)
-        negative_end = self.seg1.fade(start=0, end=-1, to_gain=-120)
+        inf_end = seg.fade(start=0, end=float('inf'), to_gain=-120)
+        negative_end = seg.fade(start=0, end=-1, to_gain=-120)
         
         self.assertWithinTolerance(inf_end.rms, negative_end.rms, percentage=0.001)
-        self.assertTrue(inf_end.rms < negative_end.rms)
-        self.assertTrue(inf_end.rms < self.seg1.rms)
-        self.assertEqual(len(inf_end), len(self.seg1))
+        self.assertTrue(negative_end.rms < inf_end.rms)
+        self.assertTrue(inf_end.rms < seg.rms)
+        self.assertEqual(len(inf_end), len(seg))
         
-        self.assertTrue(-3 < ratio_to_db(inf_end.rms, self.seg1.rms) < -2)
+        self.assertTrue(-3 < ratio_to_db(inf_end.rms, seg.rms) < -2)
         
-        fade_out = self.seg1.fade_out(5000)
-        fade_in = self.seg2.fade_in(5000)
+        # use a slice out of the middle to make sure there is audio
+        seg = self.seg2[20000:30000]
+        fade_out = seg.fade_out(5000)
+        fade_in = seg.fade_in(5000)
         
-        self.assertTrue(0 < fade_out.rms < self.seg1.rms)
-        self.assertTrue(0 < fade_in.rms < self.seg2.rms)
+        self.assertTrue(0 < fade_out.rms < seg.rms)
+        self.assertTrue(0 < fade_in.rms < seg.rms)
         
-        self.assertEqual(len(fade_out), len(self.seg1))
-        self.assertEqual(len(fade_in), len(self.seg2))
+        self.assertEqual(len(fade_out), len(seg))
+        self.assertEqual(len(fade_in), len(seg))
+        
+        db_at_beginning = ratio_to_db(fade_in[:1000].rms, seg[:1000].rms)
+        db_at_end = ratio_to_db(fade_in[-1000:].rms, seg[-1000:].rms)
+        self.assertTrue(db_at_beginning < db_at_end)
+        
+        db_at_beginning = ratio_to_db(fade_out[:1000].rms, seg[:1000].rms)
+        db_at_end = ratio_to_db(fade_out[-1000:].rms, seg[-1000:].rms)
+        self.assertTrue(db_at_end < db_at_beginning)
 
 
 
