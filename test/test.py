@@ -168,12 +168,17 @@ class AudioSegmentTests(unittest.TestCase):
         
         self.assertTrue(-3 < ratio_to_db(inf_end.rms, self.seg1.rms) < -2)
         
+        fade_out = self.seg1.fade_out(5000)
+        fade_in = self.seg2.fade_in(5000)
         
+        self.assertTrue(0 < fade_out.rms < self.seg1.rms)
+        self.assertTrue(0 < fade_in.rms < self.seg2.rms)
         
-
+        self.assertEqual(len(fade_out), len(self.seg1))
+        self.assertEqual(len(fade_in), len(self.seg2))
 
 
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
+    
