@@ -3,3 +3,4 @@
 /.pydevproject
 /dist/
 /pydub.egg-info/
+/.DS_Store

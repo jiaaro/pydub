@@ -80,7 +80,7 @@ class AudioSegment(object):
 
     def __add__(self, arg):
         if isinstance(arg, AudioSegment):
-            return self.append(arg, crossfade_ms=0)
+            return self.append(arg, crossfade=0)
         else:
             return self.apply_gain(arg)
         
@@ -296,23 +296,23 @@ class AudioSegment(object):
         return spawn(data=output)
 
 
-    def append(self, seg, crossfade_ms=100):
+    def append(self, seg, crossfade=100):
         output = TemporaryFile()
         
         seg1, seg2 = AudioSegment._sync(self, seg)
         
-        if not crossfade_ms:
+        if not crossfade:
             return seg1._spawn(seg1._data + seg2._data)
         
-        crossfade = seg1[-crossfade_ms:].fade(to_gain=-120, start=0, end=float('inf'))
-        crossfade *= seg1[:crossfade_ms].fade(from_gain=-120, start=0, end=float('inf'))
+        xf = seg1[-crossfade:].fade(to_gain=-120, start=0, end=float('inf'))
+        xf *= seg1[:crossfade].fade(from_gain=-120, start=0, end=float('inf'))
         
-        output.write(seg1[:-crossfade_ms]._data)
-        output.write(crossfade._data)
-        output.write(seg2[crossfade_ms:]._data)
+        output.write(seg1[:-crossfade]._data)
+        output.write(xf._data)
+        output.write(seg2[crossfade:]._data)
         
         output.seek(0)
-        return self._spawn(data=output)
+        return seg1._spawn(data=output)
         
         
     def fade(self, to_gain=0, from_gain=0, start=None, end=None, duration=None):

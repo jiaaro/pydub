@@ -35,15 +35,16 @@ class FileAccessTests(unittest.TestCase):
         self.assertTrue(seg1._data == seg2._data)
 
 
-test1 = test2 = None
+test1 = test2 = test3 = None
 class AudioSegmentTests(unittest.TestCase):
         
     def setUp(self):
-        global test1, test2
+        global test1, test2, test3
         if not test1:
             test1 = AudioSegment.from_mp3(os.path.join(data_dir, 'test1.mp3'))
             test2 = AudioSegment.from_mp3(os.path.join(data_dir, 'test2.mp3'))
-        self.seg1, self.seg2 = test1, test2 
+            test3 = AudioSegment.from_mp3(os.path.join(data_dir, 'test3.mp3'))
+        self.seg1, self.seg2, self.seg3 = test1, test2, test3 
 
 
     def assertWithinRange(self, val, lower_bound, upper_bound):
@@ -58,12 +59,19 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertWithinRange(val, lower_bound, upper_bound)
 
 
-    def test_concat_with_add(self):
+    def test_concat(self):
         catted_audio = self.seg1 + self.seg2
         
         expected = len(self.seg1) + len(self.seg2)
         self.assertWithinTolerance(len(catted_audio), expected, 1)
         
+        
+    def test_append(self):
+        merged1 = self.seg3.append(self.seg1, crossfade=100)
+        merged2 = self.seg3.append(self.seg2, crossfade=100)
+        
+        self.assertEqual(len(merged1), len(self.seg1) + len(self.seg3) - 100)
+        self.assertEqual(len(merged2), len(self.seg2) + len(self.seg3) - 100)
     
     def test_volume_with_add_sub(self):
         quieter = self.seg1 - 6
@@ -71,7 +79,6 @@ class AudioSegmentTests(unittest.TestCase):
         
         louder = quieter + 2.5
         self.assertAlmostEqual(ratio_to_db(louder.rms, quieter.rms), 2.5)
-        
         
         
     def test_repeat_with_multiply(self):
@@ -136,7 +143,7 @@ class AudioSegmentTests(unittest.TestCase):
         monomp3 = AudioSegment.from_mp3(mono.export())
         self.assertWithinTolerance(len(monomp3), len(self.seg2), percentage=0.01)
         
-        merged = monomp3.append(stereo, crossfade_ms=100)
+        merged = monomp3.append(stereo, crossfade=100)
         self.assertWithinTolerance(len(merged), len(self.seg1)+len(self.seg2)-100, tolerance=1)
         
         
