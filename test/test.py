@@ -115,6 +115,9 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(len(last_5_seconds), 5000)
         self.assertEqual(len(before), len(self.seg1) - 5000)
         
+        past_end = second_long_slice[:1500]
+        self.assertTrue(second_long_slice._data == past_end._data)
+        
     
     def test_indexing(self):
         short = self.seg1[:100]

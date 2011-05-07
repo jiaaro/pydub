@@ -58,6 +58,9 @@ class AudioSegment(object):
         if isinstance(millisecond, slice):
             start = millisecond.start if millisecond.start is not None else 0
             end = millisecond.stop if millisecond.stop is not None else len(self)
+            
+            start = min(start, len(self))
+            end = min(end, len(self))
         else:
             start = millisecond
             end = millisecond + 1
