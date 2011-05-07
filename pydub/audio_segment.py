@@ -71,7 +71,7 @@ class AudioSegment(object):
         missing_frames = (expected_length - len(data)) / self.frame_width
         if missing_frames:
             if missing_frames > self.frame_count(ms=2):
-                raise TooManyMissingFrames("You should never be filling in more than 1 ms with silence here")
+                raise TooManyMissingFrames("You should never be filling in more than 2 ms with silence here, missing frames: %s" % missing_frames)
             silence = audioop.mul(data[:self.frame_width], self.sample_width, 0)
             data += (silence * missing_frames)
         
