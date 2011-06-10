@@ -165,9 +165,8 @@ class AudioSegment(object):
         val = self.frame_count(ms=len(self)) if val == float("inf") else self.frame_count(ms=val)
         return int(val)
     
-    
     @classmethod
-    def from_mp3(cls, file):
+    def from_file(cls, file, format):
         file = _fd_or_path_or_tempfile(file, 'r', tempfile=False)
         file.seek(0)
         
@@ -179,7 +178,7 @@ class AudioSegment(object):
         # read stdin / write stdout
         subprocess.call(['ffmpeg', 
                          '-y', # always overwrite existing files
-                         "-f", "mp3", "-i", input.name, # input options (filename last)
+                         "-f", format, "-i", input.name, # input options (filename last)
                          "-f", "wav", output.name, # output options (filename last)
                          ], 
                         
@@ -188,6 +187,16 @@ class AudioSegment(object):
         
         input.close()
         return cls.from_wav(output)
+    
+    
+    @classmethod
+    def from_mp3(cls, file):
+        return cls.from_file(file, 'mp3')
+    
+    
+    @classmethod
+    def from_flv(cls, file):
+        return cls.from_file(file, 'flv')
     
     
     @classmethod
