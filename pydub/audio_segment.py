@@ -207,9 +207,6 @@ class AudioSegment(object):
     
     
     def export(self, out_f=None, format='mp3'):
-        if format not in ('mp3', 'wav'):
-            raise UnsupportedOuputFormat("Only mp3 is supported at present")
-        
         out_f = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
         
