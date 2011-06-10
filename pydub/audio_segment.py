@@ -1,3 +1,4 @@
+import os
 import subprocess
 from tempfile import TemporaryFile, NamedTemporaryFile
 from StringIO import StringIO
@@ -173,10 +174,17 @@ class AudioSegment(object):
         input = NamedTemporaryFile(mode='wb')
         input.write(file.read())
         
-        output = TemporaryFile()
+        output = NamedTemporaryFile(mode="w+")
         
         # read stdin / write stdout
-        subprocess.call(['lame', '--silent', '--mp3input', '--decode', input.name, '-'], stdout=output)
+        subprocess.call(['ffmpeg', 
+                         '-y', # always overwrite existing files
+                         "-f", "mp3", "-i", input.name, # input options (filename last)
+                         "-f", "wav", output.name, # output options (filename last)
+                         ], 
+                        
+                        # make ffmpeg shut up
+                        stderr=open(os.devnull))
         
         input.close()
         return cls.from_wav(output)
@@ -206,11 +214,21 @@ class AudioSegment(object):
         wave_data.writeframesraw(self._data)
         wave_data.close()
         
-        if format == 'mp3':
-            subprocess.call(['lame', '--silent',
-                             data.name, '-'], stdout=out_f)
-        elif format == 'wav':
-            out_f.write(open(data.name).read())
+        
+        output = NamedTemporaryFile(mode="w+")
+        
+        # read stdin / write stdout
+        subprocess.call(['ffmpeg', 
+                         '-y', # always overwrite existing files
+                         "-f", "wav", "-i", data.name, # input options (filename last)
+                         "-f", format, output.name, # output options (filename last)
+                         ], 
+                        
+                        # make ffmpeg shut up
+                        stderr=open(os.devnull))
+        
+        output.seek(0)
+        out_f.write(output.read())
         
         data.unlink(data.name)
         out_f.seek(0)

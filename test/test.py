@@ -191,6 +191,20 @@ class AudioSegmentTests(unittest.TestCase):
         db_at_beginning = ratio_to_db(fade_out[:1000].rms, seg[:1000].rms)
         db_at_end = ratio_to_db(fade_out[-1000:].rms, seg[-1000:].rms)
         self.assertTrue(db_at_end < db_at_beginning)
+        
+    
+    def test_for_accidental_shortening(self):
+        seg = AudioSegment.from_mp3(os.path.join(data_dir, 'party.mp3'))
+        seg.export('tmp.mp3')
+        
+        for i in range(10):
+            AudioSegment.from_mp3('tmp.mp3').export('tmp.mp3')
+            
+        tmp = AudioSegment.from_mp3('tmp.mp3')
+        
+        self.assertEqual(len(seg), len(tmp))
+        
+        os.unlink('tmp.mp3')
 
 
 
