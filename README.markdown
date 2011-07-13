@@ -11,7 +11,7 @@ copy the pydub director into your python path
 
 requires lame for mp3 encoding and decoding
 
- - lame (http://lame.sourceforge.net/)
+ - ffmpeg (http://www.ffmpeg.org/)
 
 
 # Example Use
