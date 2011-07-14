@@ -9,6 +9,9 @@ from .utils import _fd_or_path_or_tempfile, db_to_float
 from .exceptions import UnsupportedOuputFormat, TooManyMissingFrames, InvalidDuration
 
 
+AUDIO_FILE_EXT_ALIASES = {
+    "m4a": "mp4"
+}
 
 class AudioSegment(object):
     """
@@ -167,24 +170,28 @@ class AudioSegment(object):
     
     @classmethod
     def from_file(cls, file, format):
-        file = _fd_or_path_or_tempfile(file, 'r', tempfile=False)
-        file.seek(0)
-        
+        file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
+        format = AUDIO_FILE_EXT_ALIASES.get(format, format)
+                
         input = NamedTemporaryFile(mode='wb')
         input.write(file.read())
+        input.flush()
         
-        output = NamedTemporaryFile(mode="w+")
+        output = NamedTemporaryFile(mode="rb")
         
-        # read stdin / write stdout
-        subprocess.call(['ffmpeg', 
-                         '-y', # always overwrite existing files
-                         "-f", format, "-i", input.name, # input options (filename last)
-                         "-f", "wav", output.name, # output options (filename last)
-                         ], 
-                        
-                        # make ffmpeg shut up
-                        stderr=open(os.devnull))
+        ffmpeg_call = ['ffmpeg', 
+                       '-y', # always overwrite existing files
+                       ]
+        if format: ffmpeg_call += ["-f", format]
+        ffmpeg_call += [
+                        "-i", input.name, # input options (filename last)
+                        "-f", "wav", # output options (filename last) 
+                        output.name
+                        ]
         
+        subprocess.call(ffmpeg_call, 
+                        stderr=open(os.devnull)
+                        )
         input.close()
         return cls.from_wav(output)
     
@@ -209,7 +216,6 @@ class AudioSegment(object):
     def export(self, out_f=None, format='mp3'):
         out_f = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
-        
         data = NamedTemporaryFile(mode="wb", delete=False)
         
         wave_data = wave.open(data)

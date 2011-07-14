@@ -198,13 +198,19 @@ class AudioSegmentTests(unittest.TestCase):
         seg.export('tmp.mp3')
         
         for i in range(10):
-            AudioSegment.from_mp3('tmp.mp3').export('tmp.mp3')
+            AudioSegment.from_mp3('tmp.mp3').export('tmp.mp3', "mp3")
             
         tmp = AudioSegment.from_mp3('tmp.mp3')
         
-        self.assertEqual(len(seg), len(tmp))
-        
         os.unlink('tmp.mp3')
+        self.assertEqual(len(tmp), len(seg))
+        
+        
+        
+        
+    def test_formats(self):
+        seg_m4a = AudioSegment.from_file(os.path.join(data_dir, 'format_test.m4a'), "m4a")
+        self.assertTrue(len(seg_m4a))
 
 
 
