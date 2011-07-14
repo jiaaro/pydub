@@ -9,9 +9,9 @@ copy the pydub director into your python path
 
 # Dependencies
 
-requires lame for mp3 encoding and decoding
+requires ffmpeg for encoding and decoding all non-wav files (which work natively)
 
- - lame (http://lame.sourceforge.net/)
+ - ffmpeg (http://www.ffmpeg.org/)
 
 
 # Example Use
