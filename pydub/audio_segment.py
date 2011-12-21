@@ -172,7 +172,10 @@ class AudioSegment(object):
     def from_file(cls, file, format):
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
         format = AUDIO_FILE_EXT_ALIASES.get(format, format)
-                
+        
+        if format == 'wav':
+            return cls.from_wav(file)
+        
         input = NamedTemporaryFile(mode='wb')
         input.write(file.read())
         input.flush()
@@ -218,7 +221,12 @@ class AudioSegment(object):
     def export(self, out_f=None, format='mp3'):
         out_f = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
-        data = NamedTemporaryFile(mode="wb", delete=False)
+        
+        # for wav output we can just write the data directly to out_f
+        if format == "wav":
+            data = out_f
+        else: 
+            data = NamedTemporaryFile(mode="wb", delete=False)
         
         wave_data = wave.open(data)
         wave_data.setnchannels(self.channels)
@@ -228,6 +236,9 @@ class AudioSegment(object):
         wave_data.writeframesraw(self._data)
         wave_data.close()
         
+        # for wav files, we're done (wav data is written directly to out_f)
+        if format == 'wav': 
+            return out_f
         
         output = NamedTemporaryFile(mode="w+")
         
