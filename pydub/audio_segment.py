@@ -185,6 +185,8 @@ class AudioSegment(object):
         if format: ffmpeg_call += ["-f", format]
         ffmpeg_call += [
                         "-i", input.name, # input options (filename last)
+                        "-vn", # Drop any video streams if there are any
+                        
                         "-f", "wav", # output options (filename last) 
                         output.name
                         ]
