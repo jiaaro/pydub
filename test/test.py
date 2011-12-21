@@ -203,9 +203,7 @@ class AudioSegmentTests(unittest.TestCase):
         tmp = AudioSegment.from_mp3('tmp.mp3')
         
         os.unlink('tmp.mp3')
-        self.assertEqual(len(tmp), len(seg))
-        
-        
+        self.assertFalse(len(tmp) < len(seg))
         
         
     def test_formats(self):
