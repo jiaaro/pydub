@@ -169,12 +169,14 @@ class AudioSegment(object):
         return int(val)
 
     @classmethod
-    def from_file(cls, file, format):
+    def from_file(cls, file, format=None):
+        file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
+
+        if not format:
+            format = os.path.splitext(file.name)[1]
+        format = AUDIO_FILE_EXT_ALIASES.get(format, format)
         if format not in SUPPORTED_FORMATS:
             raise UnsupportedFormat('Invalid input format')
-
-        file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
-        format = AUDIO_FILE_EXT_ALIASES.get(format, format)
 
         if format == 'wav':
             return cls.from_wav(file)
