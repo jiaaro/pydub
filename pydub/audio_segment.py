@@ -13,7 +13,6 @@ from .exceptions import InvalidDuration
 AUDIO_FILE_EXT_ALIASES = {
     "m4a": "mp4"
 }
-SUPPORTED_FORMATS = ('mp3', 'flv', 'ogg', 'wav', 'm4a', 'mp4')
 
 
 class AudioSegment(object):
@@ -175,8 +174,6 @@ class AudioSegment(object):
         if not format:
             format = os.path.splitext(file.name)[1]
         format = AUDIO_FILE_EXT_ALIASES.get(format, format)
-        if format not in SUPPORTED_FORMATS:
-            raise UnsupportedFormat('Invalid input format')
 
         if format == 'wav':
             return cls.from_wav(file)
