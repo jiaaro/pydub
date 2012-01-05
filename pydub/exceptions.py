@@ -1,9 +1,5 @@
 
 
-class UnsupportedFormat(Exception):
-    pass
-
-
 class TooManyMissingFrames(Exception):
     pass
 

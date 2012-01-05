@@ -6,7 +6,7 @@ import wave
 import audioop
 
 from .utils import _fd_or_path_or_tempfile, db_to_float
-from .exceptions import UnsupportedFormat, TooManyMissingFrames
+from .exceptions import TooManyMissingFrames
 from .exceptions import InvalidDuration
 
 
