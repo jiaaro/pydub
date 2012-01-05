@@ -209,6 +209,10 @@ class AudioSegment(object):
         return cls.from_file(file, 'flv')
 
     @classmethod
+    def from_ogg(cls, file):
+        return cls.from_file(file, 'ogg')
+
+    @classmethod
     def from_wav(cls, file):
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
         file.seek(0)
