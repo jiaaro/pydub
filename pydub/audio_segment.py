@@ -13,7 +13,7 @@ from .exceptions import InvalidDuration
 AUDIO_FILE_EXT_ALIASES = {
     "m4a": "mp4"
 }
-SUPPORTED_FORMATS = ('mp3', 'flv', 'ogg', 'wav')
+SUPPORTED_FORMATS = ('mp3', 'flv', 'ogg', 'wav', 'm4a', 'mp4')
 
 
 class AudioSegment(object):
