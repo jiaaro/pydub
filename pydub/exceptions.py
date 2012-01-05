@@ -1,6 +1,6 @@
 
 
-class UnsupportedOuputFormat(Exception):
+class UnsupportedFormat(Exception):
     pass
 
 

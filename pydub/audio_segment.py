@@ -6,13 +6,14 @@ import wave
 import audioop
 
 from .utils import _fd_or_path_or_tempfile, db_to_float
-from .exceptions import UnsupportedOuputFormat, TooManyMissingFrames
+from .exceptions import UnsupportedFormat, TooManyMissingFrames
 from .exceptions import InvalidDuration
 
 
 AUDIO_FILE_EXT_ALIASES = {
     "m4a": "mp4"
 }
+SUPPORTED_FORMATS = ('mp3', 'flv', 'ogg', 'wav')
 
 
 class AudioSegment(object):
@@ -169,6 +170,9 @@ class AudioSegment(object):
 
     @classmethod
     def from_file(cls, file, format):
+        if format not in SUPPORTED_FORMATS:
+            raise UnsupportedFormat('Invalid input format')
+
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
         format = AUDIO_FILE_EXT_ALIASES.get(format, format)
 
