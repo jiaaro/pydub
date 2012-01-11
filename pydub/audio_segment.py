@@ -224,14 +224,13 @@ class AudioSegment(object):
     def export(self, out_f=None, format='mp3'):
         out_f = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
-
         # for wav output we can just write the data directly to out_f
         if format == "wav":
             data = out_f
         else:
             data = NamedTemporaryFile(mode="wb", delete=False)
 
-        wave_data = wave.open(data)
+        wave_data = wave.open(data, 'wb')
         wave_data.setnchannels(self.channels)
         wave_data.setsampwidth(self.sample_width)
         wave_data.setframerate(self.frame_rate)
