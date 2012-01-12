@@ -150,9 +150,14 @@ class AudioSegmentTests(unittest.TestCase):
         seg = self.seg1 + self.seg2
 
         exported_mp3 = seg.export()
+        exported_wav = seg.export(format='wav')
 
-        exported = AudioSegment.from_mp3(exported_mp3)
-        self.assertWithinTolerance(len(exported), len(seg), percentage=0.01)
+        exported1 = AudioSegment.from_mp3(exported_mp3)
+        exported2 = AudioSegment.from_wav(exported_wav)
+
+        self.assertWithinTolerance(len(exported1), len(seg), percentage=0.01)
+        self.assertWithinTolerance(len(exported2), len(seg), percentage=0.01)
+
 
     def test_fades(self):
         seg = self.seg1[:10000]
