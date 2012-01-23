@@ -24,6 +24,7 @@ class AudioSegment(object):
     a = AudioSegment.from_mp3(mp3file)
     first_second = a[:1000]
     """
+    ffmpeg = 'ffmpeg'
 
     def __init__(self, data=None, *args, **kwargs):
         if kwargs.get('metadata', False):
@@ -184,7 +185,7 @@ class AudioSegment(object):
 
         output = NamedTemporaryFile(mode="rb")
 
-        ffmpeg_call = ['ffmpeg',
+        ffmpeg_call = [cls.ffmpeg,
                        '-y',  # always overwrite existing files
                        ]
         if format:
@@ -245,7 +246,7 @@ class AudioSegment(object):
         output = NamedTemporaryFile(mode="w+")
 
         # read stdin / write stdout
-        subprocess.call(['ffmpeg',
+        subprocess.call([self.ffmpeg,
             '-y',  # always overwrite existing files
             "-f", "wav", "-i", data.name,  # input options (filename last)
             "-f", format, output.name,  # output options (filename last)
