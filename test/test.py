@@ -154,6 +154,14 @@ class AudioSegmentTests(unittest.TestCase):
         exported = AudioSegment.from_mp3(exported_mp3)
         self.assertWithinTolerance(len(exported), len(seg), percentage=0.01)
 
+    def test_export_forced_codec(self):
+        seg = self.seg1 + self.seg2
+
+        seg.export('tmp.ogg', 'ogg', codec='libvorbis')
+        exported = AudioSegment.from_ogg('tmp.ogg')
+        os.unlink('tmp.ogg')
+        self.assertWithinTolerance(len(exported), len(seg), percentage=0.01)
+
     def test_fades(self):
         seg = self.seg1[:10000]
         # 1 ms difference in the position of the end of the fade out
