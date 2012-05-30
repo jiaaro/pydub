@@ -1,3 +1,4 @@
+before_script: "sudo aptitude -y -q install ffmpeg"
 language: python
 python:
   - "2.5"
