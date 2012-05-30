@@ -4,3 +4,5 @@
 /dist/
 /pydub.egg-info/
 .DS_Store
+env
+*.swp
