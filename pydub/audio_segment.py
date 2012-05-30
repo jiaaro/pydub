@@ -309,17 +309,17 @@ class AudioSegment(object):
 
     @property
     def rms(self):
-        return audioop.rms(self._data, self.frame_width)
+        return audioop.rms(self._data, self.sample_width)
 
     def apply_gain(self, volume_change):
-        return self._spawn(data=audioop.mul(self._data, self.frame_width,
+        return self._spawn(data=audioop.mul(self._data, self.sample_width,
             db_to_float(float(volume_change))))
 
     def overlay(self, seg, position=0, loop=False):
         output = TemporaryFile()
 
         seg1, seg2 = AudioSegment._sync(self, seg)
-        frame_width = seg1.frame_width
+        sample_width = seg1.sample_width
         spawn = seg1._spawn
 
         output.write(seg1[:position]._data)
@@ -338,7 +338,7 @@ class AudioSegment(object):
                 loop = False
 
             output.write(audioop.add(seg1[pos:pos + seg2_len], seg2,
-                frame_width))
+                sample_width))
             pos += seg2_len
 
             if not loop:
