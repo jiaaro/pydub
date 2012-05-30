@@ -8,6 +8,7 @@ import audioop
 from .utils import _fd_or_path_or_tempfile, db_to_float
 from .exceptions import TooManyMissingFrames
 from .exceptions import InvalidDuration
+from pydub.utils import ratio_to_db
 
 
 AUDIO_FILE_EXT_ALIASES = {
@@ -310,6 +311,28 @@ class AudioSegment(object):
     @property
     def rms(self):
         return audioop.rms(self._data, self.sample_width)
+    
+    @property
+    def max(self):
+        return audioop.max(self._data, self.sample_width)
+    
+    @property
+    def max_possible_amplitude(self):
+        bits = self.sample_width*8
+        max_possible_val = (2**bits)
+        
+        # since half is above 0 and half is below the max amplitude is divided
+        return max_possible_val / 2
+    
+    def normalize(self, headroom=0.1):
+        """
+        headroom is how close to the maximum volume to boost the signal up to (specified in dB)
+        """
+        peak_sample_val = self.max
+        target_peak = self.max_possible_amplitude * db_to_float(-headroom)
+        
+        needed_boost = ratio_to_db(target_peak / peak_sample_val)
+        return self.apply_gain(needed_boost)
 
     def apply_gain(self, volume_change):
         return self._spawn(data=audioop.mul(self._data, self.sample_width,
