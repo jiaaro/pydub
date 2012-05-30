@@ -55,6 +55,10 @@ class AudioSegment(object):
         """
         return round(1000 * (self.frame_count() / self.frame_rate))
 
+    def __eq__(self, other):
+        try: return self._data == other._data
+        except: return False
+
     def __iter__(self):
         return (self[i] for i in xrange(len(self)))
 
