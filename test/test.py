@@ -219,7 +219,7 @@ class AudioSegmentTests(unittest.TestCase):
         normalized = seg.normalize(0.0)
         
         self.assertEqual(len(normalized), len(seg))
-        self.assertGreater(normalized.rms, seg.rms)
+        self.assertTrue(normalized.rms > seg.rms)
         self.assertWithinTolerance(normalized.max, normalized.max_possible_amplitude, percentage=0.0001)
         
     def test_for_accidental_shortening(self):
