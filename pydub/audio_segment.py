@@ -473,3 +473,10 @@ class AudioSegment(object):
 
     def fade_in(self, duration):
         return self.fade(from_gain=-120, duration=duration, start=0)
+    
+    def reverse(self):
+        return self._spawn(
+            data=audioop.reverse(self._data, self.sample_width)
+        )
+        
+    
