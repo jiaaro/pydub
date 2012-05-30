@@ -227,7 +227,7 @@ class AudioSegment(object):
         file.seek(0)
         return cls(data=file)
 
-    def export(self, out_f=None, format='mp3'):
+    def export(self, out_f=None, format='mp3', codec=None):
         out_f = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
         # for wav output we can just write the data directly to out_f
@@ -250,15 +250,22 @@ class AudioSegment(object):
 
         output = NamedTemporaryFile(mode="w+")
 
-        # read stdin / write stdout
-        subprocess.call([self.ffmpeg,
+        # build call args
+        args =[self.ffmpeg,
             '-y',  # always overwrite existing files
             "-f", "wav", "-i", data.name,  # input options (filename last)
+        ]
+        if codec is not None:
+            # force audio encoder
+            args.extend(["-acodec", codec])
+        args.extend([
             "-f", format, output.name,  # output options (filename last)
-        ],
-
-                        # make ffmpeg shut up
-                        stderr=open(os.devnull))
+        ])
+        # read stdin / write stdout
+        subprocess.call(args,
+            # make ffmpeg shut up
+            stderr=open(os.devnull)
+        )
 
         output.seek(0)
         out_f.write(output.read())
