@@ -1,7 +1,6 @@
-before_script: "sudo aptitude -y -q install ffmpeg"
+before_script: "sudo aptitude -y -q install ffmpeg libavcodec-extra-52"
 language: python
 python:
-  - "2.5"
   - "2.6"
   - "2.7"
 script: python test/test.py
