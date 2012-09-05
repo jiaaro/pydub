@@ -48,7 +48,10 @@ beginning = first_10_seconds + 6
 ```
 
 # reduce volume by 3dB
+
+```python
 end = last_5_seconds - 3
+```
     
 Concatenate audio (add one file to the end of another)
 
