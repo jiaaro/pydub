@@ -6,69 +6,90 @@ Pydub let's you do stuff to audio in a way that isn't stupid.
 
 Open a WAV file
 
-    from pydub import AudioSegment
-    
-    song = AudioSegment.from_wav("never_gonna_give_you_up.wav")
+```python
+from pydub import AudioSegment
+
+song = AudioSegment.from_wav("never_gonna_give_you_up.wav")
+```
     
 ...or an mp3
 
-    song = AudioSegment.from_mp3("never_gonna_give_you_up.mp3")
+```python
+song = AudioSegment.from_mp3("never_gonna_give_you_up.mp3")
+```
     
 ... or an ogg, or flv, or [anything else ffmpeg supports](http://www.iepak.com/35/TopicDetail.aspx)
     
-    ogg_version = AudioSegment.from_ogg("never_gonna_give_you_up.ogg")
-    flv_version = AudioSegment.from_flv("never_gonna_give_you_up.flv")
-    
-    mp4_version = AudioSegment.from_file("never_gonna_give_you_up.mp4", "mp4")
-    wma_version = AudioSegment.from_file("never_gonna_give_you_up.wma", "wma")
-    aac_version = AudioSegment.from_file("never_gonna_give_you_up.aiff", "aac")
+```python
+ogg_version = AudioSegment.from_ogg("never_gonna_give_you_up.ogg")
+flv_version = AudioSegment.from_flv("never_gonna_give_you_up.flv")
+
+mp4_version = AudioSegment.from_file("never_gonna_give_you_up.mp4", "mp4")
+wma_version = AudioSegment.from_file("never_gonna_give_you_up.wma", "wma")
+aac_version = AudioSegment.from_file("never_gonna_give_you_up.aiff", "aac")
+```
     
 Slice audio
     
-    # pydub does things in miliseconds
-    ten_seconds = 10 * 1000
-    
-    first_10_seconds = song[:10000]
-    
-    last_5_seconds = song[5000:]
+```python
+# pydub does things in miliseconds
+ten_seconds = 10 * 1000
+
+first_10_seconds = song[:10000]
+
+last_5_seconds = song[5000:]
+```
     
 Make the beginning louder and the end quieter
     
-    # boost volume by 6dB
-    beginning = first_10_seconds + 6
-    
-    # reduce volume by 3dB
-    end = last_5_seconds - 3
+```python
+# boost volume by 6dB
+beginning = first_10_seconds + 6
+```
+
+# reduce volume by 3dB
+end = last_5_seconds - 3
     
 Concatenate audio (add one file to the end of another)
-    
-    without_the_middle = beginning + end
+
+```python    
+without_the_middle = beginning + end
+```
     
 AudioSegments are immutable
-    
-    # song is not modified
-    backwards = song.reverse()
+
+```python
+# song is not modified
+backwards = song.reverse()
+```
     
 Crossfade (again, beginning and end are not modified)
     
-    # 1.5 second crossfade
-    with_style = beginning.append(end, crossfade=1500)
-    
+```python
+# 1.5 second crossfade
+with_style = beginning.append(end, crossfade=1500)
+```
+
 Repeat
 
-    # repeat the clip twice
-    do_it_over = with_style * 2
+```python
+# repeat the clip twice
+do_it_over = with_style * 2
+```
     
 Fade (note that you can chain operations because everything returns
 an AudioSegment)
     
-    # 2 sec fade in, 3 sec fade out
-    awesome = do_it_over.fade_in(2000).fade_out(3000)
+```python
+# 2 sec fade in, 3 sec fade out
+awesome = do_it_over.fade_in(2000).fade_out(3000)
+```
     
 Save the results (again whatever ffmpeg supports)
 
-    awesome.export("mashup.mp3", format="mp3")
-    
+```python
+awesome.export("mashup.mp3", format="mp3")
+```    
 
 ## Installation
 
@@ -87,33 +108,35 @@ requires ffmpeg for encoding and decoding all non-wav files (which work natively
 
 ## Example Use
 
-	from glob import glob
-    from pydub import AudioSegment
-    
-    playlist_songs = [AudioSegment.from_mp3(mp3_file) for mp3_file in glob("*.mp3")]
-    
-    first_song = playlist_songs.pop(0)
-    
-    # let's just include the first 30 seconds of the first song (slicing 
-    # is done by milliseconds)
-    beginning_of_song = first_song[:30*1000]
-    
-    playlist = beginning_of_song
-    for song in playlist_songs:
-    
-        # We don't want an abrupt stop at the end, so let's do a 10 second crossfades
-        playlist.append(song, crossfade=(10 * 1000))
-    
-    # let's fade out the end of the last song
-    playlist = playlist.fade_out(30)
-    
-    # hmm I wonder how long it is... ( len(audio_segment) returns milliseconds )
-    playlist_length = len(playlist) / (1000*60)
-    
-    # lets save it!
-    out_f = open("%s_minute_playlist.mp3" % playlist_length, 'wb')
-    
-    playlist.export(out_f, format='mp3')
+```python
+from glob import glob
+from pydub import AudioSegment
+
+playlist_songs = [AudioSegment.from_mp3(mp3_file) for mp3_file in glob("*.mp3")]
+
+first_song = playlist_songs.pop(0)
+
+# let's just include the first 30 seconds of the first song (slicing 
+# is done by milliseconds)
+beginning_of_song = first_song[:30*1000]
+
+playlist = beginning_of_song
+for song in playlist_songs:
+
+    # We don't want an abrupt stop at the end, so let's do a 10 second crossfades
+    playlist.append(song, crossfade=(10 * 1000))
+
+# let's fade out the end of the last song
+playlist = playlist.fade_out(30)
+
+# hmm I wonder how long it is... ( len(audio_segment) returns milliseconds )
+playlist_length = len(playlist) / (1000*60)
+
+# lets save it!
+out_f = open("%s_minute_playlist.mp3" % playlist_length, 'wb')
+
+playlist.export(out_f, format='mp3')
+```
     
 ### How about Another Example?
 
@@ -124,32 +147,32 @@ For this example we're going to:
   - Strip out the silence
   - Add on the bumpers (intro/outro theme music)
 
-Cool!
+```python
+from pydub import AudioSegment
+from pydub.utils import db_to_float
 
-    from pydub import AudioSegment
-    from pydub.utils import db_to_float
-    
-    # Let's load up the audio we need...
-    podcast = AudioSegment.from_mp3("podcast.mp3")
-    intro = AudioSegment.from_wav("intro.wav")
-    outro = AudioSegment.from_wav("outro.wav")
-    
-    # Let's consider anything that is 30 decibels quieter than
-    # the average volume of the podcast to be silence
-    average_loudness = podcast.rms
-    silence_threshold = average_loudness * db_to_float(-30)
-    
-    # filter out the silence
-    podcast_parts = (ms for ms in podcast if ms.rms > silence_threshold)
-    
-    # combine all the chunks back together
-    podcast = reduce(lambda a, b: a + b, podcast_parts)
-    
-    # add on the bumpers
-    podcast = intro + podcast + outro
-    
-    # save the result
-    podcast.export("podcast_processed.mp3", format="mp3")
+# Let's load up the audio we need...
+podcast = AudioSegment.from_mp3("podcast.mp3")
+intro = AudioSegment.from_wav("intro.wav")
+outro = AudioSegment.from_wav("outro.wav")
+
+# Let's consider anything that is 30 decibels quieter than
+# the average volume of the podcast to be silence
+average_loudness = podcast.rms
+silence_threshold = average_loudness * db_to_float(-30)
+
+# filter out the silence
+podcast_parts = (ms for ms in podcast if ms.rms > silence_threshold)
+
+# combine all the chunks back together
+podcast = reduce(lambda a, b: a + b, podcast_parts)
+
+# add on the bumpers
+podcast = intro + podcast + outro
+
+# save the result
+podcast.export("podcast_processed.mp3", format="mp3")
+```
     
 Not bad!
 
