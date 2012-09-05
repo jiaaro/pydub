@@ -45,11 +45,8 @@ Make the beginning louder and the end quieter
 ```python
 # boost volume by 6dB
 beginning = first_10_seconds + 6
-```
 
 # reduce volume by 3dB
-
-```python
 end = last_5_seconds - 3
 ```
     
