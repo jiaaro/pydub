@@ -121,9 +121,11 @@ Let's say you have a weekly podcast and you want to do the processing automatica
 
 For this example we're going to:
  
- - Strip out the silence
- - Add on the bumpers (intro/outro theme music)
- 
+  - Strip out the silence
+  - Add on the bumpers (intro/outro theme music)
+
+Cool!
+
     from pydub import AudioSegment
     from pydub.utils import db_to_float
     
