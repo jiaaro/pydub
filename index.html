@@ -63,146 +63,88 @@
       <br><img src="https://secure.travis-ci.org/jiaaro/pydub.png?branch=master">
     </div>
 
-    <p><h2>Example Use</h2>
+    
+    
+    <p>Open a WAV file</p>
 
-<code><pre>
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">pydub</span> <span class="kn">import</span> <span class="n">AudioSegment</span>
 
-from glob import glob
-from pydub import AudioSegment
+<span class="n">song</span> <span class="o">=</span> <span class="n">AudioSegment</span><span class="o">.</span><span class="n">from_wav</span><span class="p">(</span><span class="s">"never_gonna_give_you_up.wav"</span><span class="p">)</span>
+</pre></div>
 
-playlist_songs = [AudioSegment.from_mp3(mp3_file) for mp3_file in glob("*.mp3")]
+<p>...or an mp3</p>
 
-first_song = playlist_songs.pop(0)
+<div class="highlight"><pre><span class="n">song</span> <span class="o">=</span> <span class="n">AudioSegment</span><span class="o">.</span><span class="n">from_mp3</span><span class="p">(</span><span class="s">"never_gonna_give_you_up.mp3"</span><span class="p">)</span>
+</pre></div>
 
-# let's just include the first 30 seconds of the first song (slicing 
-# is done by milliseconds)
-beginning_of_song = first_song[:30*1000]
+<p>... or an ogg, or flv, or <a href="http://www.iepak.com/35/TopicDetail.aspx">anything else ffmpeg supports</a></p>
 
-playlist = beginning_of_song
-for song in playlist_songs:
+<div class="highlight"><pre><span class="n">ogg_version</span> <span class="o">=</span> <span class="n">AudioSegment</span><span class="o">.</span><span class="n">from_ogg</span><span class="p">(</span><span class="s">"never_gonna_give_you_up.ogg"</span><span class="p">)</span>
+<span class="n">flv_version</span> <span class="o">=</span> <span class="n">AudioSegment</span><span class="o">.</span><span class="n">from_flv</span><span class="p">(</span><span class="s">"never_gonna_give_you_up.flv"</span><span class="p">)</span>
 
-	# We don't want an abrupt stop at the end, so let's do a 10 second crossfades
-	playlist.append(song, crossfade=(10 * 1000))
+<span class="n">mp4_version</span> <span class="o">=</span> <span class="n">AudioSegment</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s">"never_gonna_give_you_up.mp4"</span><span class="p">,</span> <span class="s">"mp4"</span><span class="p">)</span>
+<span class="n">wma_version</span> <span class="o">=</span> <span class="n">AudioSegment</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s">"never_gonna_give_you_up.wma"</span><span class="p">,</span> <span class="s">"wma"</span><span class="p">)</span>
+<span class="n">aac_version</span> <span class="o">=</span> <span class="n">AudioSegment</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s">"never_gonna_give_you_up.aiff"</span><span class="p">,</span> <span class="s">"aac"</span><span class="p">)</span>
+</pre></div>
 
-# let's fade out the end of the last song
-playlist = playlist.fade_out(30)
+<p>Slice audio</p>
 
-# hmm I wonder how long it is... ( len(audio_segment) returns milliseconds )
-playlist_length = len(playlist) / (1000*60)
+<div class="highlight"><pre><span class="c"># pydub does things in miliseconds</span>
+<span class="n">ten_seconds</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="mi">1000</span>
 
-# lets save it!
-out_f = open("%s_minute_playlist.mp3" % playlist_length, 'wb')
+<span class="n">first_10_seconds</span> <span class="o">=</span> <span class="n">song</span><span class="p">[:</span><span class="mi">10000</span><span class="p">]</span>
 
-playlist.export(out_f, format='mp3')
-	
-</pre></code>
-<br>
-<h2>How about another example?</h2>
-<p>
-	Let's say you have a weekly podcast and you want to do the processing 
-	automatically.
-</p>
-<p>
-	For this example we're going to:<br>
-	<ul>
-		<li>Strip out the silence</li>
-		<li>Add on the bumpers (intro/outro theme music)</li>
-	</ul>
-</p>
+<span class="n">last_5_seconds</span> <span class="o">=</span> <span class="n">song</span><span class="p">[</span><span class="mi">5000</span><span class="p">:]</span>
+</pre></div>
 
-<code><pre>
-from pydub import AudioSegment
-from pydub.utils import db_to_float
+<p>Make the beginning louder and the end quieter</p>
 
-# Let's load up the audio we need...
-podcast = AudioSegment.from_mp3("podcast.mp3")
-intro = AudioSegment.from_wav("intro.wav")
-outro = AudioSegment.from_wav("outro.wav")
+<div class="highlight"><pre><span class="c"># boost volume by 6dB</span>
+<span class="n">beginning</span> <span class="o">=</span> <span class="n">first_10_seconds</span> <span class="o">+</span> <span class="mi">6</span>
 
-# Let's consider anything that is 30 decibels quieter than
-# the average volume of the podcast to be silence
-average_loudness = podcast.rms
-silence_threshold = average_loudness * db_to_float(-30)
+<span class="c"># reduce volume by 3dB</span>
+<span class="n">end</span> <span class="o">=</span> <span class="n">last_5_seconds</span> <span class="o">-</span> <span class="mi">3</span>
+</pre></div>
 
-# filter out the silence
-podcast_parts = (ms for ms in podcast if ms.rms > silence_threshold)
+<p>Concatenate audio (add one file to the end of another)</p>
 
-# combine all the chunks back together
-podcast = reduce(lambda a, b: a + b, podcast_parts)
+<div class="highlight"><pre><span class="n">without_the_middle</span> <span class="o">=</span> <span class="n">beginning</span> <span class="o">+</span> <span class="n">end</span>
+</pre></div>
 
-# add on the bumpers
-podcast = intro + podcast + outro
+<p>AudioSegments are immutable</p>
 
-# save the result
-podcast.export("podcast_processed.mp3", format="mp3")
+<div class="highlight"><pre><span class="c"># song is not modified</span>
+<span class="n">backwards</span> <span class="o">=</span> <span class="n">song</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+</pre></div>
 
-</pre></code>
-	<br>
-</p><h2>Dependencies</h2>
-<p>ffmpeg (<a href="http://www.ffmpeg.org/">ffmpeg.org</a>)</p>
+<p>Crossfade (again, beginning and end are not modified)</p>
 
-<br>
-<h2>Install</h2>
-<p>copy the pydub directory into your python path</p>
-<p style="font-weight: bold;"> - OR - </p>
-<p>pip install pydub</p>
-<br>
-<h2>License</h2>
-<p><pre>Copyright &copy; 2011 James Robert, http://jiaaro.com
+<div class="highlight"><pre><span class="c"># 1.5 second crossfade</span>
+<span class="n">with_style</span> <span class="o">=</span> <span class="n">beginning</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">end</span><span class="p">,</span> <span class="n">crossfade</span><span class="o">=</span><span class="mi">1500</span><span class="p">)</span>
+</pre></div>
 
+<p>Repeat</p>
 
+<div class="highlight"><pre><span class="c"># repeat the clip twice</span>
+<span class="n">do_it_over</span> <span class="o">=</span> <span class="n">with_style</span> <span class="o">*</span> <span class="mi">2</span>
+</pre></div>
 
-Permission is hereby granted, free of charge, to any person obtaining
+<p>Fade (note that you can chain operations because everything returns
+an AudioSegment)</p>
 
-a copy of this software and associated documentation files (the
+<div class="highlight"><pre><span class="c"># 2 sec fade in, 3 sec fade out</span>
+<span class="n">awesome</span> <span class="o">=</span> <span class="n">do_it_over</span><span class="o">.</span><span class="n">fade_in</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span><span class="o">.</span><span class="n">fade_out</span><span class="p">(</span><span class="mi">3000</span><span class="p">)</span>
+</pre></div>
 
-"Software"), to deal in the Software without restriction, including
+<p>Save the results (again whatever ffmpeg supports)</p>
 
-without limitation the rights to use, copy, modify, merge, publish,
+<div class="highlight"><pre><span class="n">awesome</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s">"mashup.mp3"</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">"mp3"</span><span class="p">)</span>
+</pre></div>
 
-distribute, sublicense, and/or sell copies of the Software, and to
-
-permit persons to whom the Software is furnished to do so, subject to
-
-the following conditions:
-
-
-
-The above copyright notice and this permission notice shall be
-
-included in all copies or substantial portions of the Software.
-
-
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</pre></p>
-<br>
-<h2>Authors / Contact</h2>
-<p>James Robert (jiaaro@gmail.com)</p>
-<br>
-
-
-    <h2>Download</h2>
-    <p>
-      You can download this project in either
-      <a href="http://github.com/jiaaro/pydub/zipball/master">zip</a> or
-      <a href="http://github.com/jiaaro/pydub/tarball/master">tar</a> formats.
-    </p>
-    <p>You can also clone the project with <a href="http://git-scm.com">Git</a>
-      by running:
-      <pre>$ git clone git://github.com/jiaaro/pydub</pre>
-    </p>
+<h3><a href="https://github.com/jiaaro/pydub/">Read more on github &raquo;</a></h3>
+    
+    
+    
 
     <div class="footer">
       get the source code on GitHub : <a href="http://github.com/jiaaro/pydub">jiaaro/pydub</a>
