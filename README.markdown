@@ -93,7 +93,7 @@ awesome.export("mashup.mp3", format="mp3")
 
 ## Installation
 
-copy the pydub director into your python path 
+copy the pydub directory into your python path 
 
 -OR-
 
