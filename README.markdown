@@ -1,6 +1,6 @@
 [![Build Status](https://secure.travis-ci.org/jiaaro/pydub.png?branch=master)](http://travis-ci.org/jiaaro/pydub)
 
-# Overview
+## Overview
 
 Pydub let's you do stuff to audio in a way that isn't stupid.
 
@@ -70,7 +70,7 @@ Save the results (again whatever ffmpeg supports)
     awesome.export("mashup.mp3", format="mp3")
     
 
-# Installation
+## Installation
 
 copy the pydub director into your python path 
 
@@ -79,32 +79,98 @@ copy the pydub director into your python path
   pip install pydub
 
 
-# Dependencies
+## Dependencies
 
 requires ffmpeg for encoding and decoding all non-wav files (which work natively)
 
  - ffmpeg (http://www.ffmpeg.org/)
 
-# Example Use
+## Example Use
 
-	from pydub import AudioSegment
+	from glob import glob
+    from pydub import AudioSegment
+    
+    playlist_songs = [AudioSegment.from_mp3(mp3_file) for mp3_file in glob("*.mp3")]
+    
+    first_song = playlist_songs.pop(0)
+    
+    # let's just include the first 30 seconds of the first song (slicing 
+    # is done by milliseconds)
+    beginning_of_song = first_song[:30*1000]
+    
+    playlist = beginning_of_song
+    for song in playlist_songs:
+    
+        # We don't want an abrupt stop at the end, so let's do a 10 second crossfades
+        playlist.append(song, crossfade=(10 * 1000))
+    
+    # let's fade out the end of the last song
+    playlist = playlist.fade_out(30)
+    
+    # hmm I wonder how long it is... ( len(audio_segment) returns milliseconds )
+    playlist_length = len(playlist) / (1000*60)
+    
+    # lets save it!
+    out_f = open("%s_minute_playlist.mp3" % playlist_length, 'wb')
+    
+    playlist.export(out_f, format='mp3')
+    
+### How about Another Example?
 
-	song = AudioSegment.from_mp3(song_mp3_file)
-	dj_intro = AudioSegment.from_mp3(some_mp3_of_a_dj)
-	
-	# let's just include the first 30 seconds of the song in the
-	# promotional clip (slicing is done by milliseconds)
-	beginning_of_song = song[:30*1000]
+Let's say you have a weekly podcast and you want to do the processing automatically.
 
-	# We don't want an abrupt stop at the end, so let's do a 5 second fadeout
-	beginning_of_song = beginning_of_song.fade_out(5 * 1000)
+For this example we're going to:
+ 
+ - Strip out the silence
+ - Add on the bumpers (intro/outro theme music)
+ 
+    from pydub import AudioSegment
+    from pydub.utils import db_to_float
+    
+    # Let's load up the audio we need...
+    podcast = AudioSegment.from_mp3("podcast.mp3")
+    intro = AudioSegment.from_wav("intro.wav")
+    outro = AudioSegment.from_wav("outro.wav")
+    
+    # Let's consider anything that is 30 decibels quieter than
+    # the average volume of the podcast to be silence
+    average_loudness = podcast.rms
+    silence_threshold = average_loudness * db_to_float(-30)
+    
+    # filter out the silence
+    podcast_parts = (ms for ms in podcast if ms.rms > silence_threshold)
+    
+    # combine all the chunks back together
+    podcast = reduce(lambda a, b: a + b, podcast_parts)
+    
+    # add on the bumpers
+    podcast = intro + podcast + outro
+    
+    # save the result
+    podcast.export("podcast_processed.mp3", format="mp3")
+    
+Not bad!
 
-	# 50 ms crossfade to eliminate pops
-	promo_clip = dj_intro.append(beginning_of_song, crossfade=50)
-	
-	# hmm I wonder how long it is... ( len(audio_segment) returns milliseconds )
-	promo_length = len(promo_clip) / 1000
-	
-	# lets save it!
-	out_f = open("%s_second_promo_clip.mp3" % promo_length, 'wb')
-	shout.export(out_f, format='mp3')
+## License ([MIT License](http://opensource.org/licenses/mit-license.php))
+
+Copyright © 2011 James Robert, http://jiaaro.com
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
