@@ -179,16 +179,18 @@ class AudioSegment(object):
 
         if not format:
             format = os.path.splitext(file.name)[1]
+            format = format.strip(".")
+            
         format = AUDIO_FILE_EXT_ALIASES.get(format, format)
 
         if format == 'wav':
             return cls.from_wav(file)
 
-        input = NamedTemporaryFile(mode='wb')
+        input = NamedTemporaryFile(mode='wb', delete=False)
         input.write(file.read())
         input.flush()
 
-        output = NamedTemporaryFile(mode="rb")
+        output = NamedTemporaryFile(mode="rb", delete=False)
 
         ffmpeg_call = [cls.ffmpeg,
                        '-y',  # always overwrite existing files
@@ -206,8 +208,17 @@ class AudioSegment(object):
         subprocess.call(ffmpeg_call,
                         stderr=open(os.devnull)
                         )
+        
+        obj = cls.from_wav(output)
+        
         input.close()
-        return cls.from_wav(output)
+        output.close()
+        os.unlink(input.name)
+        os.unlink(output.name)
+        
+        return obj
+        
+        
 
     @classmethod
     def from_mp3(cls, file):
@@ -248,7 +259,7 @@ class AudioSegment(object):
         if format == 'wav':
             return out_f
 
-        output = NamedTemporaryFile(mode="w+")
+        output = NamedTemporaryFile(mode="w+", delete=False)
 
         # build call args
         args =[self.ffmpeg,
@@ -269,8 +280,13 @@ class AudioSegment(object):
 
         output.seek(0)
         out_f.write(output.read())
-
-        data.unlink(data.name)
+        
+        data.close()
+        output.close()
+        
+        os.unlink(data.name)
+        os.unlink(output.name)
+        
         out_f.seek(0)
         return out_f
 
