@@ -259,7 +259,7 @@ class AudioSegment(object):
         if format == 'wav':
             return out_f
 
-        output = NamedTemporaryFile(mode="w+", delete=False)
+        output = NamedTemporaryFile(mode="w+b", delete=False)
 
         # build call args
         args =[self.ffmpeg,

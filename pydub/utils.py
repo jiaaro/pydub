@@ -2,9 +2,9 @@ from tempfile import TemporaryFile
 from math import log
 
 
-def _fd_or_path_or_tempfile(fd, mode='w+', tempfile=True):
+def _fd_or_path_or_tempfile(fd, mode='w+b', tempfile=True):
     if fd is None and tempfile:
-        fd = TemporaryFile()
+        fd = TemporaryFile(mode=mode)
 
     if isinstance(fd, basestring):
         fd = open(fd, mode=mode)
