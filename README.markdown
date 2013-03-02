@@ -106,6 +106,10 @@ requires ffmpeg for encoding and decoding all non-wav files (which work natively
 
  - ffmpeg (http://www.ffmpeg.org/)
 
+## Important Notes
+
+`AudioSegment` objects are [immutable](http://www.devshed.com/c/a/Python/String-and-List-Python-Object-Types/1/)
+
 ## Example Use
 
 ```python
