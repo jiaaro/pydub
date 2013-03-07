@@ -403,7 +403,7 @@ class AudioSegment(object):
             return seg1._spawn(seg1._data + seg2._data)
 
         xf = seg1[-crossfade:].fade(to_gain=-120, start=0, end=float('inf'))
-        xf *= seg1[:crossfade].fade(from_gain=-120, start=0, end=float('inf'))
+        xf *= seg2[:crossfade].fade(from_gain=-120, start=0, end=float('inf'))
 
         output.write(seg1[:-crossfade]._data)
         output.write(xf._data)
