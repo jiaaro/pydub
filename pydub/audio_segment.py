@@ -60,6 +60,9 @@ class AudioSegment(object):
         try: return self._data == other._data
         except: return False
 
+    def __ne__(self, other):
+        return not (self == other)
+
     def __iter__(self):
         return (self[i] for i in xrange(len(self)))
 
