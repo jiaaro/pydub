@@ -238,7 +238,7 @@ class AudioSegment(object):
         file.seek(0)
         return cls(data=file)
 
-    def export(self, out_f=None, format='mp3', codec=None):
+    def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None):
         out_f = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
         # for wav output we can just write the data directly to out_f
@@ -269,6 +269,14 @@ class AudioSegment(object):
         if codec is not None:
             # force audio encoder
             args.extend(["-acodec", codec])
+        
+        if bitrate is not None:
+            args.extend(["-b", bitrate])
+            
+        if parameters is not None:
+            # extend arguments with arbitrary set
+            args.extend(parameters)
+            
         args.extend([
             "-f", format, output.name,  # output options (filename last)
         ])
