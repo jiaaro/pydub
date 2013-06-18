@@ -91,6 +91,23 @@ Save the results (again whatever ffmpeg supports)
 awesome.export("mashup.mp3", format="mp3")
 ```    
 
+You can pass an optional bitrate argument to export using any syntax ffmpeg supports.
+
+```python
+awesome.export("mashup.mp3", format="mp3", bitrate="192k")
+```    
+
+Any further arguments supported by ffmpeg can be passed as a list in a 'parameters' argument, with switch first, argument second. Note that no validation takes place on these parameters, and you may be limited by what your particular build of ffmpeg supports.
+
+```python
+# Use preset mp3 quality 0 (equivalent to lame V0)
+awesome.export("mashup.mp3", format="mp3", parameters=["-q:a", "0"])
+
+# Mix down to two channels and set hard output volume
+awesome.export("mashup.mp3", format="mp3", parameters=["-ac", "2", "-vol", "150"])
+```    
+
+
 ## Installation
 
 copy the pydub directory into your python path 
