@@ -274,7 +274,7 @@ class AudioSegment(object):
             args.extend(["-acodec", codec])
         
         if bitrate is not None:
-            args.extend(["-b", bitrate])
+            args.extend(["-b:a", bitrate])
             
         if parameters is not None:
             # extend arguments with arbitrary set
