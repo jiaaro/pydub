@@ -239,6 +239,12 @@ class AudioSegmentTests(unittest.TestCase):
                 'format_test.m4a'), "m4a")
         self.assertTrue(len(seg_m4a))
 
+    def test_equal_and_not_equal(self):
+        wav_file = self.seg1.export(format='wav')
+        wav = AudioSegment.from_wav(wav_file)
+        self.assertTrue(self.seg1 == wav)
+        self.assertFalse(self.seg1 != wav)
+
 
 if __name__ == "__main__":
     unittest.main()
