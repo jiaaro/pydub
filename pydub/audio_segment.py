@@ -44,6 +44,8 @@ class AudioSegment(object):
             self.sample_width = raw.getsampwidth()
             self.frame_rate = raw.getframerate()
             self.frame_width = self.channels * self.sample_width
+            self.number_frames = raw.getnframes()
+            self.duration = self.frame_rate and self.number_frames / self.frame_rate or 0
 
             raw.rewind()
             self._data = raw.readframes(float('inf'))
