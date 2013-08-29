@@ -158,7 +158,6 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertWithinTolerance(len(exported1), len(seg), percentage=0.01)
         self.assertWithinTolerance(len(exported2), len(seg), percentage=0.01)
 
-
     def test_export_forced_codec(self):
         seg = self.seg1 + self.seg2
 
@@ -244,6 +243,14 @@ class AudioSegmentTests(unittest.TestCase):
         wav = AudioSegment.from_wav(wav_file)
         self.assertTrue(self.seg1 == wav)
         self.assertFalse(self.seg1 != wav)
+
+    def test_duration(self):
+        self.assertEqual(int(self.seg1.duration_seconds), 207)
+
+        wav_file = self.seg1.export(format='wav')
+        wav = AudioSegment.from_wav(wav_file)
+        self.assertEqual(wav.duration_seconds, self.seg1.duration_seconds)
+
 
 
 if __name__ == "__main__":
