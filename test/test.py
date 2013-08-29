@@ -245,11 +245,11 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertFalse(self.seg1 != wav)
 
     def test_duration(self):
-        self.assertEqual(self.seg1.duration, 207)
+        self.assertEqual(int(self.seg1.duration_seconds), 207)
 
         wav_file = self.seg1.export(format='wav')
         wav = AudioSegment.from_wav(wav_file)
-        self.assertEqual(wav.duration, self.seg1.duration)
+        self.assertEqual(wav.duration_seconds, self.seg1.duration_seconds)
 
 
 
