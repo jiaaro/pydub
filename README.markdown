@@ -56,6 +56,12 @@ Concatenate audio (add one file to the end of another)
 without_the_middle = beginning + end
 ```
     
+How long is it?
+
+```python
+without_the_middle.duration_seconds == 15.0
+```
+    
 AudioSegments are immutable
 
 ```python
