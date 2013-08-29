@@ -357,6 +357,10 @@ class AudioSegment(object):
         
         # since half is above 0 and half is below the max amplitude is divided
         return max_possible_val / 2
+
+    @property
+    def duration_seconds(self):
+        return self.frame_rate and self.frame_count() / self.frame_rate or 0.0
     
     def normalize(self, headroom=0.1):
         """
