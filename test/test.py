@@ -251,6 +251,17 @@ class AudioSegmentTests(unittest.TestCase):
         wav = AudioSegment.from_wav(wav_file)
         self.assertEqual(wav.duration_seconds, self.seg1.duration_seconds)
 
+    def test_autodetect_format(self):
+        try:
+            AudioSegment.from_file(os.path.join(data_dir, 'wrong_extension.aac'), 'aac')
+        except EOFError:
+            pass
+        except Exception as e:
+            self.fail('Expected Exception is not thrown')
+
+        # Trying to auto detect input file format
+        aac_file = AudioSegment.from_file(os.path.join(data_dir, 'wrong_extension.aac'))
+        self.assertEqual(int(aac_file.duration_seconds), 9)
 
 
 if __name__ == "__main__":

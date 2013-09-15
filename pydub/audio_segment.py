@@ -179,12 +179,9 @@ class AudioSegment(object):
     @classmethod
     def from_file(cls, file, format=None):
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
-
-        if not format:
-            format = os.path.splitext(file.name)[1]
-            format = format.strip(".")
             
-        format = AUDIO_FILE_EXT_ALIASES.get(format, format)
+        if format:
+            format = AUDIO_FILE_EXT_ALIASES.get(format, format)
 
         if format == 'wav':
             return cls.from_wav(file)
@@ -196,21 +193,22 @@ class AudioSegment(object):
         output = NamedTemporaryFile(mode="rb", delete=False)
 
         ffmpeg_call = [cls.ffmpeg,
-                       '-y',  # always overwrite existing files
-                       ]
+                       '-y', # always overwrite existing files
+        ]
+
+        # If format is not defined
+        # ffmpeg will detect it automatically
         if format:
             ffmpeg_call += ["-f", format]
+
         ffmpeg_call += [
-                        "-i", input.name,  # input options (filename last)
-                        "-vn",  # Drop any video streams if there are any
+            "-i", input.name, # input options (filename last)
+            "-vn", # Drop any video streams if there are any
+            "-f", "wav", # output options (filename last)
+            output.name
+        ]
 
-                        "-f", "wav",  # output options (filename last)
-                        output.name
-                        ]
-
-        subprocess.call(ffmpeg_call,
-                        stderr=open(os.devnull)
-                        )
+        subprocess.call(ffmpeg_call, stderr=open(os.devnull))
         
         obj = cls.from_wav(output)
         
@@ -220,8 +218,6 @@ class AudioSegment(object):
         os.unlink(output.name)
         
         return obj
-        
-        
 
     @classmethod
     def from_mp3(cls, file):
@@ -244,6 +240,7 @@ class AudioSegment(object):
     def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None):
         out_f = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
+
         # for wav output we can just write the data directly to out_f
         if format == "wav":
             data = out_f
@@ -283,6 +280,7 @@ class AudioSegment(object):
         args.extend([
             "-f", format, output.name,  # output options (filename last)
         ])
+
         # read stdin / write stdout
         subprocess.call(args,
             # make ffmpeg shut up
