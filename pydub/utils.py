@@ -1,3 +1,5 @@
+from __future__ import division
+
 from tempfile import TemporaryFile
 from math import log
 import sys

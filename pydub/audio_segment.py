@@ -1,3 +1,5 @@
+from __future__ import division
+
 import os
 import subprocess
 from tempfile import TemporaryFile, NamedTemporaryFile
@@ -5,10 +7,10 @@ import wave
 import audioop
 import sys
 
-if sys.version_info >= (3, 0):
-    from io import StringIO, BytesIO
-else:
+try:
     from StringIO import StringIO
+except:
+    from io import StringIO, BytesIO
 
 from .utils import _fd_or_path_or_tempfile, db_to_float
 from .exceptions import TooManyMissingFrames
@@ -17,6 +19,9 @@ from pydub.utils import ratio_to_db
 
 if sys.version_info >= (3, 0):
     basestring = str
+
+if sys.version_info >= (3, 0):
+    xrange = range
 
 AUDIO_FILE_EXT_ALIASES = {
     "m4a": "mp4"
@@ -43,8 +48,10 @@ class AudioSegment(object):
         else:
             # normal construction
             data = data if isinstance(data, basestring) else data.read()
-
-            raw = wave.open(StringIO(data), 'rb')
+            if sys.version_info >= (3, 0):
+                raw = wave.open(BytesIO(data), 'rb')
+            else:
+                raw = wave.open(StringIO(data), 'rb')
 
             raw.rewind()
             self.channels = raw.getnchannels()
@@ -91,7 +98,7 @@ class AudioSegment(object):
 
         # ensure the output is as long as the requester is expecting
         expected_length = end - start
-        missing_frames = (expected_length - len(data)) / self.frame_width
+        missing_frames = (expected_length - len(data)) // self.frame_width
         if missing_frames:
             if missing_frames > self.frame_count(ms=2):
                 raise TooManyMissingFrames("You should never be filling in "\
@@ -142,7 +149,7 @@ class AudioSegment(object):
         """
         # accept lists of data chunks
         if isinstance(data, list):
-            data = ''.join(data)
+            data = b''.join(data)
 
         # accept file-like objects
         if hasattr(data, 'read'):
@@ -258,7 +265,8 @@ class AudioSegment(object):
         wave_data.setnchannels(self.channels)
         wave_data.setsampwidth(self.sample_width)
         wave_data.setframerate(self.frame_rate)
-        wave_data.setnframes(self.frame_count())
+        # For some reason packing the wave header struct with a float in python 2 doesn't throw an exception
+        wave_data.setnframes(int(self.frame_count())) 
         wave_data.writeframesraw(self._data)
         wave_data.close()
 
@@ -319,7 +327,7 @@ class AudioSegment(object):
         if ms is not None:
             return ms * (self.frame_rate / 1000.0)
         else:
-            return float(len(self._data) / self.frame_width)
+            return float(len(self._data) // self.frame_width)
 
     def set_frame_rate(self, frame_rate):
         if frame_rate == self.frame_rate:
@@ -339,7 +347,7 @@ class AudioSegment(object):
             frame_width = self.frame_width * 2
         elif channels == 1 and self.channels == 2:
             fn = 'tomono'
-            frame_width = self.frame_width / 2
+            frame_width = self.frame_width // 2
 
         fn = getattr(audioop, fn)
         converted = fn(self._data, self.sample_width, 1, 1)
