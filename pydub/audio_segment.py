@@ -5,6 +5,11 @@ import wave
 import audioop
 import sys
 
+if sys.version_info >= (3, 0):
+    from io import StringIO, BytesIO
+else:
+    from StringIO import StringIO
+
 from .utils import _fd_or_path_or_tempfile, db_to_float
 from .exceptions import TooManyMissingFrames
 from .exceptions import InvalidDuration
