@@ -470,8 +470,8 @@ class AudioSegment(object):
 
         frames = self.frame_count()
 
-        start = min(len(self), start)
-        end = min(len(self), end)
+        start = min(len(self), start) if start is not None else None
+        end = min(len(self), end) if end is not None else None
 
         if start is not None and start < 0:
             start += len(self)
