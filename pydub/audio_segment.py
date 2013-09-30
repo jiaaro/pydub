@@ -1,15 +1,17 @@
 import os
 import subprocess
 from tempfile import TemporaryFile, NamedTemporaryFile
-from StringIO import StringIO
 import wave
 import audioop
+import sys
 
 from .utils import _fd_or_path_or_tempfile, db_to_float
 from .exceptions import TooManyMissingFrames
 from .exceptions import InvalidDuration
 from pydub.utils import ratio_to_db
 
+if sys.version_info >= (3, 0):
+    basestring = str
 
 AUDIO_FILE_EXT_ALIASES = {
     "m4a": "mp4"
