@@ -1,8 +1,7 @@
-[![Build Status](https://secure.travis-ci.org/jiaaro/pydub.png?branch=master)](http://travis-ci.org/jiaaro/pydub)
-
-## Overview
-
+# Pydub [![Build Status](https://secure.travis-ci.org/jiaaro/pydub.png?branch=master)](http://travis-ci.org/jiaaro/pydub)
 Pydub let's you do stuff to audio in a way that isn't stupid.
+
+##  Quickstart
 
 Open a WAV file
 
@@ -12,13 +11,13 @@ from pydub import AudioSegment
 song = AudioSegment.from_wav("never_gonna_give_you_up.wav")
 ```
     
-...or an mp3
+...or a mp3
 
 ```python
 song = AudioSegment.from_mp3("never_gonna_give_you_up.mp3")
 ```
     
-... or an ogg, or flv, or [anything else ffmpeg supports](http://www.iepak.com/35/TopicDetail.aspx)
+... or an ogg, or flv, or [anything else ffmpeg supports](http://www.ffmpeg.org/general.html#File-Formats)
     
 ```python
 ogg_version = AudioSegment.from_ogg("never_gonna_give_you_up.ogg")
@@ -29,10 +28,10 @@ wma_version = AudioSegment.from_file("never_gonna_give_you_up.wma", "wma")
 aac_version = AudioSegment.from_file("never_gonna_give_you_up.aiff", "aac")
 ```
     
-Slice audio
+Slice audio:
     
 ```python
-# pydub does things in miliseconds
+# pydub does things in milliseconds
 ten_seconds = 10 * 1000
 
 first_10_seconds = song[:10000]
@@ -95,6 +94,12 @@ Save the results (again whatever ffmpeg supports)
 
 ```python
 awesome.export("mashup.mp3", format="mp3")
+```   
+
+Save the results with tags (metadata)
+
+```python
+awesome.export("mashup.mp3", format="mp3", tags={'artist': 'Various artists', 'album': 'Best of 2011', 'comments': 'This album is awesome!'})
 ```    
 
 You can pass an optional bitrate argument to export using any syntax ffmpeg supports.
@@ -113,19 +118,21 @@ awesome.export("mashup.mp3", format="mp3", parameters=["-q:a", "0"])
 awesome.export("mashup.mp3", format="mp3", parameters=["-ac", "2", "-vol", "150"])
 ```    
 
-
 ## Installation
 
-copy the pydub directory into your python path 
+Copy the pydub directory into your python path. Zip [here](https://github.com/jiaaro/pydub/zipball/master)
 
 -OR-
 
-  pip install pydub
+    pip install pydub
 
+-OR-
+
+    git clone https://github.com/jiaaro/pydub.git
 
 ## Dependencies
 
-requires ffmpeg for encoding and decoding all non-wav files (which work natively)
+Requires ffmpeg for encoding and decoding all non-wav files (which work natively)
 
  - ffmpeg (http://www.ffmpeg.org/)
 
@@ -134,6 +141,25 @@ requires ffmpeg for encoding and decoding all non-wav files (which work natively
 `AudioSegment` objects are [immutable](http://www.devshed.com/c/a/Python/String-and-List-Python-Object-Types/1/)
 
 ## Example Use
+
+Suppose you have a directory filled with *mp4* and *flv* videos and you want to convert all of them to *mp3* so you can listen to  them on your mp3 player.
+
+```python
+import os
+import glob
+from pydub import AudioSegment
+
+video_dir = '/home/johndoe/downloaded_videos/'  # Path where the videos are located
+extension_list = ('*.mp4', '*.flv')
+
+os.chdir(video_dir)
+for extension in extension_list:
+    for video in glob.glob(extension):
+        mp3_filename = os.path.splitext(os.path.basename(video))[0] + '.mp3'
+        AudioSegment.from_file(video).export(mp3_filename, format='mp3')
+```
+    
+### How about another example?
 
 ```python
 from glob import glob
@@ -164,8 +190,8 @@ out_f = open("%s_minute_playlist.mp3" % playlist_length, 'wb')
 
 playlist.export(out_f, format='mp3')
 ```
-    
-### How about Another Example?
+
+### Yet another Example?
 
 Let's say you have a weekly podcast and you want to do the processing automatically.
 
@@ -200,6 +226,10 @@ podcast = intro + podcast + outro
 # save the result
 podcast.export("podcast_processed.mp3", format="mp3")
 ```
+
+
+
+
     
 Not bad!
 
