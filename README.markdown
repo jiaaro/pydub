@@ -31,7 +31,7 @@ aac_version = AudioSegment.from_file("never_gonna_give_you_up.aiff", "aac")
 Slice audio:
     
 ```python
-# pydub does things in miliseconds
+# pydub does things in milliseconds
 ten_seconds = 10 * 1000
 
 first_10_seconds = song[:10000]
@@ -120,7 +120,7 @@ awesome.export("mashup.mp3", format="mp3", parameters=["-ac", "2", "-vol", "150"
 
 ## Installation
 
-Copy the pydub directory into your python path. zip [here](https://github.com/jiaaro/pydub/zipball/master)
+Copy the pydub directory into your python path. Zip [here](https://github.com/jiaaro/pydub/zipball/master)
 
 -OR-
 
