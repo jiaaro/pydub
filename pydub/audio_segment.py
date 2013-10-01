@@ -29,6 +29,7 @@ AUDIO_FILE_EXT_ALIASES = {
 
 
 class AudioSegment(object):
+
     """
     Note: AudioSegment objects are immutable
 
@@ -71,8 +72,10 @@ class AudioSegment(object):
         return round(1000 * (self.frame_count() / self.frame_rate))
 
     def __eq__(self, other):
-        try: return self._data == other._data
-        except: return False
+        try:
+            return self._data == other._data
+        except:
+            return False
 
     def __ne__(self, other):
         return not (self == other)
@@ -101,11 +104,11 @@ class AudioSegment(object):
         missing_frames = (expected_length - len(data)) // self.frame_width
         if missing_frames:
             if missing_frames > self.frame_count(ms=2):
-                raise TooManyMissingFrames("You should never be filling in "\
-                "   more than 2 ms with silence here, missing frames: %s" % \
-                missing_frames)
+                raise TooManyMissingFrames("You should never be filling in "
+                                           "   more than 2 ms with silence here, missing frames: %s" %
+                                           missing_frames)
             silence = audioop.mul(data[:self.frame_width],
-                self.sample_width, 0)
+                                  self.sample_width, 0)
             data += (silence * missing_frames)
 
         return self._spawn(data)
@@ -118,8 +121,8 @@ class AudioSegment(object):
 
     def __sub__(self, arg):
         if isinstance(arg, AudioSegment):
-            raise TypeError("AudioSegment objects can't be subtracted from "\
-                "each other")
+            raise TypeError("AudioSegment objects can't be subtracted from "
+                            "each other")
         else:
             return self.apply_gain(-arg)
 
@@ -158,11 +161,11 @@ class AudioSegment(object):
             data = data.read()
 
         metadata = {
-                    'sample_width': self.sample_width,
-                    'frame_rate': self.frame_rate,
-                    'frame_width': self.frame_width,
-                    'channels': self.channels
-                    }
+            'sample_width': self.sample_width,
+            'frame_rate': self.frame_rate,
+            'frame_width': self.frame_width,
+            'channels': self.channels
+        }
         metadata.update(overrides)
         return AudioSegment(data=data, metadata=metadata)
 
@@ -193,22 +196,22 @@ class AudioSegment(object):
     @classmethod
     def from_file(cls, file, format=None):
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
-            
+
         if format:
             format = AUDIO_FILE_EXT_ALIASES.get(format, format)
 
         if format == 'wav':
             return cls.from_wav(file)
 
-        input = NamedTemporaryFile(mode='wb', delete=False)
-        input.write(file.read())
-        input.flush()
+        input_file = NamedTemporaryFile(mode='wb', delete=False)
+        input_file.write(file.read())
+        input_file.flush()
 
         output = NamedTemporaryFile(mode="rb", delete=False)
 
         ffmpeg_call = [cls.ffmpeg,
-                       '-y', # always overwrite existing files
-        ]
+                       '-y',  # always overwrite existing files
+                       ]
 
         # If format is not defined
         # ffmpeg will detect it automatically
@@ -216,21 +219,21 @@ class AudioSegment(object):
             ffmpeg_call += ["-f", format]
 
         ffmpeg_call += [
-            "-i", input.name, # input options (filename last)
-            "-vn", # Drop any video streams if there are any
-            "-f", "wav", # output options (filename last)
+            "-i", input_file.name,  # input_file options (filename last)
+            "-vn",  # Drop any video streams if there are any
+            "-f", "wav",  # output options (filename last)
             output.name
         ]
 
         subprocess.call(ffmpeg_call, stderr=open(os.devnull))
-        
+
         obj = cls.from_wav(output)
-        
-        input.close()
+
+        input_file.close()
         output.close()
-        os.unlink(input.name)
+        os.unlink(input_file.name)
         os.unlink(output.name)
-        
+
         return obj
 
     @classmethod
@@ -265,8 +268,9 @@ class AudioSegment(object):
         wave_data.setnchannels(self.channels)
         wave_data.setsampwidth(self.sample_width)
         wave_data.setframerate(self.frame_rate)
-        # For some reason packing the wave header struct with a float in python 2 doesn't throw an exception
-        wave_data.setnframes(int(self.frame_count())) 
+        # For some reason packing the wave header struct with a float in python 2
+        # doesn't throw an exception
+        wave_data.setnframes(int(self.frame_count()))
         wave_data.writeframesraw(self._data)
         wave_data.close()
 
@@ -277,40 +281,40 @@ class AudioSegment(object):
         output = NamedTemporaryFile(mode="w+b", delete=False)
 
         # build call args
-        args =[self.ffmpeg,
-            '-y',  # always overwrite existing files
-            "-f", "wav", "-i", data.name,  # input options (filename last)
-        ]
+        args = [self.ffmpeg,
+                '-y',  # always overwrite existing files
+                "-f", "wav", "-i", data.name,  # input options (filename last)
+                ]
         if codec is not None:
             # force audio encoder
             args.extend(["-acodec", codec])
-        
+
         if bitrate is not None:
             args.extend(["-b:a", bitrate])
-            
+
         if parameters is not None:
             # extend arguments with arbitrary set
             args.extend(parameters)
-            
+
         args.extend([
             "-f", format, output.name,  # output options (filename last)
         ])
 
         # read stdin / write stdout
         subprocess.call(args,
-            # make ffmpeg shut up
-            stderr=open(os.devnull)
-        )
+                        # make ffmpeg shut up
+                        stderr=open(os.devnull)
+                        )
 
         output.seek(0)
         out_f.write(output.read())
-        
+
         data.close()
         output.close()
-        
+
         os.unlink(data.name)
         os.unlink(output.name)
-        
+
         out_f.seek(0)
         return out_f
 
@@ -334,9 +338,9 @@ class AudioSegment(object):
             return self
 
         converted, _ = audioop.ratecv(self._data, self.sample_width,
-            self.channels, self.frame_rate, frame_rate, None)
+                                      self.channels, self.frame_rate, frame_rate, None)
         return self._spawn(data=converted,
-            overrides={'frame_rate': frame_rate})
+                           overrides={'frame_rate': frame_rate})
 
     def set_channels(self, channels):
         if channels == self.channels:
@@ -353,41 +357,41 @@ class AudioSegment(object):
         converted = fn(self._data, self.sample_width, 1, 1)
 
         return self._spawn(data=converted, overrides={'channels': channels,
-            'frame_width': frame_width})
+                                                      'frame_width': frame_width})
 
     @property
     def rms(self):
         return audioop.rms(self._data, self.sample_width)
-    
+
     @property
     def max(self):
         return audioop.max(self._data, self.sample_width)
-    
+
     @property
     def max_possible_amplitude(self):
-        bits = self.sample_width*8
-        max_possible_val = (2**bits)
-        
+        bits = self.sample_width * 8
+        max_possible_val = (2 ** bits)
+
         # since half is above 0 and half is below the max amplitude is divided
         return max_possible_val / 2
 
     @property
     def duration_seconds(self):
         return self.frame_rate and self.frame_count() / self.frame_rate or 0.0
-    
+
     def normalize(self, headroom=0.1):
         """
         headroom is how close to the maximum volume to boost the signal up to (specified in dB)
         """
         peak_sample_val = self.max
         target_peak = self.max_possible_amplitude * db_to_float(-headroom)
-        
+
         needed_boost = ratio_to_db(target_peak / peak_sample_val)
         return self.apply_gain(needed_boost)
 
     def apply_gain(self, volume_change):
         return self._spawn(data=audioop.mul(self._data, self.sample_width,
-            db_to_float(float(volume_change))))
+                                            db_to_float(float(volume_change))))
 
     def overlay(self, seg, position=0, loop=False):
         output = TemporaryFile()
@@ -412,7 +416,7 @@ class AudioSegment(object):
                 loop = False
 
             output.write(audioop.add(seg1[pos:pos + seg2_len], seg2,
-                sample_width))
+                                     sample_width))
             pos += seg2_len
 
             if not loop:
@@ -441,7 +445,7 @@ class AudioSegment(object):
         return seg1._spawn(data=output)
 
     def fade(self, to_gain=0, from_gain=0, start=None, end=None,
-            duration=None):
+             duration=None):
         """
         Fade the volume of this audio segment.
 
@@ -461,8 +465,8 @@ class AudioSegment(object):
             the duration of the fade
         """
         if None not in [duration, end, start]:
-            raise TypeError('Only two of the three arguments, "start", '\
-                '"end", and "duration" may be specified')
+            raise TypeError('Only two of the three arguments, "start", '
+                            '"end", and "duration" may be specified')
 
         # no fade == the same audio
         if to_gain == 0 and from_gain == 0:
@@ -497,7 +501,7 @@ class AudioSegment(object):
         before_fade = self[:start]._data
         if from_gain != 0:
             before_fade = audioop.mul(before_fade, self.sample_width,
-                from_power)
+                                      from_power)
         output.append(before_fade)
 
         gain_delta = db_to_float(to_gain) - from_power
@@ -514,7 +518,7 @@ class AudioSegment(object):
         after_fade = self[end:]._data
         if to_gain != 0:
             after_fade = audioop.mul(after_fade, self.sample_width,
-                db_to_float(to_gain))
+                                     db_to_float(to_gain))
         output.append(after_fade)
 
         return self._spawn(data=output)
@@ -524,10 +528,8 @@ class AudioSegment(object):
 
     def fade_in(self, duration):
         return self.fade(from_gain=-120, duration=duration, start=0)
-    
+
     def reverse(self):
         return self._spawn(
             data=audioop.reverse(self._data, self.sample_width)
         )
-        
-    
