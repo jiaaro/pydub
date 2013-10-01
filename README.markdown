@@ -1,8 +1,7 @@
-[![Build Status](https://secure.travis-ci.org/jiaaro/pydub.png?branch=master)](http://travis-ci.org/jiaaro/pydub)
-
-## Overview
-
+# Pydub [![Build Status](https://secure.travis-ci.org/jiaaro/pydub.png?branch=master)](http://travis-ci.org/jiaaro/pydub)
 Pydub let's you do stuff to audio in a way that isn't stupid.
+
+##  Quickstart
 
 Open a WAV file
 
@@ -12,13 +11,13 @@ from pydub import AudioSegment
 song = AudioSegment.from_wav("never_gonna_give_you_up.wav")
 ```
     
-...or an mp3
+...or a mp3
 
 ```python
 song = AudioSegment.from_mp3("never_gonna_give_you_up.mp3")
 ```
     
-... or an ogg, or flv, or [anything else ffmpeg supports](http://www.iepak.com/35/TopicDetail.aspx)
+... or an ogg, or flv, or [anything else ffmpeg supports](http://www.ffmpeg.org/general.html#File-Formats)
     
 ```python
 ogg_version = AudioSegment.from_ogg("never_gonna_give_you_up.ogg")
@@ -29,7 +28,7 @@ wma_version = AudioSegment.from_file("never_gonna_give_you_up.wma", "wma")
 aac_version = AudioSegment.from_file("never_gonna_give_you_up.aiff", "aac")
 ```
     
-Slice audio
+Slice audio:
     
 ```python
 # pydub does things in miliseconds
@@ -97,7 +96,7 @@ Save the results (again whatever ffmpeg supports)
 awesome.export("mashup.mp3", format="mp3")
 ```   
 
-Save the results with tags
+Save the results with tags (metadata)
 
 ```python
 awesome.export("mashup.mp3", format="mp3", tags={'artist': 'Various artists', 'album': 'Best of 2011', 'comments': 'This album is awesome!'})
