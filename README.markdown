@@ -142,6 +142,25 @@ Requires ffmpeg for encoding and decoding all non-wav files (which work natively
 
 ## Example Use
 
+Suppose you have a directory filled with *mp4* and *flv* videos and you want to convert all of them to *mp3* so you can listen to  them on your mp3 player.
+
+```python
+import os
+import glob
+from pydub import AudioSegment
+
+video_dir = '/home/johndoe/downloaded_videos/'  # Path where the videos are located
+extension_list = ('*.mp4', '*.flv')
+
+os.chdir(video_dir)
+for extension in extension_list:
+    for video in glob.glob(extension):
+        mp3_filename = os.path.splitext(os.path.basename(video))[0] + '.mp3'
+        AudioSegment.from_file(video).export(mp3_filename, format='mp3')
+```
+    
+### How about another example?
+
 ```python
 from glob import glob
 from pydub import AudioSegment
@@ -171,8 +190,8 @@ out_f = open("%s_minute_playlist.mp3" % playlist_length, 'wb')
 
 playlist.export(out_f, format='mp3')
 ```
-    
-### How about Another Example?
+
+### Yet another Example?
 
 Let's say you have a weekly podcast and you want to do the processing automatically.
 
@@ -207,6 +226,10 @@ podcast = intro + podcast + outro
 # save the result
 podcast.export("podcast_processed.mp3", format="mp3")
 ```
+
+
+
+
     
 Not bad!
 
