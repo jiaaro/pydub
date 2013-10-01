@@ -95,6 +95,12 @@ Save the results (again whatever ffmpeg supports)
 
 ```python
 awesome.export("mashup.mp3", format="mp3")
+```   
+
+Save the results with tags
+
+```python
+awesome.export("mashup.mp3", format="mp3", tags={'artist': 'Various artists', 'album': 'Best of 2011', 'comments': 'This album is awesome!'})
 ```    
 
 You can pass an optional bitrate argument to export using any syntax ffmpeg supports.
@@ -113,19 +119,21 @@ awesome.export("mashup.mp3", format="mp3", parameters=["-q:a", "0"])
 awesome.export("mashup.mp3", format="mp3", parameters=["-ac", "2", "-vol", "150"])
 ```    
 
-
 ## Installation
 
-copy the pydub directory into your python path 
+Copy the pydub directory into your python path. zip [here](https://github.com/jiaaro/pydub/zipball/master)
 
 -OR-
 
-  pip install pydub
+    pip install pydub
 
+-OR-
+
+    git clone https://github.com/jiaaro/pydub.git
 
 ## Dependencies
 
-requires ffmpeg for encoding and decoding all non-wav files (which work natively)
+Requires ffmpeg for encoding and decoding all non-wav files (which work natively)
 
  - ffmpeg (http://www.ffmpeg.org/)
 
