@@ -254,7 +254,7 @@ class AudioSegment(object):
         file.seek(0)
         return cls(data=file)
 
-    def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None):
+    def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None):
         out_f = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
 
@@ -296,6 +296,13 @@ class AudioSegment(object):
             # extend arguments with arbitrary set
             args.extend(parameters)
 
+        if tags is not None:
+            if not isinstance(tags, dict):
+                raise TypeError("Tags must be a dictionary.")
+            else:
+                # Extend ffmpeg command with tags
+                [args.extend(['-metadata', '{}="{}"'.format(k, v)])
+                 for k, v in tags.items()]
         args.extend([
             "-f", format, output.name,  # output options (filename last)
         ])
