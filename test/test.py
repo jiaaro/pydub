@@ -1,5 +1,7 @@
+import mimetypes
 import unittest
 import os
+from tempfile import NamedTemporaryFile, SpooledTemporaryFile
 
 from pydub import AudioSegment
 from pydub.utils import db_to_float, ratio_to_db
@@ -46,6 +48,8 @@ class AudioSegmentTests(unittest.TestCase):
             test2 = AudioSegment.from_mp3(os.path.join(data_dir, 'test2.mp3'))
             test3 = AudioSegment.from_mp3(os.path.join(data_dir, 'test3.mp3'))
         self.seg1, self.seg2, self.seg3 = test1, test2, test3
+        self.wave_file_path = os.path.join(data_dir, '8k16bitpcm.wav')
+        self.mp4_file_path = os.path.join(data_dir, 'creative_common.mp4')
 
     def assertWithinRange(self, val, lower_bound, upper_bound):
         self.assertTrue(lower_bound < val < upper_bound,
@@ -262,6 +266,27 @@ class AudioSegmentTests(unittest.TestCase):
         # Trying to auto detect input file format
         aac_file = AudioSegment.from_file(os.path.join(data_dir, 'wrong_extension.aac'))
         self.assertEqual(int(aac_file.duration_seconds), 9)
+
+    def test_export_wave_as_mp3(self):
+        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
+            AudioSegment.from_file(self.wave_file_path).export(tmp_mp3_file,
+                                                               format="mp3")
+            tmp_file_type, _ = mimetypes.guess_type(tmp_mp3_file.name)
+            self.assertEqual(tmp_file_type, 'audio/mpeg')
+
+    def test_export_mp4_as_mp3(self):
+        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
+            AudioSegment.from_file(self.mp4_file_path).export(tmp_mp3_file,
+                                                              format="mp3")
+            tmp_file_type, _ = mimetypes.guess_type(tmp_mp3_file.name)
+            self.assertEqual(tmp_file_type, 'audio/mpeg')
+
+    def test_export_mp4_as_wav(self):
+        with NamedTemporaryFile('w+b', suffix='.wav') as tmp_wav_file:
+            AudioSegment.from_file(self.mp4_file_path).export(tmp_wav_file,
+                                                              format="mp3")
+            tmp_file_type, _ = mimetypes.guess_type(tmp_wav_file.name)
+            self.assertEqual(tmp_file_type, 'audio/x-wav')
 
 
 if __name__ == "__main__":

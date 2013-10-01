@@ -1,6 +1,11 @@
+from __future__ import division
+
 from tempfile import TemporaryFile
 from math import log
+import sys
 
+if sys.version_info >= (3, 0):
+    basestring = str
 
 def _fd_or_path_or_tempfile(fd, mode='w+b', tempfile=True):
     if fd is None and tempfile:
