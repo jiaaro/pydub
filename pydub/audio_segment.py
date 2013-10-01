@@ -301,7 +301,7 @@ class AudioSegment(object):
                 raise TypeError("Tags must be a dictionary.")
             else:
                 # Extend ffmpeg command with tags
-                [args.extend(['-metadata', '{}="{}"'.format(k, v)])
+                [args.extend(['-metadata', '{0}="{1}"'.format(k, v)])
                  for k, v in tags.items()]
         args.extend([
             "-f", format, output.name,  # output options (filename last)
