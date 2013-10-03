@@ -302,5 +302,17 @@ class AudioSegmentTests(unittest.TestCase):
             tmp_file_type, _ = mimetypes.guess_type(tmp_mp3_file.name)
             self.assertEqual(tmp_file_type, 'audio/mpeg')
 
+    def test_export_mp4_as_mp3_with_tags_raises_exception_when_tags_are_not_a_dictionary(self):
+        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
+            json = '{"title": "The Title You Want", "album": "Name of the Album", "artist": "Artist\'s name"}'
+            self.assertRaises(
+                TypeError, AudioSegment.from_file(self.mp4_file_path).export(),
+                tmp_mp3_file, format="mp3", tags=json)
+
+    def test_fade_raises_exception_when_duration_start_end_are_none(self):
+        seg = self.seg1[:10000]
+        self.assertRaises(
+            TypeError, seg.fade(), start=None, end=None, duration=None)
+
 if __name__ == "__main__":
     unittest.main()
