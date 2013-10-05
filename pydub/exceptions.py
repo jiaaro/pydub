@@ -6,3 +6,11 @@ class TooManyMissingFrames(Exception):
 
 class InvalidDuration(Exception):
     pass
+
+
+class InvalidTag(Exception):
+    pass
+
+
+class InvalidID3TagVersion(Exception):
+    pass
