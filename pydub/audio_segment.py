@@ -255,6 +255,27 @@ class AudioSegment(object):
         return cls(data=file)
 
     def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None):
+        """
+        Export an AudioSegment to a file with given options
+
+        out_f (string):
+            Path to destination audio file
+
+        format (string)
+            Format for destination audio file. ('mp3', 'wav', 'ogg' or other ffmpeg supported files)
+
+        codec (string)
+            Codec used to encoding for the destination.
+
+        bitrate (string)
+            Bitrate used when encoding destination file. (128, 256, 312k...)
+
+        parameters (string)
+            Aditional ffmpeg parameters
+
+        tags (dict)
+            Set metadata information to destination files usually used as tags. ({title='Song Title', artist='Song Artist'})
+        """
         out_f = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
 
@@ -280,35 +301,36 @@ class AudioSegment(object):
 
         output = NamedTemporaryFile(mode="w+b", delete=False)
 
-        # build call args
-        args = [self.ffmpeg,
-                '-y',  # always overwrite existing files
-                "-f", "wav", "-i", data.name,  # input options (filename last)
-                ]
+        # build ffmpeg command to export
+        ffmpeg_call = [self.ffmpeg,
+                       '-y',  # always overwrite existing files
+                       "-f", "wav", "-i", data.name,  # input options (filename last)
+                       ]
         if codec is not None:
             # force audio encoder
-            args.extend(["-acodec", codec])
+            ffmpeg_call.extend(["-acodec", codec])
 
         if bitrate is not None:
-            args.extend(["-b:a", bitrate])
+            ffmpeg_call.extend(["-b:a", bitrate])
 
         if parameters is not None:
             # extend arguments with arbitrary set
-            args.extend(parameters)
+            ffmpeg_call.extend(parameters)
 
         if tags is not None:
             if not isinstance(tags, dict):
                 raise TypeError("Tags must be a dictionary.")
             else:
                 # Extend ffmpeg command with tags
-                [args.extend(['-metadata', '{0}="{1}"'.format(k, v)])
+                [ffmpeg_call.extend(['-metadata', '{0}="{1}"'.format(k, v)])
                  for k, v in tags.items()]
-        args.extend([
+
+        ffmpeg_call.extend([
             "-f", format, output.name,  # output options (filename last)
         ])
 
         # read stdin / write stdout
-        subprocess.call(args,
+        subprocess.call(ffmpeg_call,
                         # make ffmpeg shut up
                         stderr=open(os.devnull)
                         )
