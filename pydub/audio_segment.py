@@ -254,7 +254,7 @@ class AudioSegment(object):
         file.seek(0)
         return cls(data=file)
 
-    def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None):
+    def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None, id3v2_version='4'):
         """
         Export an AudioSegment to a file with given options
 
@@ -275,6 +275,9 @@ class AudioSegment(object):
 
         tags (dict)
             Set metadata information to destination files usually used as tags. ({title='Song Title', artist='Song Artist'})
+
+        id3v2_version (string)
+            Set ID3v2 version for tags. (default: '4', currently supported by ffmpeg: '3' or '4')
         """
         out_f = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
@@ -324,6 +327,10 @@ class AudioSegment(object):
                 # Extend ffmpeg command with tags
                 [ffmpeg_call.extend(['-metadata', '{0}="{1}"'.format(k, v)])
                  for k, v in tags.items()]
+
+        ffmpeg_call.extend([
+            "-id3v2_version",  id3v2_version
+        ])
 
         ffmpeg_call.extend([
             "-f", format, output.name,  # output options (filename last)
