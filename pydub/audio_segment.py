@@ -13,10 +13,17 @@ try:
 except:
     from io import StringIO, BytesIO
 
-from .utils import _fd_or_path_or_tempfile, db_to_float
-from .exceptions import TooManyMissingFrames
-from .exceptions import InvalidDuration
-from pydub.utils import ratio_to_db
+from .utils import (
+    _fd_or_path_or_tempfile,
+    db_to_float,
+    ratio_to_db,
+)
+from .exceptions import (
+    TooManyMissingFrames,
+    InvalidDuration,
+    InvalidID3TagVersion,
+    InvalidTag,
+)
 
 if sys.version_info >= (3, 0):
     basestring = str
@@ -281,8 +288,10 @@ class AudioSegment(object):
             Set metadata information to destination files usually used as tags. ({title='Song Title', artist='Song Artist'})
 
         id3v2_version (string)
-            Set ID3v2 version for tags. (default: '4', currently supported by ffmpeg: '3' or '4')
+            Set ID3v2 version for tags. (default: '4')
         """
+        id3v2_allowed_versions = ['3', '4']
+
         out_f = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
 
@@ -326,12 +335,15 @@ class AudioSegment(object):
 
         if tags is not None:
             if not isinstance(tags, dict):
-                raise TypeError("Tags must be a dictionary.")
+                raise InvalidTag("Tags must be a dictionary.")
             else:
                 # Extend ffmpeg command with tags
                 [ffmpeg_call.extend(['-metadata', '{0}="{1}"'.format(k, v)])
                  for k, v in tags.items()]
 
+        if id3v2_version not in id3v2_allowed_versions:
+            raise InvalidID3TagVersion(
+                "id3v2_version not allowed, allowed versions: %s" % id3v2_allowed_versions)
         ffmpeg_call.extend([
             "-id3v2_version",  id3v2_version
         ])
