@@ -1,10 +1,17 @@
+from functools import partial
 import mimetypes
-import unittest
 import os
+import unittest
 from tempfile import NamedTemporaryFile, SpooledTemporaryFile
 
 from pydub import AudioSegment
 from pydub.utils import db_to_float, ratio_to_db
+from pydub.exceptions import (
+    InvalidTag,
+    InvalidID3TagVersion,
+    InvalidDuration,
+    TooManyMissingFrames,
+)
 
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -150,17 +157,19 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertWithinTolerance(len(merged),
                                    len(self.seg1) + len(self.seg2) - 100, tolerance=1)
 
-    def test_export(self):
-        seg = self.seg1 + self.seg2
-
+    def test_export_as_mp3(self):
+        seg = self.seg1
         exported_mp3 = seg.export()
+        seg_exported_mp3 = AudioSegment.from_mp3(exported_mp3)
+
+        self.assertWithinTolerance(len(seg_exported_mp3), len(seg), percentage=0.01)
+
+    def test_export_as_wav(self):
+        seg = self.seg1
         exported_wav = seg.export(format='wav')
+        seg_exported_wav = AudioSegment.from_wav(exported_wav)
 
-        exported1 = AudioSegment.from_mp3(exported_mp3)
-        exported2 = AudioSegment.from_wav(exported_wav)
-
-        self.assertWithinTolerance(len(exported1), len(seg), percentage=0.01)
-        self.assertWithinTolerance(len(exported2), len(seg), percentage=0.01)
+        self.assertWithinTolerance(len(seg_exported_wav), len(seg), percentage=0.01)
 
     def test_export_forced_codec(self):
         seg = self.seg1 + self.seg2
@@ -305,14 +314,28 @@ class AudioSegmentTests(unittest.TestCase):
     def test_export_mp4_as_mp3_with_tags_raises_exception_when_tags_are_not_a_dictionary(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
             json = '{"title": "The Title You Want", "album": "Name of the Album", "artist": "Artist\'s name"}'
-            self.assertRaises(
-                TypeError, AudioSegment.from_file(self.mp4_file_path).export(),
-                tmp_mp3_file, format="mp3", tags=json)
+            func = partial(
+                AudioSegment.from_file(self.mp4_file_path).export, tmp_mp3_file,
+                format="mp3", tags=json)
+            self.assertRaises(InvalidTag, func)
+
+    def test_export_mp4_as_mp3_with_tags_raises_exception_when_id3version_is_wrong(self):
+        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
+            func = partial(
+                AudioSegment.from_file(self.mp4_file_path).export, tmp_mp3_file,
+                format="mp3", id3v2_version='BAD VERSION')
+            self.assertRaises(InvalidID3TagVersion, func)
 
     def test_fade_raises_exception_when_duration_start_end_are_none(self):
-        seg = self.seg1[:10000]
-        self.assertRaises(
-            TypeError, seg.fade(), start=None, end=None, duration=None)
+        seg = self.seg1
+        func = partial(seg.fade, start=1, end=1, duration=1)
+        self.assertRaises(TypeError, func)
+
+    def test_fade_raises_exception_when_duration_is_negative(self):
+        seg = self.seg1
+        func = partial(
+            seg.fade, to_gain=1, from_gain=1, start=None, end=None, duration=-1)
+        self.assertRaises(InvalidDuration, func)
 
 if __name__ == "__main__":
     unittest.main()
