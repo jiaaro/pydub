@@ -187,9 +187,9 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertTrue(-3 < ratio_to_db(inf_end.rms, seg.rms) < -2)
 
         # use a slice out of the middle to make sure there is audio
-        seg = self.seg2[20000:30000]
-        fade_out = seg.fade_out(5000)
-        fade_in = seg.fade_in(5000)
+        seg = self.seg2[2000:8000]
+        fade_out = seg.fade_out(1000)
+        fade_in = seg.fade_in(1000)
 
         self.assertTrue(0 < fade_out.rms < seg.rms)
         self.assertTrue(0 < fade_in.rms < seg.rms)
@@ -250,7 +250,7 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertFalse(self.seg1 != wav)
 
     def test_duration(self):
-        self.assertEqual(int(self.seg1.duration_seconds), 36)
+        self.assertEqual(int(self.seg1.duration_seconds), 10)
 
         wav_file = self.seg1.export(format='wav')
         wav = AudioSegment.from_wav(wav_file)
