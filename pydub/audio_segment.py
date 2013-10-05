@@ -5,6 +5,7 @@ import subprocess
 from tempfile import TemporaryFile, NamedTemporaryFile
 import wave
 import audioop
+import shlex
 import sys
 
 try:
@@ -225,6 +226,9 @@ class AudioSegment(object):
             output.name
         ]
 
+        # Uses shlex for better handling of string arguments
+        ffmpeg_call = shlex.split(' '.join(ffmpeg_call))
+
         subprocess.call(ffmpeg_call, stderr=open(os.devnull))
 
         obj = cls.from_wav(output)
@@ -335,6 +339,9 @@ class AudioSegment(object):
         ffmpeg_call.extend([
             "-f", format, output.name,  # output options (filename last)
         ])
+
+        # Uses shlex for better handling of string arguments
+        ffmpeg_call = shlex.split(' '.join(ffmpeg_call))
 
         # read stdin / write stdout
         subprocess.call(ffmpeg_call,
