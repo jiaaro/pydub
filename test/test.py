@@ -187,9 +187,9 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertTrue(-3 < ratio_to_db(inf_end.rms, seg.rms) < -2)
 
         # use a slice out of the middle to make sure there is audio
-        seg = self.seg2[20000:30000]
-        fade_out = seg.fade_out(5000)
-        fade_in = seg.fade_in(5000)
+        seg = self.seg2[2000:8000]
+        fade_out = seg.fade_out(1000)
+        fade_in = seg.fade_in(1000)
 
         self.assertTrue(0 < fade_out.rms < seg.rms)
         self.assertTrue(0 < fade_in.rms < seg.rms)
@@ -250,7 +250,7 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertFalse(self.seg1 != wav)
 
     def test_duration(self):
-        self.assertEqual(int(self.seg1.duration_seconds), 207)
+        self.assertEqual(int(self.seg1.duration_seconds), 10)
 
         wav_file = self.seg1.export(format='wav')
         wav = AudioSegment.from_wav(wav_file)
@@ -301,6 +301,18 @@ class AudioSegmentTests(unittest.TestCase):
                                                               tags=tags_dict)
             tmp_file_type, _ = mimetypes.guess_type(tmp_mp3_file.name)
             self.assertEqual(tmp_file_type, 'audio/mpeg')
+
+    def test_export_mp4_as_mp3_with_tags_raises_exception_when_tags_are_not_a_dictionary(self):
+        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
+            json = '{"title": "The Title You Want", "album": "Name of the Album", "artist": "Artist\'s name"}'
+            self.assertRaises(
+                TypeError, AudioSegment.from_file(self.mp4_file_path).export(),
+                tmp_mp3_file, format="mp3", tags=json)
+
+    def test_fade_raises_exception_when_duration_start_end_are_none(self):
+        seg = self.seg1[:10000]
+        self.assertRaises(
+            TypeError, seg.fade(), start=None, end=None, duration=None)
 
 if __name__ == "__main__":
     unittest.main()
