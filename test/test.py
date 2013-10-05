@@ -55,8 +55,9 @@ class AudioSegmentTests(unittest.TestCase):
             test2 = AudioSegment.from_mp3(os.path.join(data_dir, 'test2.mp3'))
             test3 = AudioSegment.from_mp3(os.path.join(data_dir, 'test3.mp3'))
         self.seg1, self.seg2, self.seg3 = test1, test2, test3
-        self.wave_file_path = os.path.join(data_dir, '8k16bitpcm.wav')
+        self.ogg_file_path = os.path.join(data_dir, 'bach.ogg')
         self.mp4_file_path = os.path.join(data_dir, 'creative_common.mp4')
+        self.mp3_seg_party = AudioSegment.from_mp3(os.path.join(data_dir, 'party.mp3'))
 
     def assertWithinRange(self, val, lower_bound, upper_bound):
         self.assertTrue(lower_bound < val < upper_bound,
@@ -236,16 +237,15 @@ class AudioSegmentTests(unittest.TestCase):
             normalized.max, normalized.max_possible_amplitude, percentage=0.0001)
 
     def test_for_accidental_shortening(self):
-        seg = AudioSegment.from_mp3(os.path.join(data_dir, 'party.mp3'))
-        seg.export('tmp.mp3')
+        seg = self.mp3_seg_party
+        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
+            seg.export(tmp_mp3_file.name)
 
-        for i in range(10):
-            AudioSegment.from_mp3('tmp.mp3').export('tmp.mp3', "mp3")
+            for i in range(3):
+                AudioSegment.from_mp3(tmp_mp3_file.name).export(tmp_mp3_file.name, "mp3")
 
-        tmp = AudioSegment.from_mp3('tmp.mp3')
-
-        os.unlink('tmp.mp3')
-        self.assertFalse(len(tmp) < len(seg))
+            tmp_seg = AudioSegment.from_mp3(tmp_mp3_file.name)
+            self.assertFalse(len(tmp_seg) < len(seg))
 
     def test_formats(self):
         seg_m4a = AudioSegment.from_file(os.path.join(data_dir,
@@ -277,10 +277,10 @@ class AudioSegmentTests(unittest.TestCase):
         aac_file = AudioSegment.from_file(os.path.join(data_dir, 'wrong_extension.aac'))
         self.assertEqual(int(aac_file.duration_seconds), 9)
 
-    def test_export_wave_as_mp3(self):
+    def test_export_ogg_as_mp3(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
-            AudioSegment.from_file(self.wave_file_path).export(tmp_mp3_file,
-                                                               format="mp3")
+            AudioSegment.from_file(self.ogg_file_path).export(tmp_mp3_file,
+                                                              format="mp3")
             tmp_file_type, _ = mimetypes.guess_type(tmp_mp3_file.name)
             self.assertEqual(tmp_file_type, 'audio/mpeg')
 
