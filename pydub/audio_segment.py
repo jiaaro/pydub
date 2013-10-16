@@ -24,6 +24,7 @@ from .exceptions import (
     InvalidID3TagVersion,
     InvalidTag,
 )
+from . import effects
 
 if sys.version_info >= (3, 0):
     basestring = str
@@ -435,16 +436,6 @@ class AudioSegment(object):
     def duration_seconds(self):
         return self.frame_rate and self.frame_count() / self.frame_rate or 0.0
 
-    def normalize(self, headroom=0.1):
-        """
-        headroom is how close to the maximum volume to boost the signal up to (specified in dB)
-        """
-        peak_sample_val = self.max
-        target_peak = self.max_possible_amplitude * db_to_float(-headroom)
-
-        needed_boost = ratio_to_db(target_peak / peak_sample_val)
-        return self.apply_gain(needed_boost)
-
     def apply_gain(self, volume_change):
         return self._spawn(data=audioop.mul(self._data, self.sample_width,
                                             db_to_float(float(volume_change))))
@@ -589,3 +580,6 @@ class AudioSegment(object):
         return self._spawn(
             data=audioop.reverse(self._data, self.sample_width)
         )
+        
+    def normalize(self, *args, **kwargs):
+        return effects.normalize(self, *args, **kwargs)
