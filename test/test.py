@@ -320,10 +320,11 @@ class AudioSegmentTests(unittest.TestCase):
             self.assertRaises(InvalidTag, func)
 
     def test_export_mp4_as_mp3_with_tags_raises_exception_when_id3version_is_wrong(self):
+        tags = {'artist': 'Artist', 'title': 'Title'}
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
             func = partial(
                 AudioSegment.from_file(self.mp4_file_path).export, tmp_mp3_file,
-                format="mp3", id3v2_version='BAD VERSION')
+                format="mp3", tags=tags, id3v2_version='BAD VERSION')
             self.assertRaises(InvalidID3TagVersion, func)
 
     def test_fade_raises_exception_when_duration_start_end_are_none(self):

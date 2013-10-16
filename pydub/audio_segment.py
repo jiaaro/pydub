@@ -341,12 +341,13 @@ class AudioSegment(object):
                 [ffmpeg_call.extend(['-metadata', '{0}="{1}"'.format(k, v)])
                  for k, v in tags.items()]
 
-        if id3v2_version not in id3v2_allowed_versions:
-            raise InvalidID3TagVersion(
-                "id3v2_version not allowed, allowed versions: %s" % id3v2_allowed_versions)
-        ffmpeg_call.extend([
-            "-id3v2_version",  id3v2_version
-        ])
+                if format == 'mp3':
+                    if id3v2_version not in id3v2_allowed_versions:
+                        raise InvalidID3TagVersion(
+                            "id3v2_version not allowed, allowed versions: %s" % id3v2_allowed_versions)
+                    ffmpeg_call.extend([
+                        "-id3v2_version",  id3v2_version
+                    ])
 
         ffmpeg_call.extend([
             "-f", format, output.name,  # output options (filename last)
