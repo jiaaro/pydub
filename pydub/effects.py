@@ -1,8 +1,10 @@
 from .utils import (
     db_to_float,
     ratio_to_db,
+    register_pydub_effect
 )
 
+@register_pydub_effect
 def normalize(seg, headroom=0.1):
     """
     headroom is how close to the maximum volume to boost the signal up to (specified in dB)

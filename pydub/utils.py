@@ -16,7 +16,6 @@ def _fd_or_path_or_tempfile(fd, mode='w+b', tempfile=True):
 
     return fd
 
-
 def db_to_float(db):
     """
     Converts the input db to a float, which represents the equivalent
@@ -24,7 +23,6 @@ def db_to_float(db):
     """
     db = float(db)
     return 10 ** (db / 10)
-
 
 def ratio_to_db(ratio, val2=None):
     """
@@ -38,3 +36,31 @@ def ratio_to_db(ratio, val2=None):
         ratio = ratio / val2
 
     return 10 * log(ratio, 10)
+
+def register_pydub_effect(fn, name=None):
+    """
+    decorator for adding pydub effects to the AudioSegment objects.
+    
+    example use:
+    
+        @register_pydub_effect
+        def normalize(audio_segment):
+            ...
+    
+    or you can specify a name:
+        
+        @register_pydub_effect("normalize")
+        def normalize_audio_segment(audio_segment):
+            ...
+    
+    """
+    if isinstance(fn, basestring):
+        name = fn
+        return lambda fn: register_pydub_effect(fn, name)
+    
+    if name is None:
+        name = fn.__name__
+    
+    from .audio_segment import AudioSegment
+    setattr(AudioSegment, name, fn)
+    return fn

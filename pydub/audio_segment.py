@@ -24,7 +24,6 @@ from .exceptions import (
     InvalidID3TagVersion,
     InvalidTag,
 )
-from . import effects
 
 if sys.version_info >= (3, 0):
     basestring = str
@@ -580,6 +579,6 @@ class AudioSegment(object):
         return self._spawn(
             data=audioop.reverse(self._data, self.sample_width)
         )
-        
-    def normalize(self, *args, **kwargs):
-        return effects.normalize(self, *args, **kwargs)
+
+
+from . import effects
