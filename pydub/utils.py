@@ -1,7 +1,7 @@
 from __future__ import division
 
 from tempfile import TemporaryFile
-from math import log
+from math import log, ceil, floor
 import sys
 
 if sys.version_info >= (3, 0):
@@ -64,3 +64,15 @@ def register_pydub_effect(fn, name=None):
     from .audio_segment import AudioSegment
     setattr(AudioSegment, name, fn)
     return fn
+    
+def make_chunks(audio_segment, chunk_length):
+    """
+    Breaks an AudioSegment into chunks that are <chunk_length> milliseconds
+    long.
+    
+    if chunk_length is 50 then you'll get a list of 50 millisecond long audio
+    segments back (except the last one, which can be shorter)
+    """
+    number_of_chunks = ceil(len(audio_segment)/float(chunk_length))
+    return [audio_segment[i*chunk_length:(i+1)*chunk_length] 
+            for i in range(int(number_of_chunks))]

@@ -5,7 +5,7 @@ import unittest
 from tempfile import NamedTemporaryFile, SpooledTemporaryFile
 
 from pydub import AudioSegment
-from pydub.utils import db_to_float, ratio_to_db
+from pydub.utils import db_to_float, ratio_to_db, make_chunks
 from pydub.exceptions import (
     InvalidTag,
     InvalidID3TagVersion,
@@ -337,6 +337,14 @@ class AudioSegmentTests(unittest.TestCase):
         func = partial(
             seg.fade, to_gain=1, from_gain=1, start=None, end=None, duration=-1)
         self.assertRaises(InvalidDuration, func)
+        
+    def test_make_chunks(self):
+        seg = self.seg1
+        chunks = make_chunks(seg, 100)
+        seg2 = chunks[0]
+        for chunk in chunks[1:]:
+            seg2 += chunk
+        self.assertEqual(len(seg), len(seg2))
 
 if __name__ == "__main__":
     unittest.main()
