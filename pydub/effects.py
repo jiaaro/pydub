@@ -37,7 +37,7 @@ def speedup(seg, playback_speed=1.5, chunk_size=150, crossfade=25):
     # the crossfade cannot be longer than the amound of audio we're removing
     crossfade = min(crossfade, ms_to_remove_per_chunk-1)
         
-    print "chunk: {}, rm: {}".format(chunk_size, ms_to_remove_per_chunk)
+    print("chunk: {}, rm: {}".format(chunk_size, ms_to_remove_per_chunk))
     
     chunks = make_chunks(seg, chunk_size + ms_to_remove_per_chunk)
     if len(chunks) < 2:
