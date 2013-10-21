@@ -49,15 +49,13 @@ def speedup(seg, playback_speed=1.5, chunk_size=150, crossfade=25):
 
     # we don't want to truncate the last chunk since it is not guaranteed to be
     # the full chunk length
-    last_chunk_i = len(chunks) - 1
-    chunks = [chunk[:-ms_to_remove_per_chunk] 
-              for (i, chunk) in enumerate(chunks)
-              if i < last_chunk_i]
+    last_chunk = chunks[-1]
+    chunks = [chunk[:-ms_to_remove_per_chunk] for chunk in chunks[:-1]]
     
     out = chunks[0]
-    for chunk in chunks[1:-1]:
+    for chunk in chunks[1:]:
         out = out.append(chunk, crossfade=crossfade)
         
-    out = out.append(chunk, crossfade=min(crossfade, len(chunk)))
+    out += last_chunk
     return out
     
