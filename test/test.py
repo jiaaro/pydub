@@ -347,16 +347,10 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(len(seg), len(seg2))
 
     def test_speedup(self):
-        with NamedTemporaryFile('w+b') as spedfile:
-            original_seg = self.seg1
-            original_seg.speedup(2.0).export(spedfile.name)
-            speedup_seg = AudioSegment.from_file(spedfile.name)
+        speedup_seg = self.seg1.speedup(2.0)
 
-            original_milliseconds = original_seg.duration_seconds * 60000
-            speedup_milliseconds = speedup_seg.duration_seconds * 60000
-
-            self.assertWithinTolerance(
-                original_milliseconds / 2, speedup_milliseconds, percentage=0.01)
+        self.assertWithinTolerance(
+            len(self.seg1) / 2, len(speedup_seg), percentage=0.01)
 
 if __name__ == "__main__":
     unittest.main()
