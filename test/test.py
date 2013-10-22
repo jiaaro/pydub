@@ -337,7 +337,7 @@ class AudioSegmentTests(unittest.TestCase):
         func = partial(
             seg.fade, to_gain=1, from_gain=1, start=None, end=None, duration=-1)
         self.assertRaises(InvalidDuration, func)
-        
+
     def test_make_chunks(self):
         seg = self.seg1
         chunks = make_chunks(seg, 100)
@@ -345,6 +345,18 @@ class AudioSegmentTests(unittest.TestCase):
         for chunk in chunks[1:]:
             seg2 += chunk
         self.assertEqual(len(seg), len(seg2))
+
+    def test_speedup(self):
+        with NamedTemporaryFile('w+b') as spedfile:
+            original_seg = self.seg1
+            original_seg.speedup(2.0).export(spedfile.name)
+            speedup_seg = AudioSegment.from_file(spedfile.name)
+
+            original_milliseconds = original_seg.duration_seconds * 60000
+            speedup_milliseconds = speedup_seg.duration_seconds * 60000
+
+            self.assertWithinTolerance(
+                original_milliseconds / 2, speedup_milliseconds, percentage=0.01)
 
 if __name__ == "__main__":
     unittest.main()
