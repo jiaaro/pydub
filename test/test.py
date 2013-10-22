@@ -345,6 +345,12 @@ class AudioSegmentTests(unittest.TestCase):
         for chunk in chunks[1:]:
             seg2 += chunk
         self.assertEqual(len(seg), len(seg2))
+        
+    def test_empty(self):
+        self.assertEqual(len(self.seg1), len(self.seg1 + AudioSegment.empty()))
+        self.assertEqual(len(self.seg2), len(self.seg2 + AudioSegment.empty()))
+        self.assertEqual(len(self.seg3), len(self.seg3 + AudioSegment.empty()))
+        
 
     def test_speedup(self):
         speedup_seg = self.seg1.speedup(2.0)

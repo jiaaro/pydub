@@ -202,6 +202,10 @@ class AudioSegment(object):
         return int(val)
 
     @classmethod
+    def empty(cls):
+        return cls(b'', metadata={"channels": 1, "sample_width": 1, "frame_rate":1, "frame_width": 1})
+        
+    @classmethod
     def from_file(cls, file, format=None):
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
@@ -393,8 +397,13 @@ class AudioSegment(object):
         if frame_rate == self.frame_rate:
             return self
 
-        converted, _ = audioop.ratecv(self._data, self.sample_width,
-                                      self.channels, self.frame_rate, frame_rate, None)
+        if self._data:
+            converted, _ = audioop.ratecv(self._data, self.sample_width,
+                                          self.channels, self.frame_rate, 
+                                          frame_rate, None)
+        else:
+            converted = self._data
+            
         return self._spawn(data=converted,
                            overrides={'frame_rate': frame_rate})
 
