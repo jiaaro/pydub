@@ -176,7 +176,7 @@ class AudioSegmentTests(unittest.TestCase):
         seg = self.seg1 + self.seg2
 
         with NamedTemporaryFile('w+b', suffix='.ogg') as tmp_file:
-            seg.export(tmp_file.name, 'ogg', codec='vorbis')
+            seg.export(tmp_file.name, 'ogg', codec='libvorbis')
             exported = AudioSegment.from_ogg(tmp_file.name)
             self.assertWithinTolerance(len(exported), len(seg), percentage=0.01)
 
