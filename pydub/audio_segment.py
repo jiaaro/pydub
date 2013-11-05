@@ -5,7 +5,6 @@ import subprocess
 from tempfile import TemporaryFile, NamedTemporaryFile
 import wave
 import audioop
-import shlex
 import sys
 
 try:
@@ -203,8 +202,8 @@ class AudioSegment(object):
 
     @classmethod
     def empty(cls):
-        return cls(b'', metadata={"channels": 1, "sample_width": 1, "frame_rate":1, "frame_width": 1})
-        
+        return cls(b'', metadata={"channels": 1, "sample_width": 1, "frame_rate": 1, "frame_width": 1})
+
     @classmethod
     def from_file(cls, file, format=None):
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
@@ -236,9 +235,6 @@ class AudioSegment(object):
             "-f", "wav",  # output options (filename last)
             output.name
         ]
-
-        # Uses shlex for better handling of string arguments
-        ffmpeg_call = shlex.split(' '.join(ffmpeg_call))
 
         subprocess.call(ffmpeg_call, stderr=open(os.devnull))
 
@@ -342,7 +338,7 @@ class AudioSegment(object):
                 raise InvalidTag("Tags must be a dictionary.")
             else:
                 # Extend ffmpeg command with tags
-                [ffmpeg_call.extend(['-metadata', '{0}="{1}"'.format(k, v)])
+                [ffmpeg_call.extend(['-metadata', '{0}={1}'.format(k, v)])
                  for k, v in tags.items()]
 
                 if format == 'mp3':
@@ -356,9 +352,6 @@ class AudioSegment(object):
         ffmpeg_call.extend([
             "-f", format, output.name,  # output options (filename last)
         ])
-
-        # Uses shlex for better handling of string arguments
-        ffmpeg_call = shlex.split(' '.join(ffmpeg_call))
 
         # read stdin / write stdout
         subprocess.call(ffmpeg_call,
@@ -399,11 +392,11 @@ class AudioSegment(object):
 
         if self._data:
             converted, _ = audioop.ratecv(self._data, self.sample_width,
-                                          self.channels, self.frame_rate, 
+                                          self.channels, self.frame_rate,
                                           frame_rate, None)
         else:
             converted = self._data
-            
+
         return self._spawn(data=converted,
                            overrides={'frame_rate': frame_rate})
 
@@ -560,7 +553,7 @@ class AudioSegment(object):
         output.append(before_fade)
 
         gain_delta = db_to_float(to_gain) - from_power
-        
+
         # fades longer than 100ms can use coarse fading (one gain step per ms),
         # shorter fades will have audible clicks so they use precise fading (one
         # gain step per sample)
@@ -578,13 +571,13 @@ class AudioSegment(object):
             end_frame = self.frame_count(ms=end)
             fade_frames = end_frame - start_frame
             scale_step = gain_delta / fade_frames
-            
+
             for i in range(int(fade_frames)):
                 volume_change = from_power + (scale_step * i)
                 sample = self.get_frame(int(start_frame + i))
                 sample = audioop.mul(sample, self.sample_width, volume_change)
-                
-                output.append(sample)            
+
+                output.append(sample)
 
         # original data after the crossfade portion, at the new volume
         after_fade = self[end:]._data
