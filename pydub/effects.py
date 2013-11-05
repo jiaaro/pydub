@@ -62,3 +62,39 @@ def speedup(seg, playback_speed=1.5, chunk_size=150, crossfade=25):
 
     out += last_chunk
     return out
+    
+@register_pydub_effect
+def strip_silence(seg, silence_len=1000, silence_thresh=-20):
+    silence_thresh = seg.rms * db_to_float(silence_thresh)
+    
+    # find silence and add start and end indicies to the to_cut list
+    to_cut = []
+    silence_start = None
+    for i, sample in enumerate(seg):
+        if sample.rms < silence_thresh:
+            if silence_start is None:
+                silence_start = i
+            continue
+            
+        if silence_start is None:
+            continue
+            
+        if i - silence_start > silence_len:
+            to_cut.append([silence_start, i-1])
+        
+        silence_start = None
+            
+    print to_cut
+    
+    keep_silence = 100
+    
+    to_cut.reverse()
+    for cstart, cend in to_cut:
+        if len(seg[cend:]) < keep_silence:
+            seg = seg[:cstart + keep_silence]
+        elif len(seg[:cstart]) < keep_silence:
+            seg = seg[cend-keep_silence:]
+        else:
+            print cstart, "-", cend
+            seg = seg[:cstart+keep_silence].append(seg[cend-keep_silence:], crossfade=keep_silence*2)
+    return seg
