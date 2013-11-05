@@ -84,7 +84,7 @@ def strip_silence(seg, silence_len=1000, silence_thresh=-20):
         
         silence_start = None
             
-    print to_cut
+    # print(to_cut)
     
     keep_silence = 100
     
@@ -95,6 +95,6 @@ def strip_silence(seg, silence_len=1000, silence_thresh=-20):
         elif len(seg[:cstart]) < keep_silence:
             seg = seg[cend-keep_silence:]
         else:
-            print cstart, "-", cend
+            #print(cstart, "-", cend)
             seg = seg[:cstart+keep_silence].append(seg[cend-keep_silence:], crossfade=keep_silence*2)
     return seg
