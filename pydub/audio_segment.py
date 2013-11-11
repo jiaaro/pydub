@@ -26,9 +26,8 @@ from .exceptions import (
 
 if sys.version_info >= (3, 0):
     basestring = str
-
-if sys.version_info >= (3, 0):
     xrange = range
+    StringIO = BytesIO
 
 AUDIO_FILE_EXT_ALIASES = {
     "m4a": "mp4"
@@ -56,10 +55,7 @@ class AudioSegment(object):
         else:
             # normal construction
             data = data if isinstance(data, basestring) else data.read()
-            if sys.version_info >= (3, 0):
-                raw = wave.open(BytesIO(data), 'rb')
-            else:
-                raw = wave.open(StringIO(data), 'rb')
+            raw = wave.open(StringIO(data), 'rb')
 
             raw.rewind()
             self.channels = raw.getnchannels()
