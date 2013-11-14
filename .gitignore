@@ -7,3 +7,5 @@
 env
 *.swp
 .idea
+
+/build/
