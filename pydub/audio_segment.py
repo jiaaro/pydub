@@ -16,6 +16,7 @@ from .utils import (
     _fd_or_path_or_tempfile,
     db_to_float,
     ratio_to_db,
+    get_encoder_name,
 )
 from .exceptions import (
     TooManyMissingFrames,
@@ -44,7 +45,7 @@ class AudioSegment(object):
     a = AudioSegment.from_mp3(mp3file)
     first_second = a[:1000]
     """
-    ffmpeg = 'ffmpeg'
+    converter = get_encoder_name()  # either ffmpeg or avconv
 
     def __init__(self, data=None, *args, **kwargs):
         if kwargs.get('metadata', False):
@@ -216,23 +217,23 @@ class AudioSegment(object):
 
         output = NamedTemporaryFile(mode="rb", delete=False)
 
-        ffmpeg_call = [cls.ffmpeg,
-                       '-y',  # always overwrite existing files
-                       ]
+        convertion_command = [cls.converter,
+                              '-y',  # always overwrite existing files
+                              ]
 
         # If format is not defined
-        # ffmpeg will detect it automatically
+        # ffmpeg/avconv will detect it automatically
         if format:
-            ffmpeg_call += ["-f", format]
+            convertion_command += ["-f", format]
 
-        ffmpeg_call += [
+        convertion_command += [
             "-i", input_file.name,  # input_file options (filename last)
             "-vn",  # Drop any video streams if there are any
             "-f", "wav",  # output options (filename last)
             output.name
         ]
 
-        subprocess.call(ffmpeg_call, stderr=open(os.devnull))
+        subprocess.call(convertion_command, stderr=open(os.devnull))
 
         obj = cls.from_wav(output)
 
@@ -269,7 +270,7 @@ class AudioSegment(object):
             Path to destination audio file
 
         format (string)
-            Format for destination audio file. ('mp3', 'wav', 'ogg' or other ffmpeg supported files)
+            Format for destination audio file. ('mp3', 'wav', 'ogg' or other ffmpeg/avconv supported files)
 
         codec (string)
             Codec used to encoding for the destination.
@@ -278,7 +279,7 @@ class AudioSegment(object):
             Bitrate used when encoding destination file. (128, 256, 312k...)
 
         parameters (string)
-            Aditional ffmpeg parameters
+            Aditional ffmpeg/avconv parameters
 
         tags (dict)
             Set metadata information to destination files usually used as tags. ({title='Song Title', artist='Song Artist'})
@@ -313,51 +314,51 @@ class AudioSegment(object):
 
         output = NamedTemporaryFile(mode="w+b", delete=False)
 
-        # build ffmpeg command to export
-        ffmpeg_call = [self.ffmpeg,
-                       '-y',  # always overwrite existing files
-                       "-f", "wav", "-i", data.name,  # input options (filename last)
-                       ]
+        # build converter command to export
+        convertion_command = [self.converter,
+                              '-y',  # always overwrite existing files
+                              "-f", "wav", "-i", data.name,  # input options (filename last)
+                              ]
 
         if format == "ogg" and codec is None:
-            ffmpeg_call.extend(["-acodec", "libvorbis"])
+            convertion_command.extend(["-acodec", "libvorbis"])
 
         if codec is not None:
             # force audio encoder
-            ffmpeg_call.extend(["-acodec", codec])
+            convertion_command.extend(["-acodec", codec])
 
         if bitrate is not None:
-            ffmpeg_call.extend(["-b:a", bitrate])
+            convertion_command.extend(["-b:a", bitrate])
 
         if parameters is not None:
             # extend arguments with arbitrary set
-            ffmpeg_call.extend(parameters)
+            convertion_command.extend(parameters)
 
         if tags is not None:
             if not isinstance(tags, dict):
                 raise InvalidTag("Tags must be a dictionary.")
             else:
-                # Extend ffmpeg command with tags
+                # Extend converter command with tags
                 # print(tags)
                 for key, value in tags.items():
-                    ffmpeg_call.extend(['-metadata', '{0}={1}'.format(key, value)])
+                    convertion_command.extend(['-metadata', '{0}={1}'.format(key, value)])
 
                 if format == 'mp3':
                     # set id3v2 tag version
                     if id3v2_version not in id3v2_allowed_versions:
                         raise InvalidID3TagVersion(
                             "id3v2_version not allowed, allowed versions: %s" % id3v2_allowed_versions)
-                    ffmpeg_call.extend([
+                    convertion_command.extend([
                         "-id3v2_version",  id3v2_version
                     ])
 
-        ffmpeg_call.extend([
+        convertion_command.extend([
             "-f", format, output.name,  # output options (filename last)
         ])
 
         # read stdin / write stdout
-        subprocess.call(ffmpeg_call,
-                        # make ffmpeg shut up
+        subprocess.call(convertion_command,
+                        # make converter shut up
                         stderr=open(os.devnull)
                         )
 

@@ -86,13 +86,54 @@ def make_chunks(audio_segment, chunk_length):
             for i in range(int(number_of_chunks))]
 
 
+def which(program):
+    """
+    Mimics behavior of UNIX which command.
+    """
+    envdir_list = os.environ["PATH"].split(os.pathsep)
+
+    for envdir in envdir_list:
+        program_path = os.path.join(envdir, program)
+        if os.path.isfile(program_path) and os.access(program_path, os.X_OK):
+            return program_path
+
+
+def get_encoder_name():
+    """
+    Return enconder default application for system, either avconv or ffmpeg
+    """
+    if which("avconv"):
+        return "avconv"
+    elif which("ffmpeg"):
+        return "ffmpeg"
+    else:
+        # should raise exception
+        return "ffmpeg"
+
+
+def get_prober_name():
+    """
+    Return probe application, either avconv or ffmpeg
+    """
+    if which("avprobe"):
+        return "avprobe"
+    elif which("ffprobe"):
+        return "ffprobe"
+    else:
+        # should raise exception
+        return "ffprobe"
+
+
 def mediainfo(filepath):
     """Return dictionary with media info(codec, duration, size, bitrate...) from filepath
     """
 
     from .audio_segment import AudioSegment
 
-    command = "ffprobe -v quiet -show_format -show_streams {0}".format(filepath)
+    command = "{0} -v quiet -show_format -show_streams {1}".format(
+        get_prober_name(),
+        filepath
+    )
     output = Popen(command.split(), stdout=PIPE).communicate()[0].decode("utf-8")
 
     rgx = re.compile(r"(?:(?P<inner_dict>.*?):)?(?P<key>.*?)\=(?P<value>.*?)$")
