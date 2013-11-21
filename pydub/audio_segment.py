@@ -334,10 +334,12 @@ class AudioSegment(object):
                 raise InvalidTag("Tags must be a dictionary.")
             else:
                 # Extend ffmpeg command with tags
-                [ffmpeg_call.extend(['-metadata', '{0}={1}'.format(k, v)])
-                 for k, v in tags.items()]
+                # print(tags)
+                for key, value in tags.items():
+                    ffmpeg_call.extend(['-metadata', '{0}={1}'.format(key, value)])
 
                 if format == 'mp3':
+                    # set id3v2 tag version
                     if id3v2_version not in id3v2_allowed_versions:
                         raise InvalidID3TagVersion(
                             "id3v2_version not allowed, allowed versions: %s" % id3v2_allowed_versions)

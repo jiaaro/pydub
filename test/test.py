@@ -5,7 +5,12 @@ import unittest
 from tempfile import NamedTemporaryFile, SpooledTemporaryFile
 
 from pydub import AudioSegment
-from pydub.utils import db_to_float, ratio_to_db, make_chunks
+from pydub.utils import (
+    db_to_float,
+    ratio_to_db,
+    make_chunks,
+    mediainfo,
+)
 from pydub.exceptions import (
     InvalidTag,
     InvalidID3TagVersion,
@@ -341,6 +346,18 @@ class AudioSegmentTests(unittest.TestCase):
                 AudioSegment.from_file(self.mp4_file_path).export, tmp_mp3_file,
                 format="mp3", tags=tags, id3v2_version='BAD VERSION')
             self.assertRaises(InvalidID3TagVersion, func)
+
+    def test_export_mp3_with_tags(self):
+        tags = tags = {'artist': 'Mozart', 'title': 'The Magic Flute'}
+
+        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
+            AudioSegment.from_file(self.mp4_file_path).export(tmp_mp3_file, format="mp3", tags=tags)
+
+            info = mediainfo(filepath=tmp_mp3_file.name)
+            info_tags = info["TAG"]
+
+            self.assertEqual(info_tags["artist"], "Mozart")
+            self.assertEqual(info_tags["title"], "The Magic Flute")
 
     def test_fade_raises_exception_when_duration_start_end_are_none(self):
         seg = self.seg1
