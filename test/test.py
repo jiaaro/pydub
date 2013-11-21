@@ -397,4 +397,9 @@ class AudioSegmentTests(unittest.TestCase):
             len(self.seg1) / 2, len(speedup_seg), percentage=0.01)
 
 if __name__ == "__main__":
-    unittest.main(warnings='ignore')
+    import sys
+
+    if sys.version_info >= (3, 1):
+        unittest.main(warnings="ignore")
+    else:
+        unittest.main()
