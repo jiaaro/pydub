@@ -355,7 +355,7 @@ class AudioSegmentTests(unittest.TestCase):
             self.assertRaises(InvalidID3TagVersion, func)
 
     def test_export_mp3_with_tags(self):
-        tags = tags = {'artist': 'Mozart', 'title': 'The Magic Flute'}
+        tags = {'artist': 'Mozart', 'title': 'The Magic Flute'}
 
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
             AudioSegment.from_file(self.mp4_file_path).export(tmp_mp3_file, format="mp3", tags=tags)
