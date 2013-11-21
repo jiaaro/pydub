@@ -172,6 +172,13 @@ class AudioSegmentTests(unittest.TestCase):
 
         self.assertWithinTolerance(len(seg_exported_wav), len(seg), percentage=0.01)
 
+    def test_export_as_ogg(self):
+        seg = self.seg1
+        exported_ogg = seg.export(format='ogg')
+        seg_exported_ogg = AudioSegment.from_ogg(exported_ogg)
+
+        self.assertWithinTolerance(len(seg_exported_ogg), len(seg), percentage=0.01)
+
     def test_export_forced_codec(self):
         seg = self.seg1 + self.seg2
 
@@ -345,12 +352,12 @@ class AudioSegmentTests(unittest.TestCase):
         for chunk in chunks[1:]:
             seg2 += chunk
         self.assertEqual(len(seg), len(seg2))
-        
+
     def test_empty(self):
         self.assertEqual(len(self.seg1), len(self.seg1 + AudioSegment.empty()))
         self.assertEqual(len(self.seg2), len(self.seg2 + AudioSegment.empty()))
         self.assertEqual(len(self.seg3), len(self.seg3 + AudioSegment.empty()))
-        
+
 
     def test_speedup(self):
         speedup_seg = self.seg1.speedup(2.0)
