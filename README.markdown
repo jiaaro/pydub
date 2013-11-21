@@ -132,9 +132,13 @@ Copy the pydub directory into your python path. Zip [here](https://github.com/ji
 
 ## Dependencies
 
-Requires ffmpeg for encoding and decoding all non-wav files (which work natively)
+Requires ffmpeg or avconv for encoding and decoding all non-wav files (which work natively)
 
  - ffmpeg (http://www.ffmpeg.org/)
+ 
+ -OR-
+
+ - avconv (http://libav.org/)
 
 ## Important Notes
 

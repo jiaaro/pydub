@@ -5,7 +5,12 @@ import unittest
 from tempfile import NamedTemporaryFile, SpooledTemporaryFile
 
 from pydub import AudioSegment
-from pydub.utils import db_to_float, ratio_to_db, make_chunks
+from pydub.utils import (
+    db_to_float,
+    ratio_to_db,
+    make_chunks,
+    mediainfo,
+)
 from pydub.exceptions import (
     InvalidTag,
     InvalidID3TagVersion,
@@ -57,6 +62,7 @@ class AudioSegmentTests(unittest.TestCase):
         self.seg1, self.seg2, self.seg3 = test1, test2, test3
         self.ogg_file_path = os.path.join(data_dir, 'bach.ogg')
         self.mp4_file_path = os.path.join(data_dir, 'creative_common.mp4')
+        self.mp3_file_path = os.path.join(data_dir, 'party.mp3')
         self.mp3_seg_party = AudioSegment.from_mp3(os.path.join(data_dir, 'party.mp3'))
 
     def assertWithinRange(self, val, lower_bound, upper_bound):
@@ -291,6 +297,20 @@ class AudioSegmentTests(unittest.TestCase):
             tmp_file_type, _ = mimetypes.guess_type(tmp_mp3_file.name)
             self.assertEqual(tmp_file_type, 'audio/mpeg')
 
+    def test_export_mp3_as_ogg(self):
+        with NamedTemporaryFile('w+b', suffix='.ogg') as tmp_ogg_file:
+            AudioSegment.from_file(self.mp3_file_path).export(tmp_ogg_file,
+                                                              format="ogg")
+            tmp_file_type, _ = mimetypes.guess_type(tmp_ogg_file.name)
+            self.assertEqual(tmp_file_type, 'audio/ogg')
+
+    def test_export_mp4_as_ogg(self):
+        with NamedTemporaryFile('w+b', suffix='.ogg') as tmp_ogg_file:
+            AudioSegment.from_file(self.mp4_file_path).export(tmp_ogg_file,
+                                                              format="ogg")
+            tmp_file_type, _ = mimetypes.guess_type(tmp_ogg_file.name)
+            self.assertEqual(tmp_file_type, 'audio/ogg')
+
     def test_export_mp4_as_mp3(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
             AudioSegment.from_file(self.mp4_file_path).export(tmp_mp3_file,
@@ -334,6 +354,18 @@ class AudioSegmentTests(unittest.TestCase):
                 format="mp3", tags=tags, id3v2_version='BAD VERSION')
             self.assertRaises(InvalidID3TagVersion, func)
 
+    def test_export_mp3_with_tags(self):
+        tags = tags = {'artist': 'Mozart', 'title': 'The Magic Flute'}
+
+        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
+            AudioSegment.from_file(self.mp4_file_path).export(tmp_mp3_file, format="mp3", tags=tags)
+
+            info = mediainfo(filepath=tmp_mp3_file.name)
+            info_tags = info["TAG"]
+
+            self.assertEqual(info_tags["artist"], "Mozart")
+            self.assertEqual(info_tags["title"], "The Magic Flute")
+
     def test_fade_raises_exception_when_duration_start_end_are_none(self):
         seg = self.seg1
         func = partial(seg.fade, start=1, end=1, duration=1)
@@ -358,7 +390,6 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(len(self.seg2), len(self.seg2 + AudioSegment.empty()))
         self.assertEqual(len(self.seg3), len(self.seg3 + AudioSegment.empty()))
 
-
     def test_speedup(self):
         speedup_seg = self.seg1.speedup(2.0)
 
@@ -366,4 +397,9 @@ class AudioSegmentTests(unittest.TestCase):
             len(self.seg1) / 2, len(speedup_seg), percentage=0.01)
 
 if __name__ == "__main__":
-    unittest.main()
+    import sys
+
+    if sys.version_info >= (3, 1):
+        unittest.main(warnings="ignore")
+    else:
+        unittest.main()
