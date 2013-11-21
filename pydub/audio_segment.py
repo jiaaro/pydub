@@ -318,6 +318,10 @@ class AudioSegment(object):
                        '-y',  # always overwrite existing files
                        "-f", "wav", "-i", data.name,  # input options (filename last)
                        ]
+
+        if format == "ogg" and codec is None:
+            ffmpeg_call.extend(["-acodec", "libvorbis"])
+
         if codec is not None:
             # force audio encoder
             ffmpeg_call.extend(["-acodec", codec])

@@ -178,6 +178,13 @@ class AudioSegmentTests(unittest.TestCase):
 
         self.assertWithinTolerance(len(seg_exported_wav), len(seg), percentage=0.01)
 
+    def test_export_as_ogg(self):
+        seg = self.seg1
+        exported_ogg = seg.export(format='ogg')
+        seg_exported_ogg = AudioSegment.from_ogg(exported_ogg)
+
+        self.assertWithinTolerance(len(seg_exported_ogg), len(seg), percentage=0.01)
+
     def test_export_forced_codec(self):
         seg = self.seg1 + self.seg2
 
