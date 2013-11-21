@@ -57,6 +57,7 @@ class AudioSegmentTests(unittest.TestCase):
         self.seg1, self.seg2, self.seg3 = test1, test2, test3
         self.ogg_file_path = os.path.join(data_dir, 'bach.ogg')
         self.mp4_file_path = os.path.join(data_dir, 'creative_common.mp4')
+        self.mp3_file_path = os.path.join(data_dir, 'party.mp3')
         self.mp3_seg_party = AudioSegment.from_mp3(os.path.join(data_dir, 'party.mp3'))
 
     def assertWithinRange(self, val, lower_bound, upper_bound):
@@ -284,6 +285,20 @@ class AudioSegmentTests(unittest.TestCase):
             tmp_file_type, _ = mimetypes.guess_type(tmp_mp3_file.name)
             self.assertEqual(tmp_file_type, 'audio/mpeg')
 
+    def test_export_mp3_as_ogg(self):
+        with NamedTemporaryFile('w+b', suffix='.ogg') as tmp_ogg_file:
+            AudioSegment.from_file(self.mp3_file_path).export(tmp_ogg_file,
+                                                              format="ogg")
+            tmp_file_type, _ = mimetypes.guess_type(tmp_ogg_file.name)
+            self.assertEqual(tmp_file_type, 'audio/ogg')
+
+    def test_export_mp4_as_ogg(self):
+        with NamedTemporaryFile('w+b', suffix='.ogg') as tmp_ogg_file:
+            AudioSegment.from_file(self.mp4_file_path).export(tmp_ogg_file,
+                                                              format="ogg")
+            tmp_file_type, _ = mimetypes.guess_type(tmp_ogg_file.name)
+            self.assertEqual(tmp_file_type, 'audio/ogg')
+
     def test_export_mp4_as_mp3(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
             AudioSegment.from_file(self.mp4_file_path).export(tmp_mp3_file,
@@ -345,12 +360,11 @@ class AudioSegmentTests(unittest.TestCase):
         for chunk in chunks[1:]:
             seg2 += chunk
         self.assertEqual(len(seg), len(seg2))
-        
+
     def test_empty(self):
         self.assertEqual(len(self.seg1), len(self.seg1 + AudioSegment.empty()))
         self.assertEqual(len(self.seg2), len(self.seg2 + AudioSegment.empty()))
         self.assertEqual(len(self.seg3), len(self.seg3 + AudioSegment.empty()))
-        
 
     def test_speedup(self):
         speedup_seg = self.seg1.speedup(2.0)
@@ -359,4 +373,4 @@ class AudioSegmentTests(unittest.TestCase):
             len(self.seg1) / 2, len(speedup_seg), percentage=0.01)
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(warnings='ignore')
