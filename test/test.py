@@ -48,18 +48,17 @@ class FileAccessTests(unittest.TestCase):
         self.assertTrue(len(seg1) > 0)
 
 
-test1 = test2 = test3 = None
+test1 = AudioSegment.from_mp3(os.path.join(data_dir, 'test1.mp3'))
+test2 = AudioSegment.from_mp3(os.path.join(data_dir, 'test2.mp3'))
+test3 = AudioSegment.from_mp3(os.path.join(data_dir, 'test3.mp3'))
 
 
 class AudioSegmentTests(unittest.TestCase):
 
     def setUp(self):
-        global test1, test2, test3
-        if not test1:
-            test1 = AudioSegment.from_mp3(os.path.join(data_dir, 'test1.mp3'))
-            test2 = AudioSegment.from_mp3(os.path.join(data_dir, 'test2.mp3'))
-            test3 = AudioSegment.from_mp3(os.path.join(data_dir, 'test3.mp3'))
-        self.seg1, self.seg2, self.seg3 = test1, test2, test3
+        self.seg1 = test1
+        self.seg2 = test2
+        self.seg3 = test3
         self.ogg_file_path = os.path.join(data_dir, 'bach.ogg')
         self.mp4_file_path = os.path.join(data_dir, 'creative_common.mp4')
         self.mp3_file_path = os.path.join(data_dir, 'party.mp3')
@@ -306,10 +305,12 @@ class AudioSegmentTests(unittest.TestCase):
 
     def test_export_mp4_as_ogg(self):
         with NamedTemporaryFile('w+b', suffix='.ogg') as tmp_ogg_file:
-            AudioSegment.from_file(self.mp4_file_path).export(tmp_ogg_file,
-                                                              format="ogg")
+            AudioSegment.from_file(self.mp4_file_path).export(tmp_ogg_file, format="ogg")
             tmp_file_type, _ = mimetypes.guess_type(tmp_ogg_file.name)
+            info = mediainfo(filepath=tmp_ogg_file.name)
+
             self.assertEqual(tmp_file_type, 'audio/ogg')
+            self.assertEqual(info["codec_name"], "vorbis")
 
     def test_export_mp4_as_mp3(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
