@@ -118,6 +118,10 @@ awesome.export("mashup.mp3", format="mp3", parameters=["-q:a", "0"])
 awesome.export("mashup.mp3", format="mp3", parameters=["-ac", "2", "-vol", "150"])
 ```    
 
+## Bugs & Questions
+
+You can file bugs in our [github issues tracker](https://github.com/jiaaro/pydub/issues), and ask any technical questions on [Stack Overflow using the pydub tag](http://stackoverflow.com/questions/ask?tags=pydub). We keep an eye on both.
+
 ## Installation
 
 Copy the pydub directory into your python path. Zip [here](https://github.com/jiaaro/pydub/zipball/master)
