@@ -10,15 +10,15 @@ from pydub import AudioSegment
 
 song = AudioSegment.from_wav("never_gonna_give_you_up.wav")
 ```
-    
+
 ...or a mp3
 
 ```python
 song = AudioSegment.from_mp3("never_gonna_give_you_up.mp3")
 ```
-    
+
 ... or an ogg, or flv, or [anything else ffmpeg supports](http://www.ffmpeg.org/general.html#File-Formats)
-    
+
 ```python
 ogg_version = AudioSegment.from_ogg("never_gonna_give_you_up.ogg")
 flv_version = AudioSegment.from_flv("never_gonna_give_you_up.flv")
@@ -27,9 +27,9 @@ mp4_version = AudioSegment.from_file("never_gonna_give_you_up.mp4", "mp4")
 wma_version = AudioSegment.from_file("never_gonna_give_you_up.wma", "wma")
 aac_version = AudioSegment.from_file("never_gonna_give_you_up.aiff", "aac")
 ```
-    
+
 Slice audio:
-    
+
 ```python
 # pydub does things in milliseconds
 ten_seconds = 10 * 1000
@@ -38,9 +38,9 @@ first_10_seconds = song[:10000]
 
 last_5_seconds = song[5000:]
 ```
-    
+
 Make the beginning louder and the end quieter
-    
+
 ```python
 # boost volume by 6dB
 beginning = first_10_seconds + 6
@@ -48,28 +48,28 @@ beginning = first_10_seconds + 6
 # reduce volume by 3dB
 end = last_5_seconds - 3
 ```
-    
+
 Concatenate audio (add one file to the end of another)
 
-```python    
+```python
 without_the_middle = beginning + end
 ```
-    
+
 How long is it?
 
 ```python
 without_the_middle.duration_seconds == 15.0
 ```
-    
+
 AudioSegments are immutable
 
 ```python
 # song is not modified
 backwards = song.reverse()
 ```
-    
+
 Crossfade (again, beginning and end are not modified)
-    
+
 ```python
 # 1.5 second crossfade
 with_style = beginning.append(end, crossfade=1500)
@@ -81,32 +81,32 @@ Repeat
 # repeat the clip twice
 do_it_over = with_style * 2
 ```
-    
+
 Fade (note that you can chain operations because everything returns
 an AudioSegment)
-    
+
 ```python
 # 2 sec fade in, 3 sec fade out
 awesome = do_it_over.fade_in(2000).fade_out(3000)
 ```
-    
+
 Save the results (again whatever ffmpeg supports)
 
 ```python
 awesome.export("mashup.mp3", format="mp3")
-```   
+```
 
 Save the results with tags (metadata)
 
 ```python
 awesome.export("mashup.mp3", format="mp3", tags={'artist': 'Various artists', 'album': 'Best of 2011', 'comments': 'This album is awesome!'})
-```    
+```
 
 You can pass an optional bitrate argument to export using any syntax ffmpeg supports.
 
 ```python
 awesome.export("mashup.mp3", format="mp3", bitrate="192k")
-```    
+```
 
 Any further arguments supported by ffmpeg can be passed as a list in a 'parameters' argument, with switch first, argument second. Note that no validation takes place on these parameters, and you may be limited by what your particular build of ffmpeg supports.
 
@@ -116,7 +116,7 @@ awesome.export("mashup.mp3", format="mp3", parameters=["-q:a", "0"])
 
 # Mix down to two channels and set hard output volume
 awesome.export("mashup.mp3", format="mp3", parameters=["-ac", "2", "-vol", "150"])
-```    
+```
 
 ## Bugs & Questions
 
@@ -139,7 +139,7 @@ Copy the pydub directory into your python path. Zip [here](https://github.com/ji
 Requires ffmpeg or avconv for encoding and decoding all non-wav files (which work natively)
 
  - ffmpeg (http://www.ffmpeg.org/)
- 
+
  -OR-
 
  - avconv (http://libav.org/)
@@ -147,6 +147,24 @@ Requires ffmpeg or avconv for encoding and decoding all non-wav files (which wor
 ## Important Notes
 
 `AudioSegment` objects are [immutable](http://www.devshed.com/c/a/Python/String-and-List-Python-Object-Types/1/)
+
+
+### Ogg exporting and default codecs
+
+The Ogg specification ([http://tools.ietf.org/html/rfc5334](rfc5334)) does not specify
+the codec to use, this choice is left up to the user. Vorbis and Theora are just
+some of a number of potential codecs (see page 3 of the rfc) that can be used for the
+encapsulated data.
+
+When no codec is specified exporting to `ogg` will _default_ to using `vorbis`
+as a convinence. That is:
+
+```python
+from pydub import AudioSegment
+song = AudioSegment.from_mp3("test/data/test1.mp3")
+song.export("out.ogg", format="ogg")  # Is the same as:
+song.export("out.ogg", format="ogg", codec="libvorbis")
+```
 
 ## Example Use
 
@@ -166,7 +184,7 @@ for extension in extension_list:
         mp3_filename = os.path.splitext(os.path.basename(video))[0] + '.mp3'
         AudioSegment.from_file(video).export(mp3_filename, format='mp3')
 ```
-    
+
 ### How about another example?
 
 ```python
@@ -177,7 +195,7 @@ playlist_songs = [AudioSegment.from_mp3(mp3_file) for mp3_file in glob("*.mp3")]
 
 first_song = playlist_songs.pop(0)
 
-# let's just include the first 30 seconds of the first song (slicing 
+# let's just include the first 30 seconds of the first song (slicing
 # is done by milliseconds)
 beginning_of_song = first_song[:30*1000]
 
@@ -204,7 +222,7 @@ playlist.export(out_f, format='mp3')
 Let's say you have a weekly podcast and you want to do the processing automatically.
 
 For this example we're going to:
- 
+
   - Strip out the silence
   - Add on the bumpers (intro/outro theme music)
 
@@ -235,10 +253,6 @@ podcast = intro + podcast + outro
 podcast.export("podcast_processed.mp3", format="mp3")
 ```
 
-
-
-
-    
 Not bad!
 
 ## License ([MIT License](http://opensource.org/licenses/mit-license.php))
