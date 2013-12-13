@@ -98,3 +98,64 @@ def strip_silence(seg, silence_len=1000, silence_thresh=-20):
             #print(cstart, "-", cend)
             seg = seg[:cstart+keep_silence].append(seg[cend-keep_silence:], crossfade=keep_silence*2)
     return seg
+
+@register_pydub_effect
+def compress_dynamic_range(seg, threshold=-20.0, ratio=4.0, attack=5.0, release=50.0):
+    """
+    Keyword Arguments:
+        
+        threshold - default: -20.0
+            Threshold in dBFS. default of -20.0 means -20dB relative to the
+            maximum possible volume. 0dBFS is the maximum possible value so
+            all values for this argument sould be negative.
+
+        ratio - default: 4.0
+            Compression ratio. Audio louder than the threshold will be 
+            reduced to 1/ratio the volume. A ratio of 4.0 is equivalent to
+            a setting of 4:1 in a pro-audio compressor like the Waves C1.
+        
+        attack - default: 5.0
+            Attack in milliseconds. How long it should take for the compressor
+            to kick in once the audio has exceeded the threshold.
+
+        release - default: 50.0
+            Release in milliseconds. How long it should take for the compressor
+            to stop compressing after the audio has falled below the threshold.
+
+    
+    For an overview of Dynamic Range Compression, and more detailed explanation
+    of the related terminology, see: 
+
+        http://en.wikipedia.org/wiki/Dynamic_range_compression
+    """
+    import audioop
+
+    thresh_rms = seg.max_possible_amplitude * db_to_float(threshold)
+
+    # with a ratio of 4.0 this means the volume will exceed the threshold by
+    # 1/4 the amount (of dB) that it would otherwise
+    max_attenuation = (1 - (1.0 / ratio)) * threshold
+    attenuation_inc = max_attenuation / seg.frame_count(ms=attack)
+    attenuation_dec = max_attenuation / seg.frame_count(ms=release)
+    
+    look_ms = seg.get_frame_count(ms=attack)
+    def rms_at(frame_i):
+        return seg.get_sample_slice(frame_i - look_ms, frame_i).rms
+
+    output = []
+
+    # amount to reduce the volume of the audio by (in dB)
+    attenuation = 0.0
+    for i in xrange(seg.frame_count()):
+        if rms_at(i) > thresh_rms:
+            attenuation += attenuation_inc
+        else:
+            attenuation -= attenuation_dec
+        attenuation = min(max(attenuation, max_attenuation), 0)
+
+        frame = audioop.mul(seg.get_frame(i), 
+                            seg.sample_width, 
+                            db_to_float(attenuation))
+        output.append(frame)
+
+    return seg._spawn(data=output.join(''))

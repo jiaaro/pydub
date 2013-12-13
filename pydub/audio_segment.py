@@ -117,6 +117,25 @@ class AudioSegment(object):
 
         return self._spawn(data)
 
+    def get_sample_slice(self, start_sample=None, end_sample=None):
+        """
+        Get a section of the audio segment by sample index. NOTE: Negative
+        indicies do you address samples backword from the end of the audio
+        segment like a python list. This is intentional.
+        """
+        max_val = self.frame_count()
+        def bounded(val, default):
+            if val is None: return default
+            if val < 0: return 0
+            if val > max_val: return max_val
+            return val
+            
+        start_i = bounded(start_sample, 0) * self.frame_width
+        end_i = bounded(end_sample, max_val) * self.frame_width
+
+        data = self._data[start_i:end_i]
+        return self.spawn(data)
+
     def __add__(self, arg):
         if isinstance(arg, AudioSegment):
             return self.append(arg, crossfade=0)
