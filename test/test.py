@@ -407,10 +407,10 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertWithinTolerance(self.seg1.dBFS - compressed.dBFS, 10.0, tolerance=10.0)
         
         # Highest peak should be lower
-        self.assertLess(compressed.max, self.seg1.max)
+        self.assertTrue(compressed.max < self.seg1.max)
         
         # average volume should be reduced
-        self.assertLess(compressed.rms, self.seg1.rms)
+        self.assertTrue(compressed.rms < self.seg1.rms)
 
 if __name__ == "__main__":
     import sys
