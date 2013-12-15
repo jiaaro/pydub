@@ -1,3 +1,4 @@
+import sys
 from .utils import (
     db_to_float,
     ratio_to_db,
@@ -6,6 +7,8 @@ from .utils import (
 )
 from .exceptions import TooManyMissingFrames
 
+if sys.version_info >= (3, 0):
+    xrange = range
 
 @register_pydub_effect
 def normalize(seg, headroom=0.1):
