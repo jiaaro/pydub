@@ -230,11 +230,11 @@ class AudioSegment(object):
         if format == 'wav':
             return cls.from_wav(file)
 
-        input_file = NamedTemporaryFile(mode='wb', delete=False)
+        input_file = NamedTemporaryFile(mode='wb')
         input_file.write(file.read())
         input_file.flush()
 
-        output = NamedTemporaryFile(mode="rb", delete=False)
+        output = NamedTemporaryFile(mode="rb")
 
         convertion_command = [cls.converter,
                               '-y',  # always overwrite existing files
@@ -258,8 +258,6 @@ class AudioSegment(object):
 
         input_file.close()
         output.close()
-        os.unlink(input_file.name)
-        os.unlink(output.name)
 
         return obj
 
