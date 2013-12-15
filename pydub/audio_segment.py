@@ -134,7 +134,7 @@ class AudioSegment(object):
         end_i = bounded(end_sample, max_val) * self.frame_width
 
         data = self._data[start_i:end_i]
-        return self.spawn(data)
+        return self._spawn(data)
 
     def __add__(self, arg):
         if isinstance(arg, AudioSegment):
@@ -442,6 +442,13 @@ class AudioSegment(object):
     @property
     def rms(self):
         return audioop.rms(self._data, self.sample_width)
+        
+    @property
+    def dBFS(self):
+        rms = self.rms
+        if not rms: 
+            return -float("infinity")
+        return ratio_to_db(self.rms / self.max_possible_amplitude)
 
     @property
     def max(self):

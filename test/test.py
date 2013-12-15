@@ -395,6 +395,22 @@ class AudioSegmentTests(unittest.TestCase):
 
         self.assertWithinTolerance(
             len(self.seg1) / 2, len(speedup_seg), percentage=0.01)
+    
+    def test_dBFS(self):
+        self.assertWithinTolerance(self.seg1.dBFS, -8.88, tolerance=0.01)
+        self.assertWithinTolerance(self.seg2.dBFS, -10.39, tolerance=0.01)
+        self.assertWithinTolerance(self.seg3.dBFS, -6.47, tolerance=0.01)        
+    
+    def test_compress(self):
+        compressed = self.seg1.compress_dynamic_range()
+        compressed.normalize().export("./compressed.mp3", "mp3")
+        self.assertWithinTolerance(self.seg1.dBFS - compressed.dBFS, 10.0, tolerance=10.0)
+        
+        # Highest peak should be lower
+        self.assertLess(compressed.max, self.seg1.max)
+        
+        # average volume should be reduced
+        self.assertLess(compressed.rms, self.seg1.rms)
 
 if __name__ == "__main__":
     import sys

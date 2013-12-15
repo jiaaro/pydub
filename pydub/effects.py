@@ -131,31 +131,45 @@ def compress_dynamic_range(seg, threshold=-20.0, ratio=4.0, attack=5.0, release=
     import audioop
 
     thresh_rms = seg.max_possible_amplitude * db_to_float(threshold)
-
-    # with a ratio of 4.0 this means the volume will exceed the threshold by
-    # 1/4 the amount (of dB) that it would otherwise
-    max_attenuation = (1 - (1.0 / ratio)) * threshold
-    attenuation_inc = max_attenuation / seg.frame_count(ms=attack)
-    attenuation_dec = max_attenuation / seg.frame_count(ms=release)
     
-    look_ms = seg.get_frame_count(ms=attack)
+    look_frames = int(seg.frame_count(ms=attack))
     def rms_at(frame_i):
-        return seg.get_sample_slice(frame_i - look_ms, frame_i).rms
+        return seg.get_sample_slice(frame_i - look_frames, frame_i).rms
+    def db_over_threshold(rms):
+        if rms == 0: return 0.0
+        db = ratio_to_db(rms / thresh_rms)
+        return max(db, 0)
 
     output = []
 
     # amount to reduce the volume of the audio by (in dB)
     attenuation = 0.0
-    for i in xrange(seg.frame_count()):
-        if rms_at(i) > thresh_rms:
+    
+    attack_frames = seg.frame_count(ms=attack)
+    release_frames = seg.frame_count(ms=release)
+    for i in xrange(int(seg.frame_count())):
+        rms_now = rms_at(i)
+        
+        # with a ratio of 4.0 this means the volume will exceed the threshold by
+        # 1/4 the amount (of dB) that it would otherwise
+        max_attenuation = (1 - (1.0 / ratio)) * db_over_threshold(rms_now)
+        
+        attenuation_inc = max_attenuation / attack_frames
+        attenuation_dec = max_attenuation / release_frames
+        
+        if rms_now > thresh_rms and attenuation <= max_attenuation:
             attenuation += attenuation_inc
+            attenuation = min(attenuation, max_attenuation)
         else:
             attenuation -= attenuation_dec
-        attenuation = min(max(attenuation, max_attenuation), 0)
-
-        frame = audioop.mul(seg.get_frame(i), 
-                            seg.sample_width, 
-                            db_to_float(attenuation))
+            attenuation = max(attenuation, 0)
+        
+        frame = seg.get_frame(i)
+        if attenuation != 0.0:
+            frame = audioop.mul(frame,
+                                seg.sample_width,
+                                db_to_float(-attenuation))
+        
         output.append(frame)
-
-    return seg._spawn(data=output.join(''))
+    
+    return seg._spawn(data=b''.join(output))
