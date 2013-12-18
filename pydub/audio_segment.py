@@ -123,7 +123,7 @@ class AudioSegment(object):
     def get_sample_slice(self, start_sample=None, end_sample=None):
         """
         Get a section of the audio segment by sample index. NOTE: Negative
-        indicies do you address samples backword from the end of the audio
+        indicies do *not* address samples backword from the end of the audio
         segment like a python list. This is intentional.
         """
         max_val = self.frame_count()
