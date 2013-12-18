@@ -415,6 +415,16 @@ class AudioSegmentTests(unittest.TestCase):
             # average volume should be reduced
             self.assertTrue(compressed.rms < self.seg1.rms)
 
+    def test_exporting_to_ogg_uses_default_codec_when_codec_param_is_none(self):
+        with NamedTemporaryFile('w+b', suffix='.ogg') as tmp_ogg_file:
+            AudioSegment.from_file(self.mp4_file_path).export(tmp_ogg_file, format="ogg")
+
+            info = mediainfo(filepath=tmp_ogg_file.name)
+
+        self.assertEqual(info["codec_name"], "vorbis")
+        self.assertEqual(info["format_name"], "ogg")
+
+
 if __name__ == "__main__":
     import sys
 

@@ -46,6 +46,9 @@ class AudioSegment(object):
     first_second = a[:1000]
     """
     converter = get_encoder_name()  # either ffmpeg or avconv
+    DEFAULT_CODECS = {
+        "ogg": "libvorbis"
+    }
 
     def __init__(self, data=None, *args, **kwargs):
         if kwargs.get('metadata', False):
@@ -339,8 +342,8 @@ class AudioSegment(object):
                                       "-f", "wav", "-i", data.name,  # input options (filename last)
                                       ]
 
-                if format == "ogg" and codec is None:
-                    convertion_command.extend(["-acodec", "libvorbis"])
+                if codec is None:
+                    codec = AudioSegment.DEFAULT_CODECS.get(format, None)
 
                 if codec is not None:
                     # force audio encoder
