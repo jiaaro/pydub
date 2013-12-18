@@ -403,7 +403,6 @@ class AudioSegmentTests(unittest.TestCase):
     
     def test_compress(self):
         compressed = self.seg1.compress_dynamic_range()
-        compressed.normalize().export("./compressed.mp3", "mp3")
         self.assertWithinTolerance(self.seg1.dBFS - compressed.dBFS, 10.0, tolerance=10.0)
         
         # Highest peak should be lower
