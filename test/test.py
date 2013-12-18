@@ -48,18 +48,17 @@ class FileAccessTests(unittest.TestCase):
         self.assertTrue(len(seg1) > 0)
 
 
-test1 = test2 = test3 = None
+test1 = AudioSegment.from_mp3(os.path.join(data_dir, 'test1.mp3'))
+test2 = AudioSegment.from_mp3(os.path.join(data_dir, 'test2.mp3'))
+test3 = AudioSegment.from_mp3(os.path.join(data_dir, 'test3.mp3'))
 
 
 class AudioSegmentTests(unittest.TestCase):
 
     def setUp(self):
-        global test1, test2, test3
-        if not test1:
-            test1 = AudioSegment.from_mp3(os.path.join(data_dir, 'test1.mp3'))
-            test2 = AudioSegment.from_mp3(os.path.join(data_dir, 'test2.mp3'))
-            test3 = AudioSegment.from_mp3(os.path.join(data_dir, 'test3.mp3'))
-        self.seg1, self.seg2, self.seg3 = test1, test2, test3
+        self.seg1 = test1
+        self.seg2 = test2
+        self.seg3 = test3
         self.ogg_file_path = os.path.join(data_dir, 'bach.ogg')
         self.mp4_file_path = os.path.join(data_dir, 'creative_common.mp4')
         self.mp3_file_path = os.path.join(data_dir, 'party.mp3')
@@ -306,10 +305,12 @@ class AudioSegmentTests(unittest.TestCase):
 
     def test_export_mp4_as_ogg(self):
         with NamedTemporaryFile('w+b', suffix='.ogg') as tmp_ogg_file:
-            AudioSegment.from_file(self.mp4_file_path).export(tmp_ogg_file,
-                                                              format="ogg")
+            AudioSegment.from_file(self.mp4_file_path).export(tmp_ogg_file, format="ogg")
             tmp_file_type, _ = mimetypes.guess_type(tmp_ogg_file.name)
+            info = mediainfo(filepath=tmp_ogg_file.name)
+
             self.assertEqual(tmp_file_type, 'audio/ogg')
+            self.assertEqual(info["codec_name"], "vorbis")
 
     def test_export_mp4_as_mp3(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
@@ -395,22 +396,34 @@ class AudioSegmentTests(unittest.TestCase):
 
         self.assertWithinTolerance(
             len(self.seg1) / 2, len(speedup_seg), percentage=0.01)
-    
+
     def test_dBFS(self):
         self.assertWithinTolerance(self.seg1.dBFS, -8.88, tolerance=0.01)
         self.assertWithinTolerance(self.seg2.dBFS, -10.39, tolerance=0.01)
-        self.assertWithinTolerance(self.seg3.dBFS, -6.47, tolerance=0.01)        
-    
+        self.assertWithinTolerance(self.seg3.dBFS, -6.47, tolerance=0.01)
+
     def test_compress(self):
         compressed = self.seg1.compress_dynamic_range()
-        compressed.normalize().export("./compressed.mp3", "mp3")
-        self.assertWithinTolerance(self.seg1.dBFS - compressed.dBFS, 10.0, tolerance=10.0)
-        
-        # Highest peak should be lower
-        self.assertTrue(compressed.max < self.seg1.max)
-        
-        # average volume should be reduced
-        self.assertTrue(compressed.rms < self.seg1.rms)
+
+        with NamedTemporaryFile('w+b', suffix='.mp3') as compressed_out_mp3:
+            compressed.normalize().export(compressed_out_mp3.name, "mp3")
+            self.assertWithinTolerance(self.seg1.dBFS - compressed.dBFS, 10.0, tolerance=10.0)
+
+            # Highest peak should be lower
+            self.assertTrue(compressed.max < self.seg1.max)
+
+            # average volume should be reduced
+            self.assertTrue(compressed.rms < self.seg1.rms)
+
+    def test_exporting_to_ogg_uses_default_codec_when_codec_param_is_none(self):
+        with NamedTemporaryFile('w+b', suffix='.ogg') as tmp_ogg_file:
+            AudioSegment.from_file(self.mp4_file_path).export(tmp_ogg_file, format="ogg")
+
+            info = mediainfo(filepath=tmp_ogg_file.name)
+
+        self.assertEqual(info["codec_name"], "vorbis")
+        self.assertEqual(info["format_name"], "ogg")
+
 
 if __name__ == "__main__":
     import sys
