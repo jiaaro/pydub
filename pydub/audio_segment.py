@@ -46,6 +46,16 @@ class AudioSegment(object):
     first_second = a[:1000]
     """
     converter = get_encoder_name()  # either ffmpeg or avconv
+    
+    # TODO: remove in 1.0 release
+    # maintain backwards compatibility for ffmpeg attr (now called converter)
+    ffmpeg = property(lambda s: s.converter,
+                      lambda s, v: setattr(s, 'converter', v))
+    
+    
+    DEFAULT_CODECS = {
+        "ogg": "libvorbis"
+    }
 
     def __init__(self, data=None, *args, **kwargs):
         if kwargs.get('metadata', False):
@@ -120,7 +130,7 @@ class AudioSegment(object):
     def get_sample_slice(self, start_sample=None, end_sample=None):
         """
         Get a section of the audio segment by sample index. NOTE: Negative
-        indicies do you address samples backword from the end of the audio
+        indicies do *not* address samples backword from the end of the audio
         segment like a python list. This is intentional.
         """
         max_val = self.frame_count()
@@ -339,8 +349,8 @@ class AudioSegment(object):
                               "-f", "wav", "-i", data.name,  # input options (filename last)
                               ]
 
-        if format == "ogg" and codec is None:
-            convertion_command.extend(["-acodec", "libvorbis"])
+        if codec is None:
+            codec = self.DEFAULT_CODECS.get(format, None)
 
         if codec is not None:
             # force audio encoder
