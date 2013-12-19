@@ -46,6 +46,13 @@ class AudioSegment(object):
     first_second = a[:1000]
     """
     converter = get_encoder_name()  # either ffmpeg or avconv
+    
+    # TODO: remove in 1.0 release
+    # maintain backwards compatibility for ffmpeg attr (now called converter)
+    ffmpeg = property(lambda s: s.converter,
+                      lambda s, v: setattr(s, 'converter', v))
+    
+    
     DEFAULT_CODECS = {
         "ogg": "libvorbis"
     }
