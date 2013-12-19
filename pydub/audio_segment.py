@@ -231,6 +231,21 @@ class AudioSegment(object):
         return cls(b'', metadata={"channels": 1, "sample_width": 1, "frame_rate": 1, "frame_width": 1})
 
     @classmethod
+    def silent(cls, duration=1000):
+        """
+        Generate a silent audio segment. 
+        duration specified in milliseconds (default: 1000ms).
+        """
+        # lowest frame rate I've seen in actual use 
+        frame_rate = 11025
+        frames = int(frame_rate * (duration / 1000.0))
+        data = chr(127) * frames
+        return cls(data, metadata={"channels": 1,
+                                   "sample_width": 1,
+                                   "frame_rate": frame_rate,
+                                   "frame_width": 1})
+
+    @classmethod
     def from_file(cls, file, format=None):
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
