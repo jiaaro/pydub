@@ -110,6 +110,18 @@ def get_encoder_name():
         # should raise exception
         return "ffmpeg"
 
+def get_player_name():
+    """
+    Return enconder default application for system, either avconv or ffmpeg
+    """
+    if which("avplay"):
+        return "avplay"
+    elif which("ffplay"):
+        return "ffplay"
+    else:
+        # should raise exception
+        return "ffplay"
+
 
 def get_prober_name():
     """
