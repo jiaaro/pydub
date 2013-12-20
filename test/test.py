@@ -371,6 +371,23 @@ class AudioSegmentTests(unittest.TestCase):
         func = partial(seg.fade, start=1, end=1, duration=1)
         self.assertRaises(TypeError, func)
 
+    def test_silent(self):
+        seg = AudioSegment.silent(len(self.seg1))
+        self.assertEqual(len(self.seg1), len(seg))
+        self.assertEqual(seg.rms, 0)
+        self.assertEqual(seg.frame_width, 2)
+
+        seg_8bit = seg.set_sample_width(1)
+        self.assertEqual(seg_8bit.sample_width, 1)
+        self.assertEqual(seg_8bit.frame_width, 1)
+        self.assertEqual(seg_8bit.rms, 0)
+
+        seg *= self.seg1
+        self.assertEqual(seg.rms, self.seg1.rms)
+        self.assertEqual(len(seg), len(self.seg1))
+        self.assertEqual(seg.frame_width, self.seg1.frame_width)
+        self.assertEqual(seg.frame_rate, self.seg1.frame_rate)
+
     def test_fade_raises_exception_when_duration_is_negative(self):
         seg = self.seg1
         func = partial(

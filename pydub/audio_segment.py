@@ -214,6 +214,10 @@ class AudioSegment(object):
         seg1 = seg1.set_frame_rate(frame_rate)
         seg2 = seg2.set_frame_rate(frame_rate)
 
+        sample_width = max(seg1.sample_width, seg2.sample_width)
+        seg1 = seg1.set_sample_width(sample_width)
+        seg2 = seg2.set_sample_width(sample_width)
+
         assert(len(seg1) == s1_len)
         assert(len(seg2) == s2_len)
 
@@ -239,11 +243,11 @@ class AudioSegment(object):
         # lowest frame rate I've seen in actual use 
         frame_rate = 11025
         frames = int(frame_rate * (duration / 1000.0))
-        data = chr(127) * frames
+        data = b"\0\0" * frames
         return cls(data, metadata={"channels": 1,
-                                   "sample_width": 1,
+                                   "sample_width": 2,
                                    "frame_rate": frame_rate,
-                                   "frame_width": 1})
+                                   "frame_width": 2})
 
     @classmethod
     def from_file(cls, file, format=None):
@@ -433,6 +437,26 @@ class AudioSegment(object):
         else:
             return float(len(self._data) // self.frame_width)
 
+    def set_sample_width(self, sample_width):
+        if sample_width == self.sample_width:
+            return self
+
+        data = self._data
+
+        if self.sample_width == 1:
+            data = audioop.bias(data, 1, -128)
+
+        if data:
+            data = audioop.lin2lin(data, self.sample_width, sample_width)
+        
+        if sample_width == 1:
+            data = audioop.bias(data, 1, 128)
+
+        frame_width = self.channels * sample_width
+        return self._spawn(data, overrides={'sample_width': sample_width, 
+                                            'frame_width': frame_width})
+
+
     def set_frame_rate(self, frame_rate):
         if frame_rate == self.frame_rate:
             return self
@@ -452,13 +476,12 @@ class AudioSegment(object):
             return self
 
         if channels == 2 and self.channels == 1:
-            fn = 'tostereo'
+            fn = audioop.tostereo
             frame_width = self.frame_width * 2
         elif channels == 1 and self.channels == 2:
-            fn = 'tomono'
+            fn = audioop.tomono
             frame_width = self.frame_width // 2
 
-        fn = getattr(audioop, fn)
         converted = fn(self._data, self.sample_width, 1, 1)
 
         return self._spawn(data=converted, overrides={'channels': channels,
@@ -466,7 +489,10 @@ class AudioSegment(object):
 
     @property
     def rms(self):
-        return audioop.rms(self._data, self.sample_width)
+        if self.sample_width == 1:
+            return self.set_sample_width(2).rms
+        else:
+            return audioop.rms(self._data, self.sample_width)
         
     @property
     def dBFS(self):
