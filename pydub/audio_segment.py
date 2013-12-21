@@ -17,6 +17,7 @@ from .utils import (
     db_to_float,
     ratio_to_db,
     get_encoder_name,
+    mediainfo,
 )
 from .exceptions import (
     TooManyMissingFrames,
@@ -56,7 +57,11 @@ class AudioSegment(object):
         "ogg": "libvorbis"
     }
 
-    def __init__(self, data=None, *args, **kwargs):
+    def __init__(self, data=None, tags=None, *args, **kwargs):
+        self.tags = tags if tags else {}
+        if not isinstance(self.tags, dict):
+            raise InvalidTag("tags parameter should be a dictionary.")
+
         if kwargs.get('metadata', False):
             # internal use only
             self._data = data
@@ -311,7 +316,9 @@ class AudioSegment(object):
     def from_wav(cls, file):
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
         file.seek(0)
-        return cls(data=file)
+
+        tags = mediainfo(file.name).get('TAG', {})
+        return cls(data=file, tags=tags)
 
     def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None, id3v2_version='4'):
         """
@@ -385,6 +392,7 @@ class AudioSegment(object):
             # extend arguments with arbitrary set
             convertion_command.extend(parameters)
 
+        tags = tags if tags else self.tags
         if tags is not None:
             if not isinstance(tags, dict):
                 raise InvalidTag("Tags must be a dictionary.")

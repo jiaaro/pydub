@@ -437,6 +437,17 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(info["codec_name"], "vorbis")
         self.assertEqual(info["format_name"], "ogg")
 
+    def test_instantiation_is_copying_tags_metadata_from_input_file(self):
+        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3:
+            self.seg3.export(tmp_mp3, format="mp3")
+
+            info = mediainfo(filepath=tmp_mp3.name).get('TAG')
+
+        self.assertTrue(isinstance(info, dict), "{0} is not a dict".format(type(info)))
+        self.assertIn("artist", info.keys())
+        self.assertIn("title", info.keys())
+        self.assertEqual(info["artist"], 'Chanticleer')
+        self.assertEqual(info["title"], 'Medium rooster crowing')
 
 if __name__ == "__main__":
     import sys
