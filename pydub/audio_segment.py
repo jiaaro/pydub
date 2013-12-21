@@ -10,7 +10,12 @@ import sys
 try:
     from StringIO import StringIO
 except:
-    from io import StringIO, BytesIO
+    from io import BytesIO
+
+if sys.version_info >= (3, 0):
+    basestring = str
+    xrange = range
+    StringIO = BytesIO
 
 from .utils import (
     _fd_or_path_or_tempfile,
@@ -25,11 +30,6 @@ from .exceptions import (
     InvalidID3TagVersion,
     InvalidTag,
 )
-
-if sys.version_info >= (3, 0):
-    basestring = str
-    xrange = range
-    StringIO = BytesIO
 
 AUDIO_FILE_EXT_ALIASES = {
     "m4a": "mp4"
@@ -122,8 +122,9 @@ class AudioSegment(object):
         missing_frames = (expected_length - len(data)) // self.frame_width
         if missing_frames:
             if missing_frames > self.frame_count(ms=2):
-                raise TooManyMissingFrames("You should never be filling in "
-                                           "   more than 2 ms with silence here, missing frames: %s" %
+                raise TooManyMissingFrames("You should never be filling in"
+                                           " more than 2 ms with silence here,"
+                                           " missing frames: %s" %
                                            missing_frames)
             silence = audioop.mul(data[:self.frame_width],
                                   self.sample_width, 0)
@@ -240,12 +241,15 @@ class AudioSegment(object):
 
     @classmethod
     def empty(cls):
-        return cls(b'', metadata={"channels": 1, "sample_width": 1, "frame_rate": 1, "frame_width": 1})
+        return cls(
+            b'',
+            metadata={"channels": 1, "sample_width": 1, "frame_rate": 1, "frame_width": 1}
+        )
 
     @classmethod
     def silent(cls, duration=1000):
         """
-        Generate a silent audio segment. 
+        Generate a silent audio segment.
         duration specified in milliseconds (default: 1000ms).
         """
         # lowest frame rate I've seen in actual use
@@ -406,9 +410,9 @@ class AudioSegment(object):
                     # set id3v2 tag version
                     if id3v2_version not in id3v2_allowed_versions:
                         raise InvalidID3TagVersion(
-                            "id3v2_version not allowed, allowed versions: %s" % id3v2_allowed_versions)
+                            "id3v2_version not allowed, allowed: %s" % id3v2_allowed_versions)
                     convertion_command.extend([
-                        "-id3v2_version",  id3v2_version
+                        "-id3v2_version", id3v2_version
                     ])
 
         convertion_command.extend([
@@ -609,8 +613,6 @@ class AudioSegment(object):
         # no fade == the same audio
         if to_gain == 0 and from_gain == 0:
             return self
-
-        frames = self.frame_count()
 
         start = min(len(self), start) if start is not None else None
         end = min(len(self), end) if end is not None else None

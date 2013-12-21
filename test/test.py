@@ -2,7 +2,7 @@ from functools import partial
 import mimetypes
 import os
 import unittest
-from tempfile import NamedTemporaryFile, SpooledTemporaryFile
+from tempfile import NamedTemporaryFile
 
 from pydub import AudioSegment
 from pydub.utils import (
@@ -15,7 +15,6 @@ from pydub.exceptions import (
     InvalidTag,
     InvalidID3TagVersion,
     InvalidDuration,
-    TooManyMissingFrames,
 )
 
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
@@ -279,12 +278,8 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(wav.duration_seconds, self.seg1.duration_seconds)
 
     def test_autodetect_format(self):
-        try:
+        with self.assertRaises(EOFError):
             AudioSegment.from_file(os.path.join(data_dir, 'wrong_extension.aac'), 'aac')
-        except EOFError:
-            pass
-        except Exception as e:
-            self.fail('Expected Exception is not thrown')
 
         # Trying to auto detect input file format
         aac_file = AudioSegment.from_file(os.path.join(data_dir, 'wrong_extension.aac'))
