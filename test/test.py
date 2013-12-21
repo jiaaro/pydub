@@ -438,7 +438,7 @@ class AudioSegmentTests(unittest.TestCase):
 
     def test_instantiation_is_copying_tags_metadata_from_input_file(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3:
-            self.seg3.export(tmp_mp3, format="mp3")
+            self.seg3.export(tmp_mp3.name, format="mp3")
 
             info = mediainfo(filepath=tmp_mp3.name).get('TAG')
 
