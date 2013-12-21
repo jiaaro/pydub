@@ -46,6 +46,12 @@ class AudioSegment(object):
     first_second = a[:1000]
     """
     converter = get_encoder_name()  # either ffmpeg or avconv
+
+    # TODO: remove in 1.0 release
+    # maintain backwards compatibility for ffmpeg attr (now called converter)
+    ffmpeg = property(lambda s: s.converter,
+                      lambda s, v: setattr(s, 'converter', v))
+
     DEFAULT_CODECS = {
         "ogg": "libvorbis"
     }
@@ -123,7 +129,7 @@ class AudioSegment(object):
     def get_sample_slice(self, start_sample=None, end_sample=None):
         """
         Get a section of the audio segment by sample index. NOTE: Negative
-        indicies do you address samples backword from the end of the audio
+        indicies do *not* address samples backword from the end of the audio
         segment like a python list. This is intentional.
         """
         max_val = self.frame_count()
@@ -211,6 +217,10 @@ class AudioSegment(object):
         seg1 = seg1.set_frame_rate(frame_rate)
         seg2 = seg2.set_frame_rate(frame_rate)
 
+        sample_width = max(seg1.sample_width, seg2.sample_width)
+        seg1 = seg1.set_sample_width(sample_width)
+        seg2 = seg2.set_sample_width(sample_width)
+
         assert(len(seg1) == s1_len)
         assert(len(seg2) == s2_len)
 
@@ -228,6 +238,21 @@ class AudioSegment(object):
         return cls(b'', metadata={"channels": 1, "sample_width": 1, "frame_rate": 1, "frame_width": 1})
 
     @classmethod
+    def silent(cls, duration=1000):
+        """
+        Generate a silent audio segment. 
+        duration specified in milliseconds (default: 1000ms).
+        """
+        # lowest frame rate I've seen in actual use
+        frame_rate = 11025
+        frames = int(frame_rate * (duration / 1000.0))
+        data = b"\0\0" * frames
+        return cls(data, metadata={"channels": 1,
+                                   "sample_width": 2,
+                                   "frame_rate": frame_rate,
+                                   "frame_width": 2})
+
+    @classmethod
     def from_file(cls, file, format=None):
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
@@ -237,33 +262,36 @@ class AudioSegment(object):
         if format == 'wav':
             return cls.from_wav(file)
 
-        with NamedTemporaryFile('w+b') as input_file:
-            # input_file = NamedTemporaryFile(mode='wb', delete=False)
-            input_file.write(file.read())
-            input_file.flush()
+        input_file = NamedTemporaryFile(mode='wb', delete=False)
+        input_file.write(file.read())
+        input_file.flush()
 
-            # output = NamedTemporaryFile(mode="rb", delete=False)
-            with NamedTemporaryFile('w+b') as output:
+        output = NamedTemporaryFile(mode="rb", delete=False)
 
-                convertion_command = [cls.converter,
-                                      '-y',  # always overwrite existing files
-                                      ]
+        convertion_command = [cls.converter,
+                              '-y',  # always overwrite existing files
+                              ]
 
-                # If format is not defined
-                # ffmpeg/avconv will detect it automatically
-                if format:
-                    convertion_command += ["-f", format]
+        # If format is not defined
+        # ffmpeg/avconv will detect it automatically
+        if format:
+            convertion_command += ["-f", format]
 
-                convertion_command += [
-                    "-i", input_file.name,  # input_file options (filename last)
-                    "-vn",  # Drop any video streams if there are any
-                    "-f", "wav",  # output options (filename last)
-                    output.name
-                ]
+        convertion_command += [
+            "-i", input_file.name,  # input_file options (filename last)
+            "-vn",  # Drop any video streams if there are any
+            "-f", "wav",  # output options (filename last)
+            output.name
+        ]
 
-                subprocess.call(convertion_command, stderr=open(os.devnull))
+        subprocess.call(convertion_command, stderr=open(os.devnull))
 
-                obj = cls.from_wav(output)
+        obj = cls.from_wav(output)
+
+        input_file.close()
+        output.close()
+        os.unlink(input_file.name)
+        os.unlink(output.name)
 
         return obj
 
@@ -315,78 +343,86 @@ class AudioSegment(object):
         out_f = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
 
-        with NamedTemporaryFile('w+b') as data:
-            if format == "wav":
-                data = out_f
+        # for wav output we can just write the data directly to out_f
+        if format == "wav":
+            data = out_f
+        else:
+            data = NamedTemporaryFile(mode="wb", delete=False)
 
-            wave_data = wave.open(data, 'wb')
-            wave_data.setnchannels(self.channels)
-            wave_data.setsampwidth(self.sample_width)
-            wave_data.setframerate(self.frame_rate)
-            # For some reason packing the wave header struct with a float in python 2
-            # doesn't throw an exception
-            wave_data.setnframes(int(self.frame_count()))
-            wave_data.writeframesraw(self._data)
-            wave_data.close()
+        wave_data = wave.open(data, 'wb')
+        wave_data.setnchannels(self.channels)
+        wave_data.setsampwidth(self.sample_width)
+        wave_data.setframerate(self.frame_rate)
+        # For some reason packing the wave header struct with a float in python 2
+        # doesn't throw an exception
+        wave_data.setnframes(int(self.frame_count()))
+        wave_data.writeframesraw(self._data)
+        wave_data.close()
 
-            # for wav files, we're done (wav data is written directly to out_f)
-            if format == 'wav':
-                return out_f
+        # for wav files, we're done (wav data is written directly to out_f)
+        if format == 'wav':
+            return out_f
 
-            # output = NamedTemporaryFile(mode="w+b", delete=False)
-            with NamedTemporaryFile('w+b') as output:
+        output = NamedTemporaryFile(mode="w+b", delete=False)
 
-                # build converter command to export
-                convertion_command = [self.converter,
-                                      '-y',  # always overwrite existing files
-                                      "-f", "wav", "-i", data.name,  # input options (filename last)
-                                      ]
+        # build converter command to export
+        convertion_command = [self.converter,
+                              '-y',  # always overwrite existing files
+                              "-f", "wav", "-i", data.name,  # input options (filename last)
+                              ]
 
-                if codec is None:
-                    codec = AudioSegment.DEFAULT_CODECS.get(format, None)
+        if codec is None:
+            codec = self.DEFAULT_CODECS.get(format, None)
 
-                if codec is not None:
-                    # force audio encoder
-                    convertion_command.extend(["-acodec", codec])
+        if codec is not None:
+            # force audio encoder
+            convertion_command.extend(["-acodec", codec])
 
-                if bitrate is not None:
-                    convertion_command.extend(["-b:a", bitrate])
+        if bitrate is not None:
+            convertion_command.extend(["-b:a", bitrate])
 
-                if parameters is not None:
-                    # extend arguments with arbitrary set
-                    convertion_command.extend(parameters)
+        if parameters is not None:
+            # extend arguments with arbitrary set
+            convertion_command.extend(parameters)
 
-                if tags is not None:
-                    if not isinstance(tags, dict):
-                        raise InvalidTag("Tags must be a dictionary.")
-                    else:
-                        # Extend converter command with tags
-                        for key, value in tags.items():
-                            convertion_command.extend(['-metadata', '{0}={1}'.format(key, value)])
+        if tags is not None:
+            if not isinstance(tags, dict):
+                raise InvalidTag("Tags must be a dictionary.")
+            else:
+                # Extend converter command with tags
+                # print(tags)
+                for key, value in tags.items():
+                    convertion_command.extend(['-metadata', '{0}={1}'.format(key, value)])
 
-                        if format == 'mp3':
-                            # set id3v2 tag version for mp3 files
-                            if id3v2_version not in id3v2_allowed_versions:
-                                raise InvalidID3TagVersion(
-                                    "id3v2_version not allowed, allowed versions: %s" % id3v2_allowed_versions)
-                            convertion_command.extend([
-                                "-id3v2_version",  id3v2_version
-                            ])
+                if format == 'mp3':
+                    # set id3v2 tag version
+                    if id3v2_version not in id3v2_allowed_versions:
+                        raise InvalidID3TagVersion(
+                            "id3v2_version not allowed, allowed versions: %s" % id3v2_allowed_versions)
+                    convertion_command.extend([
+                        "-id3v2_version",  id3v2_version
+                    ])
 
-                convertion_command.extend([
-                    "-f", format, output.name,  # output options (filename last)
-                ])
+        convertion_command.extend([
+            "-f", format, output.name,  # output options (filename last)
+        ])
 
-                # read stdin / write stdout
-                subprocess.call(convertion_command,
-                                # make converter shut up
-                                stderr=open(os.devnull)
-                                )
+        # read stdin / write stdout
+        subprocess.call(convertion_command,
+                        # make converter shut up
+                        stderr=open(os.devnull)
+                        )
 
-                output.seek(0)
-                out_f.write(output.read())
-                out_f.seek(0)
+        output.seek(0)
+        out_f.write(output.read())
 
+        data.close()
+        output.close()
+
+        os.unlink(data.name)
+        os.unlink(output.name)
+
+        out_f.seek(0)
         return out_f
 
     def get_frame(self, index):
@@ -403,6 +439,25 @@ class AudioSegment(object):
             return ms * (self.frame_rate / 1000.0)
         else:
             return float(len(self._data) // self.frame_width)
+
+    def set_sample_width(self, sample_width):
+        if sample_width == self.sample_width:
+            return self
+
+        data = self._data
+
+        if self.sample_width == 1:
+            data = audioop.bias(data, 1, -128)
+
+        if data:
+            data = audioop.lin2lin(data, self.sample_width, sample_width)
+
+        if sample_width == 1:
+            data = audioop.bias(data, 1, 128)
+
+        frame_width = self.channels * sample_width
+        return self._spawn(data, overrides={'sample_width': sample_width,
+                                            'frame_width': frame_width})
 
     def set_frame_rate(self, frame_rate):
         if frame_rate == self.frame_rate:
@@ -423,13 +478,12 @@ class AudioSegment(object):
             return self
 
         if channels == 2 and self.channels == 1:
-            fn = 'tostereo'
+            fn = audioop.tostereo
             frame_width = self.frame_width * 2
         elif channels == 1 and self.channels == 2:
-            fn = 'tomono'
+            fn = audioop.tomono
             frame_width = self.frame_width // 2
 
-        fn = getattr(audioop, fn)
         converted = fn(self._data, self.sample_width, 1, 1)
 
         return self._spawn(data=converted, overrides={'channels': channels,
@@ -437,7 +491,10 @@ class AudioSegment(object):
 
     @property
     def rms(self):
-        return audioop.rms(self._data, self.sample_width)
+        if self.sample_width == 1:
+            return self.set_sample_width(2).rms
+        else:
+            return audioop.rms(self._data, self.sample_width)
 
     @property
     def dBFS(self):
