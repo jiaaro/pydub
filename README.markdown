@@ -166,6 +166,23 @@ song.export("out.ogg", format="ogg")  # Is the same as:
 song.export("out.ogg", format="ogg", codec="libvorbis")
 ```
 
+## Utilities
+
+####  mediainfo
+
+```python
+
+>>> from pydub.utils import mediainfo
+>>> info = mediainfo('bach.ogg')
+
+>>> print(info) # Print all info for this media
+{'codec_name': 'flac', 'codec_tag': '0x0000', 'format_long_name': 'Ogg', 'channels': '1', 'codec_time_base': '1/44100', 'nb_frames': 'N/A', 'r_frame_rate': '0/0', 'channel_layout': 'mono', 'avg_frame_rate': '0/0', 'time_base': '1/44100', 'duration_ts': '134737', 'nb_streams': '1', 'TAG': {'ENCODER': 'Lavf55.12.100'}, 'profile': 'unknown', 'DISPOSITION': {'visual_impaired': '0', 'attached_pic': '0', 'default': '0', 'clean_effects': '0', 'hearing_impaired': '0', 'original': '0', 'lyrics': '0', 'forced': '0', 'comment': '0', 'karaoke': '0', 'dub': '0'}, 'codec_long_name': 'FLAC (Free Lossless Audio Codec)', 'format_name': 'ogg', 'index': '0', 'duration': '3.055261', 'start_pts': '0', 'sample_rate': '44100', 'size': '85644', 'bits_per_sample': '0', 'probe_score': '100', 'codec_tag_string': '[0][0][0][0]', 'bit_rate': '224253', 'start_time': '0.000000', 'filename': 'test/data/bach.ogg', 'id': 'N/A', 'nb_read_frames': 'N/A', 'codec_type': 'audio', 'sample_fmt': 's16', 'nb_programs': '0', 'nb_read_packets': 'N/A'}
+
+>>> tag_info = mediainfo('make-it-funky.mp3').get('TAG')
+>>> print(tag_info) # print tag metadata info
+{"artist": "James Brown", "title": "Make it Funky", "year": 1971}
+```
+
 ## Example Use
 
 Suppose you have a directory filled with *mp4* and *flv* videos and you want to convert all of them to *mp3* so you can listen to  them on your mp3 player.
@@ -277,4 +294,3 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-

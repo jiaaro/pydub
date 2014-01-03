@@ -2,7 +2,7 @@ from functools import partial
 import mimetypes
 import os
 import unittest
-from tempfile import NamedTemporaryFile, SpooledTemporaryFile
+from tempfile import NamedTemporaryFile
 
 from pydub import AudioSegment
 from pydub.utils import (
@@ -15,7 +15,6 @@ from pydub.exceptions import (
     InvalidTag,
     InvalidID3TagVersion,
     InvalidDuration,
-    TooManyMissingFrames,
 )
 
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
@@ -283,7 +282,7 @@ class AudioSegmentTests(unittest.TestCase):
             AudioSegment.from_file(os.path.join(data_dir, 'wrong_extension.aac'), 'aac')
         except EOFError:
             pass
-        except Exception as e:
+        except Exception:
             self.fail('Expected Exception is not thrown')
 
         # Trying to auto detect input file format
@@ -340,7 +339,7 @@ class AudioSegmentTests(unittest.TestCase):
 
     def test_export_mp4_as_mp3_with_tags_raises_exception_when_tags_are_not_a_dictionary(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
-            json = '{"title": "The Title You Want", "album": "Name of the Album", "artist": "Artist\'s name"}'
+            json = '{"title": "The Title You Want", "artist": "Artist\'s name"}'
             func = partial(
                 AudioSegment.from_file(self.mp4_file_path).export, tmp_mp3_file,
                 format="mp3", tags=json)
@@ -412,19 +411,19 @@ class AudioSegmentTests(unittest.TestCase):
 
         self.assertWithinTolerance(
             len(self.seg1) / 2, len(speedup_seg), percentage=0.01)
-    
+
     def test_dBFS(self):
         self.assertWithinTolerance(self.seg1.dBFS, -8.88, tolerance=0.01)
         self.assertWithinTolerance(self.seg2.dBFS, -10.39, tolerance=0.01)
-        self.assertWithinTolerance(self.seg3.dBFS, -6.47, tolerance=0.01)        
-    
+        self.assertWithinTolerance(self.seg3.dBFS, -6.47, tolerance=0.01)
+
     def test_compress(self):
         compressed = self.seg1.compress_dynamic_range()
         self.assertWithinTolerance(self.seg1.dBFS - compressed.dBFS, 10.0, tolerance=10.0)
-        
+
         # Highest peak should be lower
         self.assertTrue(compressed.max < self.seg1.max)
-        
+
         # average volume should be reduced
         self.assertTrue(compressed.rms < self.seg1.rms)
 
@@ -437,6 +436,15 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(info["codec_name"], "vorbis")
         self.assertEqual(info["format_name"], "ogg")
 
+    # def test_instantiation_is_copying_tags_metadata_from_input_file(self):
+    #     with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3:
+    #         self.seg3.export(tmp_mp3.name, format="mp3")
+
+    #         info = mediainfo(filepath=tmp_mp3.name).get('TAG')
+
+    #     self.assertTrue(isinstance(info, dict), "{0} is not a dict".format(type(info)))
+    #     self.assertEqual(info["artist"], 'Chanticleer')
+    #     self.assertEqual(info["title"], 'Medium rooster crowing')
 
 if __name__ == "__main__":
     import sys

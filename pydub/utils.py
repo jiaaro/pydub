@@ -1,6 +1,6 @@
 from __future__ import division
 
-from math import log, ceil, floor
+from math import log, ceil
 import os
 import re
 from subprocess import Popen, PIPE
@@ -47,19 +47,19 @@ def ratio_to_db(ratio, val2=None):
 def register_pydub_effect(fn, name=None):
     """
     decorator for adding pydub effects to the AudioSegment objects.
-    
+
     example use:
-    
+
         @register_pydub_effect
         def normalize(audio_segment):
             ...
-    
+
     or you can specify a name:
-        
+
         @register_pydub_effect("normalize")
         def normalize_audio_segment(audio_segment):
             ...
-    
+
     """
     if isinstance(fn, basestring):
         name = fn
@@ -77,7 +77,7 @@ def make_chunks(audio_segment, chunk_length):
     """
     Breaks an AudioSegment into chunks that are <chunk_length> milliseconds
     long.
-    
+
     if chunk_length is 50 then you'll get a list of 50 millisecond long audio
     segments back (except the last one, which can be shorter)
     """
@@ -110,6 +110,7 @@ def get_encoder_name():
         # should raise exception
         return "ffmpeg"
 
+
 def get_player_name():
     """
     Return enconder default application for system, either avconv or ffmpeg
@@ -139,8 +140,6 @@ def get_prober_name():
 def mediainfo(filepath):
     """Return dictionary with media info(codec, duration, size, bitrate...) from filepath
     """
-
-    from .audio_segment import AudioSegment
 
     command = "{0} -v quiet -show_format -show_streams {1}".format(
         get_prober_name(),

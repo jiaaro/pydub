@@ -10,13 +10,19 @@ import sys
 try:
     from StringIO import StringIO
 except:
-    from io import StringIO, BytesIO
+    from io import BytesIO
+
+if sys.version_info >= (3, 0):
+    basestring = str
+    xrange = range
+    StringIO = BytesIO
 
 from .utils import (
     _fd_or_path_or_tempfile,
     db_to_float,
     ratio_to_db,
     get_encoder_name,
+    mediainfo,
 )
 from .exceptions import (
     TooManyMissingFrames,
@@ -24,11 +30,6 @@ from .exceptions import (
     InvalidID3TagVersion,
     InvalidTag,
 )
-
-if sys.version_info >= (3, 0):
-    basestring = str
-    xrange = range
-    StringIO = BytesIO
 
 AUDIO_FILE_EXT_ALIASES = {
     "m4a": "mp4"
@@ -46,18 +47,21 @@ class AudioSegment(object):
     first_second = a[:1000]
     """
     converter = get_encoder_name()  # either ffmpeg or avconv
-    
+
     # TODO: remove in 1.0 release
     # maintain backwards compatibility for ffmpeg attr (now called converter)
     ffmpeg = property(lambda s: s.converter,
                       lambda s, v: setattr(s, 'converter', v))
-    
-    
+
     DEFAULT_CODECS = {
         "ogg": "libvorbis"
     }
 
-    def __init__(self, data=None, *args, **kwargs):
+    def __init__(self, data=None, tags=None, *args, **kwargs):
+        self.tags = tags if tags else {}
+        if not isinstance(self.tags, dict):
+            raise InvalidTag("tags parameter should be a dictionary.")
+
         if kwargs.get('metadata', False):
             # internal use only
             self._data = data
@@ -118,8 +122,9 @@ class AudioSegment(object):
         missing_frames = (expected_length - len(data)) // self.frame_width
         if missing_frames:
             if missing_frames > self.frame_count(ms=2):
-                raise TooManyMissingFrames("You should never be filling in "
-                                           "   more than 2 ms with silence here, missing frames: %s" %
+                raise TooManyMissingFrames("You should never be filling in"
+                                           " more than 2 ms with silence here,"
+                                           " missing frames: %s" %
                                            missing_frames)
             silence = audioop.mul(data[:self.frame_width],
                                   self.sample_width, 0)
@@ -134,12 +139,16 @@ class AudioSegment(object):
         segment like a python list. This is intentional.
         """
         max_val = self.frame_count()
+
         def bounded(val, default):
-            if val is None: return default
-            if val < 0: return 0
-            if val > max_val: return max_val
+            if val is None:
+                return default
+            if val < 0:
+                return 0
+            if val > max_val:
+                return max_val
             return val
-            
+
         start_i = bounded(start_sample, 0) * self.frame_width
         end_i = bounded(end_sample, max_val) * self.frame_width
 
@@ -232,15 +241,18 @@ class AudioSegment(object):
 
     @classmethod
     def empty(cls):
-        return cls(b'', metadata={"channels": 1, "sample_width": 1, "frame_rate": 1, "frame_width": 1})
+        return cls(
+            b'',
+            metadata={"channels": 1, "sample_width": 1, "frame_rate": 1, "frame_width": 1}
+        )
 
     @classmethod
     def silent(cls, duration=1000):
         """
-        Generate a silent audio segment. 
+        Generate a silent audio segment.
         duration specified in milliseconds (default: 1000ms).
         """
-        # lowest frame rate I've seen in actual use 
+        # lowest frame rate I've seen in actual use
         frame_rate = 11025
         frames = int(frame_rate * (duration / 1000.0))
         data = b"\0\0" * frames
@@ -308,7 +320,9 @@ class AudioSegment(object):
     def from_wav(cls, file):
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
         file.seek(0)
-        return cls(data=file)
+
+        tags = mediainfo(file.name).get('TAG', {})
+        return cls(data=file, tags=tags)
 
     def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None, id3v2_version='4'):
         """
@@ -382,6 +396,7 @@ class AudioSegment(object):
             # extend arguments with arbitrary set
             convertion_command.extend(parameters)
 
+        tags = tags if tags else self.tags
         if tags is not None:
             if not isinstance(tags, dict):
                 raise InvalidTag("Tags must be a dictionary.")
@@ -395,9 +410,9 @@ class AudioSegment(object):
                     # set id3v2 tag version
                     if id3v2_version not in id3v2_allowed_versions:
                         raise InvalidID3TagVersion(
-                            "id3v2_version not allowed, allowed versions: %s" % id3v2_allowed_versions)
+                            "id3v2_version not allowed, allowed: %s" % id3v2_allowed_versions)
                     convertion_command.extend([
-                        "-id3v2_version",  id3v2_version
+                        "-id3v2_version", id3v2_version
                     ])
 
         convertion_command.extend([
@@ -448,14 +463,13 @@ class AudioSegment(object):
 
         if data:
             data = audioop.lin2lin(data, self.sample_width, sample_width)
-        
+
         if sample_width == 1:
             data = audioop.bias(data, 1, 128)
 
         frame_width = self.channels * sample_width
-        return self._spawn(data, overrides={'sample_width': sample_width, 
+        return self._spawn(data, overrides={'sample_width': sample_width,
                                             'frame_width': frame_width})
-
 
     def set_frame_rate(self, frame_rate):
         if frame_rate == self.frame_rate:
@@ -493,11 +507,11 @@ class AudioSegment(object):
             return self.set_sample_width(2).rms
         else:
             return audioop.rms(self._data, self.sample_width)
-        
+
     @property
     def dBFS(self):
         rms = self.rms
-        if not rms: 
+        if not rms:
             return -float("infinity")
         return ratio_to_db(self.rms / self.max_possible_amplitude)
 
@@ -599,8 +613,6 @@ class AudioSegment(object):
         # no fade == the same audio
         if to_gain == 0 and from_gain == 0:
             return self
-
-        frames = self.frame_count()
 
         start = min(len(self), start) if start is not None else None
         end = min(len(self), end) if end is not None else None
