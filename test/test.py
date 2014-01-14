@@ -414,6 +414,8 @@ class AudioSegmentTests(unittest.TestCase):
             len(self.seg1) / 2, len(speedup_seg), percentage=0.01)
     
     def test_dBFS(self):
+        seg_8bit = self.seg1.set_sample_width(1)
+        self.assertWithinTolerance(seg_8bit.dBFS, -8.88, tolerance=0.01)
         self.assertWithinTolerance(self.seg1.dBFS, -8.88, tolerance=0.01)
         self.assertWithinTolerance(self.seg2.dBFS, -10.39, tolerance=0.01)
         self.assertWithinTolerance(self.seg3.dBFS, -6.47, tolerance=0.01)        
