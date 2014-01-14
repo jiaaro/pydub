@@ -48,22 +48,27 @@ class FileAccessTests(unittest.TestCase):
         self.assertTrue(len(seg1) > 0)
 
 
-test1 = test2 = test3 = None
+test1 = test2 = test3 = testparty = None
 
 
 class AudioSegmentTests(unittest.TestCase):
 
     def setUp(self):
-        global test1, test2, test3
+        global test1, test2, test3, testparty
         if not test1:
             test1 = AudioSegment.from_mp3(os.path.join(data_dir, 'test1.mp3'))
             test2 = AudioSegment.from_mp3(os.path.join(data_dir, 'test2.mp3'))
             test3 = AudioSegment.from_mp3(os.path.join(data_dir, 'test3.mp3'))
-        self.seg1, self.seg2, self.seg3 = test1, test2, test3
+            testparty = AudioSegment.from_mp3(os.path.join(data_dir, 'party.mp3'))
+        
+        self.seg1 = test1
+        self.seg2 = test2
+        self.seg3 = test3
+        self.mp3_seg_party = testparty
+        
         self.ogg_file_path = os.path.join(data_dir, 'bach.ogg')
         self.mp4_file_path = os.path.join(data_dir, 'creative_common.mp4')
         self.mp3_file_path = os.path.join(data_dir, 'party.mp3')
-        self.mp3_seg_party = AudioSegment.from_mp3(os.path.join(data_dir, 'party.mp3'))
 
     def assertWithinRange(self, val, lower_bound, upper_bound):
         self.assertTrue(lower_bound < val < upper_bound,
