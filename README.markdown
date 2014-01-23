@@ -255,6 +255,20 @@ podcast.export("podcast_processed.mp3", format="mp3")
 
 Not bad!
 
+## Getting ffmpeg set up
+
+Mac (using [homebrew](http://brew.sh)):
+
+```bash
+brew install ffmpeg --with-libvorbis --with-ffplay --with-theora
+```
+
+Linux (using aptitude):
+
+```bash
+apt-get install ffmpeg libavcodec-extra-53
+```
+
 ## License ([MIT License](http://opensource.org/licenses/mit-license.php))
 
 Copyright © 2011 James Robert, http://jiaaro.com
