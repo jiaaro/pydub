@@ -4,7 +4,6 @@ import os
 import subprocess
 from tempfile import TemporaryFile, NamedTemporaryFile
 import wave
-import audioop
 import sys
 
 try:
@@ -17,6 +16,7 @@ from .utils import (
     db_to_float,
     ratio_to_db,
     get_encoder_name,
+    audioop,
 )
 from .exceptions import (
     TooManyMissingFrames,

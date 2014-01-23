@@ -7,6 +7,12 @@ from subprocess import Popen, PIPE
 import sys
 from tempfile import TemporaryFile
 
+try:
+    import audioop
+except ImportError:
+    import pyaudioop as audioop
+    
+
 if sys.version_info >= (3, 0):
     basestring = str
 
