@@ -4,6 +4,7 @@ from .utils import (
     ratio_to_db,
     register_pydub_effect,
     make_chunks,
+    audioop,
 )
 from .exceptions import TooManyMissingFrames
 
@@ -131,7 +132,6 @@ def compress_dynamic_range(seg, threshold=-20.0, ratio=4.0, attack=5.0, release=
 
         http://en.wikipedia.org/wiki/Dynamic_range_compression
     """
-    import audioop
 
     thresh_rms = seg.max_possible_amplitude * db_to_float(threshold)
     
