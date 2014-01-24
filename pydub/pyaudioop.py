@@ -3,15 +3,18 @@ import math
 from fractions import gcd
 from ctypes import create_string_buffer
 
+
 class error(Exception):
     pass
+
 
 # this module redefines the names of some builtins that are used
 max_ = max
 
+
 def _check_size(size):
     if size != 1 and size != 2 and size != 4:
-         raise error("Size should be 1, 2 or 4")
+        raise error("Size should be 1, 2 or 4")
 
 
 def _check_params(length, size):
@@ -31,7 +34,7 @@ def _get_samples(cp, size, signed=True):
 
 def _struct_format(size, signed):
     if size == 1:
-        return "b" if signed else "B" 
+        return "b" if signed else "B"
     elif size == 2:
         return "h" if signed else "H"
     elif size == 4:
@@ -44,7 +47,7 @@ def _get_sample(cp, size, i, signed=True):
     end = start + size
     return struct.unpack_from(fmt, buffer(cp)[start:end])[0]
 
-        
+
 def _put_sample(cp, size, i, val, signed=True):
     fmt = _struct_format(size, signed)
     struct.pack_into(fmt, cp, i * size, val)
@@ -64,8 +67,8 @@ def _get_minval(size, signed=True):
     elif size == 1: return -0x80
     elif size == 2: return -0x8000
     elif size == 4: return -0x80000000
-    
-    
+
+
 def _get_clipfn(size, signed=True):
     maxval = _get_maxval(size, signed)
     minval = _get_minval(size, signed)
@@ -77,7 +80,7 @@ def _overflow(val, size, signed=True):
     maxval = _get_maxval(size, signed)
     if minval <= val <= maxval:
         return val
-    
+
     bits = size * 8
     if signed:
         offset = 2**(bits-1)
@@ -95,13 +98,13 @@ def getsample(cp, size, i):
 
 def max(cp, size):
     _check_params(len(cp), size)
-    
+
     if len(cp) == 0:
         return 0
 
     return max_(abs(sample) for sample in _get_samples(cp, size))
-    
-    
+
+
 def minmax(cp, size):
     _check_params(len(cp), size)
 
@@ -111,7 +114,7 @@ def minmax(cp, size):
             max_sample = sample
         if sample < min_sample:
             min_sample = sample
-    
+
     return min_sample, max_sample
 
 
@@ -121,18 +124,18 @@ def avg(cp, size):
     if sample_count == 0:
         return 0
     return sum(_get_samples(cp, size)) / sample_count
-    
+
 
 def rms(cp, size):
     _check_params(len(cp), size)
-    
+
     sample_count = _sample_count(cp, size)
     if sample_count == 0:
         return 0
 
     sum_squares = sum(sample**2 for sample in _get_samples(cp, size))
     return int(math.sqrt(sum_squares / sample_count))
-    
+
 
 def _sum2(cp1, cp2, length):
     size = 2
@@ -144,7 +147,7 @@ def _sum2(cp1, cp2, length):
 
 def findfit(cp1, cp2):
     size = 2
-    
+
     if len(cp1) % 2 != 0 or len(cp2) % 2 != 0:
         raise error("Strings should be even-sized")
 
@@ -168,7 +171,7 @@ def findfit(cp1, cp2):
         aj_lm1 = _get_sample(cp1, size, i + len2 - 1)
 
         sum_aij_2 += aj_lm1**2 - aj_m1**2
-        sum_aij_ri = _sum2(buffer(cp1)[i*size:], cp2, len2);
+        sum_aij_ri = _sum2(buffer(cp1)[i*size:], cp2, len2)
 
         result = (sum_ri_2 * sum_aij_2 - sum_aij_ri * sum_aij_ri) / sum_aij_2
 
@@ -180,10 +183,10 @@ def findfit(cp1, cp2):
 
     return best_i, factor
 
-    
+
 def findfactor(cp1, cp2):
     size = 2
-    
+
     if len(cp1) % 2 != 0:
         raise error("Strings should be even-sized")
 
@@ -196,18 +199,18 @@ def findfactor(cp1, cp2):
     sum_aij_ri = _sum2(cp1, cp2, sample_count)
 
     return sum_aij_ri / sum_ri_2
-    
+
 
 def findmax(cp, len2):
     size = 2
     sample_count = _sample_count(cp, size)
-    
+
     if len(cp) % 2 != 0:
         raise error("Strings should be even-sized")
-        
+
     if len2 < 0 or sample_count < len2:
         raise error("Input sample should be longer")
-    
+
     if sample_count == 0:
         return 0
 
@@ -225,9 +228,9 @@ def findmax(cp, len2):
         if result > best_result:
             best_result = result
             best_i = i
-        
+
     return best_i
-    
+
 
 def avgpp(cp, size):
     _check_params(len(cp), size)
@@ -253,7 +256,7 @@ def avgpp(cp, size):
 
             prevextremevalid = True
             prevextreme = prevval
-        
+
         prevval = val
         if diff != 0:
             prevdiff = diff
@@ -262,7 +265,7 @@ def avgpp(cp, size):
         return 0
 
     return avg / nextreme
-    
+
 
 def maxpp(cp, size):
     _check_params(len(cp), size)
@@ -287,14 +290,14 @@ def maxpp(cp, size):
                     max = extremediff
             prevextremevalid = True
             prevextreme = prevval
-        
+
         prevval = val
         if diff != 0:
             prevdiff = diff
 
     return max
-    
-    
+
+
 def cross(cp, size):
     _check_params(len(cp), size)
 
@@ -304,20 +307,20 @@ def cross(cp, size):
         if sample <= 0 < last_sample or sample >= 0 > last_sample:
             crossings += 1
         last_sample = sample
-    
+
     return crossings
-    
-    
+
+
 def mul(cp, size, factor):
     _check_params(len(cp), size)
     clip = _get_clipfn(size)
-    
+
     result = create_string_buffer(len(cp))
-    
+
     for i, sample in enumerate(_get_samples(cp, size)):
         sample = clip(int(sample * factor))
         _put_sample(result, size, i, sample)
-    
+
     return result.raw
 
 
@@ -343,7 +346,7 @@ def tomono(cp, size, fac1, fac2):
 
 def tostereo(cp, size, fac1, fac2):
     _check_params(len(cp), size)
-    
+
     sample_count = _sample_count(cp, size)
 
     result = create_string_buffer(len(cp) * 2)
@@ -367,11 +370,11 @@ def add(cp1, cp2, size):
 
     if len(cp1) != len(cp2):
         raise error("Lengths should be the same")
-    
+
     clip = _get_clipfn(size)
     sample_count = _sample_count(cp1, size)
     result = create_string_buffer(len(cp1))
-    
+
     for i in range(sample_count):
         sample1 = getsample(cp1, size, i)
         sample2 = getsample(cp2, size, i)
@@ -379,7 +382,7 @@ def add(cp1, cp2, size):
         sample = clip(sample1 + sample2)
 
         _put_sample(result, size, i, sample)
-    
+
     return result.raw
 
 
@@ -391,7 +394,7 @@ def bias(cp, size, bias):
     for i, sample in enumerate(_get_samples(cp, size)):
         sample = _overflow(sample + bias, size)
         _put_sample(result, size, i, sample)
-        
+
     return result.raw
 
 
@@ -423,7 +426,7 @@ def lin2lin(cp, size, size2):
             sample = sample << (4 * size2 / size)
         elif size > size2:
             sample = sample >> (4 * size / size2)
-        
+
         sample = _overflow(sample, size2)
 
         _put_sample(result, size2, i, sample)
@@ -447,7 +450,7 @@ def ratecv(cp, size, nchannels, inrate, outrate, state, weightA=1, weightB=0):
 
     if len(cp) % bytes_per_frame != 0:
         raise error("not a whole number of frames")
-                
+
     if inrate <= 0 or outrate <= 0:
         raise error("sampling rate not > 0")
 
@@ -462,7 +465,7 @@ def ratecv(cp, size, nchannels, inrate, outrate, state, weightA=1, weightB=0):
         d = -outrate
     else:
         d, samps = state
-        
+
         if len(samps) != nchannels:
             raise error("illegal state argument")
 
@@ -482,8 +485,11 @@ def ratecv(cp, size, nchannels, inrate, outrate, state, weightA=1, weightB=0):
             if frame_count == 0:
                 samps = zip(prev_i, cur_i)
                 retval = result.raw
+
                 # slice off extra bytes
-                retval = buffer(retval)[:(out_i * bytes_per_frame) - len(retval)]
+                trim_index = (out_i * bytes_per_frame) - len(retval)
+                retval = buffer(retval)[:trim_index]
+
                 return (retval, (d, tuple(samps)))
 
             for chan in range(nchannels):
@@ -500,7 +506,10 @@ def ratecv(cp, size, nchannels, inrate, outrate, state, weightA=1, weightB=0):
 
         while d >= 0:
             for chan in range(nchannels):
-                cur_o = (prev_i[chan] * d + cur_i[chan] * (outrate - d)) / outrate
+                cur_o = (
+                    (prev_i[chan] * d + cur_i[chan] * (outrate - d))
+                    / outrate
+                )
                 _put_sample(result, size, out_i, _overflow(cur_o, size))
                 out_i += 1
                 d -= inrate
@@ -528,5 +537,3 @@ def lin2adpcm(cp, size, state):
 
 def adpcm2lin(cp, size, state):
     raise NotImplementedError()
-    
-    
