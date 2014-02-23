@@ -1,15 +1,12 @@
-import struct
+import __builtin__
 import math
+import struct
 from fractions import gcd
 from ctypes import create_string_buffer
 
 
 class error(Exception):
     pass
-
-
-# this module redefines the names of some builtins that are used
-max_ = max
 
 
 def _check_size(size):
@@ -54,25 +51,35 @@ def _put_sample(cp, size, i, val, signed=True):
 
 
 def _get_maxval(size, signed=True):
-    if signed and size == 1:   return 0x7f
-    elif size == 1:            return 0xff
-    elif signed and size == 2: return 0x7fff
-    elif size == 2:            return 0xffff
-    elif signed and size == 4: return 0x7fffffff
-    elif size == 4:            return 0xffffffff
+    if signed and size == 1:
+        return 0x7f
+    elif size == 1:
+        return 0xff
+    elif signed and size == 2:
+        return 0x7fff
+    elif size == 2:
+        return 0xffff
+    elif signed and size == 4:
+        return 0x7fffffff
+    elif size == 4:
+        return 0xffffffff
 
 
 def _get_minval(size, signed=True):
-    if not signed:  return 0
-    elif size == 1: return -0x80
-    elif size == 2: return -0x8000
-    elif size == 4: return -0x80000000
+    if not signed:
+        return 0
+    elif size == 1:
+        return -0x80
+    elif size == 2:
+        return -0x8000
+    elif size == 4:
+        return -0x80000000
 
 
 def _get_clipfn(size, signed=True):
     maxval = _get_maxval(size, signed)
     minval = _get_minval(size, signed)
-    return lambda val: max_(min(val, maxval), minval)
+    return lambda val: __builtin__.max(min(val, maxval), minval)
 
 
 def _overflow(val, size, signed=True):
@@ -102,7 +109,7 @@ def max(cp, size):
     if len(cp) == 0:
         return 0
 
-    return max_(abs(sample) for sample in _get_samples(cp, size))
+    return __builtin__.max(abs(sample) for sample in _get_samples(cp, size))
 
 
 def minmax(cp, size):
@@ -110,10 +117,8 @@ def minmax(cp, size):
 
     max_sample, min_sample = 0, 0
     for sample in _get_samples(cp, size):
-        if sample > max_sample:
-            max_sample = sample
-        if sample < min_sample:
-            min_sample = sample
+        max_sample = __builtin__.max(sample, max_sample)
+        min_sample = __builtin__.min(sample, min_sample)
 
     return min_sample, max_sample
 
@@ -237,6 +242,7 @@ def avgpp(cp, size):
     sample_count = _sample_count(cp, size)
 
     prevextremevalid = False
+    prevextreme = None
     avg = 0
     nextreme = 0
 
@@ -272,6 +278,7 @@ def maxpp(cp, size):
     sample_count = _sample_count(cp, size)
 
     prevextremevalid = False
+    prevextreme = None
     max = 0
 
     prevval = getsample(cp, size, 0)
@@ -366,7 +373,6 @@ def tostereo(cp, size, fac1, fac2):
 
 def add(cp1, cp2, size):
     _check_params(len(cp1), size)
-    maxval = _get_maxval(size)
 
     if len(cp1) != len(cp2):
         raise error("Lengths should be the same")
