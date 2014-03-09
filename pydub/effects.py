@@ -17,6 +17,11 @@ def normalize(seg, headroom=0.1):
     headroom is how close to the maximum volume to boost the signal up to (specified in dB)
     """
     peak_sample_val = seg.max
+    
+    # if the max is 0, this audio segment is silent, and can't be normalized
+    if peak_sample_val == 0:
+        return seg
+    
     target_peak = seg.max_possible_amplitude * db_to_float(-headroom)
 
     needed_boost = ratio_to_db(target_peak / peak_sample_val)
