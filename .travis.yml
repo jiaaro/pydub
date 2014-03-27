@@ -4,6 +4,7 @@ env:
 before_install:
   - sudo apt-get update --fix-missing
 install:
+  - pip install coveralls
   - sudo apt-get install -y ${CONVERTER} libavcodec-extra-53
 language: python
 python:
@@ -14,4 +15,9 @@ python:
   - "pypy"
 allow_failures:
     - python: "pypy"
-script: python test/test.py
+script:
+  - coverage run --source=pydub --omit="pydub/pyaudioop.py" test/test.py
+  - coverage report -m
+after_script:
+  coveralls --verbose
+
