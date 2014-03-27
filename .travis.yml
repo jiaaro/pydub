@@ -17,8 +17,9 @@ python:
 allow_failures:
     - python: "pypy"
 script:
-  - coverage run --source=pydub --omit="pydub/pyaudioop.py" test/test.py
-  - coverage report -m
-after_script:
-  coveralls --verbose
+  - python test/test.py
+#  - coverage run --source=pydub --omit="pydub/pyaudioop.py" test/test.py
+#  - coverage report -m
+#after_script:
+#  coveralls --verbose
 
