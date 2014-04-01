@@ -36,23 +36,23 @@ AUDIO_FILE_EXT_ALIASES = {
 
 
 class AudioSegment(object):
-
     """
-    Note: AudioSegment objects are immutable
+    AudioSegments are *immutable* objects representing segments of audio
+    that can be manipulated using python code.
 
-    slicable using milliseconds. for example: Get the first second of an mp3...
-
-    a = AudioSegment.from_mp3(mp3file)
-    first_second = a[:1000]
+    AudioSegments are slicable using milliseconds.
+    for example:
+        a = AudioSegment.from_mp3(mp3file)
+        first_second = a[:1000] # get the first second of an mp3
+        slice = a[5000:10000] # get a slice from 5 to 10 seconds of an mp3
     """
     converter = get_encoder_name()  # either ffmpeg or avconv
-    
+
     # TODO: remove in 1.0 release
     # maintain backwards compatibility for ffmpeg attr (now called converter)
     ffmpeg = property(lambda s: s.converter,
                       lambda s, v: setattr(s, 'converter', v))
-    
-    
+
     DEFAULT_CODECS = {
         "ogg": "libvorbis"
     }
@@ -118,9 +118,10 @@ class AudioSegment(object):
         missing_frames = (expected_length - len(data)) // self.frame_width
         if missing_frames:
             if missing_frames > self.frame_count(ms=2):
-                raise TooManyMissingFrames("You should never be filling in "
-                                           "   more than 2 ms with silence here, missing frames: %s" %
-                                           missing_frames)
+                raise TooManyMissingFrames(
+                    "You should never be filling in "
+                    "   more than 2 ms with silence here, "
+                    "missing frames: %s" % missing_frames)
             silence = audioop.mul(data[:self.frame_width],
                                   self.sample_width, 0)
             data += (silence * missing_frames)
@@ -129,17 +130,23 @@ class AudioSegment(object):
 
     def get_sample_slice(self, start_sample=None, end_sample=None):
         """
-        Get a section of the audio segment by sample index. NOTE: Negative
-        indicies do *not* address samples backword from the end of the audio
-        segment like a python list. This is intentional.
+        Get a section of the audio segment by sample index.
+
+        NOTE: Negative indices do *not* address samples backword
+        from the end of the audio segment like a python list.
+        This is intentional.
         """
         max_val = self.frame_count()
+
         def bounded(val, default):
-            if val is None: return default
-            if val < 0: return 0
-            if val > max_val: return max_val
+            if val is None:
+                return default
+            if val < 0:
+                return 0
+            if val > max_val:
+                return max_val
             return val
-            
+
         start_i = bounded(start_sample, 0) * self.frame_width
         end_i = bounded(end_sample, max_val) * self.frame_width
 
@@ -164,12 +171,13 @@ class AudioSegment(object):
         If the argument is an AudioSegment, overlay the multiplied audio
         segment.
 
-
         If it's a number, just use the string multiply operation to repeat the
-        audio so the following would return an AudioSegment that contains the
+        audio.
+
+        The following would return an AudioSegment that contains the
         audio of audio_seg eight times
 
-        audio_seg * 8
+        `audio_seg * 8`
         """
         if isinstance(arg, AudioSegment):
             return self.overlay(arg, position=0, loop=True)
@@ -178,10 +186,10 @@ class AudioSegment(object):
 
     def _spawn(self, data, overrides={}):
         """
-        Creates a new audio segment using the meta data from the current one
+        Creates a new audio segment using the metadata from the current one
         and the data passed in. Should be used whenever an AudioSegment is
-        being returned by an operation that alters the current one, since
-        AudioSegment objects are immutable.
+        being returned by an operation that would alters the current one,
+        since AudioSegment objects are immutable.
         """
         # accept lists of data chunks
         if isinstance(data, list):
@@ -232,7 +240,12 @@ class AudioSegment(object):
 
     @classmethod
     def empty(cls):
-        return cls(b'', metadata={"channels": 1, "sample_width": 1, "frame_rate": 1, "frame_width": 1})
+        return cls(b'', metadata={
+            "channels": 1,
+            "sample_width": 1,
+            "frame_rate": 1,
+            "frame_width": 1
+        })
 
     @classmethod
     def silent(cls, duration=1000):
@@ -318,7 +331,8 @@ class AudioSegment(object):
             Path to destination audio file
 
         format (string)
-            Format for destination audio file. ('mp3', 'wav', 'ogg' or other ffmpeg/avconv supported files)
+            Format for destination audio file.
+            ('mp3', 'wav', 'ogg' or other ffmpeg/avconv supported files)
 
         codec (string)
             Codec used to encoding for the destination.
@@ -330,7 +344,8 @@ class AudioSegment(object):
             Aditional ffmpeg/avconv parameters
 
         tags (dict)
-            Set metadata information to destination files usually used as tags. ({title='Song Title', artist='Song Artist'})
+            Set metadata information to destination files
+            usually used as tags. ({title='Song Title', artist='Song Artist'})
 
         id3v2_version (string)
             Set ID3v2 version for tags. (default: '4')
@@ -350,8 +365,8 @@ class AudioSegment(object):
         wave_data.setnchannels(self.channels)
         wave_data.setsampwidth(self.sample_width)
         wave_data.setframerate(self.frame_rate)
-        # For some reason packing the wave header struct with a float in python 2
-        # doesn't throw an exception
+        # For some reason packing the wave header struct with
+        # a float in python 2 doesn't throw an exception
         wave_data.setnframes(int(self.frame_count()))
         wave_data.writeframesraw(self._data)
         wave_data.close()
@@ -363,10 +378,11 @@ class AudioSegment(object):
         output = NamedTemporaryFile(mode="w+b", delete=False)
 
         # build converter command to export
-        convertion_command = [self.converter,
-                              '-y',  # always overwrite existing files
-                              "-f", "wav", "-i", data.name,  # input options (filename last)
-                              ]
+        convertion_command = [
+            self.converter,
+            '-y',  # always overwrite existing files
+            "-f", "wav", "-i", data.name,  # input options (filename last)
+        ]
 
         if codec is None:
             codec = self.DEFAULT_CODECS.get(format, None)
@@ -389,7 +405,8 @@ class AudioSegment(object):
                 # Extend converter command with tags
                 # print(tags)
                 for key, value in tags.items():
-                    convertion_command.extend(['-metadata', '{0}={1}'.format(key, value)])
+                    convertion_command.extend(
+                        ['-metadata', '{0}={1}'.format(key, value)])
 
                 if format == 'mp3':
                     # set id3v2 tag version
@@ -448,14 +465,13 @@ class AudioSegment(object):
 
         if data:
             data = audioop.lin2lin(data, self.sample_width, sample_width)
-        
+
         if sample_width == 1:
             data = audioop.bias(data, 1, 128)
 
         frame_width = self.channels * sample_width
-        return self._spawn(data, overrides={'sample_width': sample_width, 
+        return self._spawn(data, overrides={'sample_width': sample_width,
                                             'frame_width': frame_width})
-
 
     def set_frame_rate(self, frame_rate):
         if frame_rate == self.frame_rate:
@@ -484,8 +500,10 @@ class AudioSegment(object):
 
         converted = fn(self._data, self.sample_width, 1, 1)
 
-        return self._spawn(data=converted, overrides={'channels': channels,
-                                                      'frame_width': frame_width})
+        return self._spawn(data=converted,
+                           overrides={
+                               'channels': channels,
+                               'frame_width': frame_width})
 
     @property
     def rms(self):
@@ -493,12 +511,12 @@ class AudioSegment(object):
             return self.set_sample_width(2).rms
         else:
             return audioop.rms(self._data, self.sample_width)
-        
+
     @property
     def dBFS(self):
         rms = self.rms
-        if not rms: 
-            return -float("infinity")
+        if not rms:
+            return - float("infinity")
         return ratio_to_db(self.rms / self.max_possible_amplitude)
 
     @property
@@ -600,8 +618,6 @@ class AudioSegment(object):
         if to_gain == 0 and from_gain == 0:
             return self
 
-        frames = self.frame_count()
-
         start = min(len(self), start) if start is not None else None
         end = min(len(self), end) if end is not None else None
 
@@ -628,22 +644,25 @@ class AudioSegment(object):
         # original data - up until the crossfade portion, as is
         before_fade = self[:start]._data
         if from_gain != 0:
-            before_fade = audioop.mul(before_fade, self.sample_width,
+            before_fade = audioop.mul(before_fade,
+                                      self.sample_width,
                                       from_power)
         output.append(before_fade)
 
         gain_delta = db_to_float(to_gain) - from_power
 
         # fades longer than 100ms can use coarse fading (one gain step per ms),
-        # shorter fades will have audible clicks so they use precise fading (one
-        # gain step per sample)
+        # shorter fades will have audible clicks so they use precise fading
+        #(one gain step per sample)
         if duration > 100:
             scale_step = gain_delta / duration
 
             for i in range(duration):
                 volume_change = from_power + (scale_step * i)
                 chunk = self[start + i]
-                chunk = audioop.mul(chunk._data, self.sample_width, volume_change)
+                chunk = audioop.mul(chunk._data,
+                                    self.sample_width,
+                                    volume_change)
 
                 output.append(chunk)
         else:
@@ -662,7 +681,8 @@ class AudioSegment(object):
         # original data after the crossfade portion, at the new volume
         after_fade = self[end:]._data
         if to_gain != 0:
-            after_fade = audioop.mul(after_fade, self.sample_width,
+            after_fade = audioop.mul(after_fade,
+                                     self.sample_width,
                                      db_to_float(to_gain))
         output.append(after_fade)
 
