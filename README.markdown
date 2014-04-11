@@ -34,7 +34,7 @@ Slice audio:
 # pydub does things in milliseconds
 ten_seconds = 10 * 1000
 
-first_10_seconds = song[ten_seconds]
+first_10_seconds = song[:ten_seconds]
 
 last_5_seconds = song[5000:]
 ```
