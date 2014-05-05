@@ -142,6 +142,7 @@ def get_prober_name():
         return "ffprobe"
     else:
         # should raise exception
+        warn("Couldn't find ffprobe or avprobe - defaulting to ffprobe, but may not work", RuntimeWarning)
         return "ffprobe"
 
 
