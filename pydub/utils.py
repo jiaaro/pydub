@@ -6,6 +6,7 @@ import re
 from subprocess import Popen, PIPE
 import sys
 from tempfile import TemporaryFile
+from warnings import warn
 
 try:
     import audioop
@@ -114,6 +115,7 @@ def get_encoder_name():
         return "ffmpeg"
     else:
         # should raise exception
+        warn("Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work", RuntimeWarning)
         return "ffmpeg"
 
 def get_player_name():
@@ -126,6 +128,7 @@ def get_player_name():
         return "ffplay"
     else:
         # should raise exception
+        warn("Couldn't find ffplay or avplay - defaulting to ffplay, but may not work", RuntimeWarning)
         return "ffplay"
 
 
