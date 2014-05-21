@@ -475,6 +475,9 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(info["codec_name"], "vorbis")
         self.assertEqual(info["format_name"], "ogg")
 
+    def test_zero_length_segment(self):
+        self.assertEqual(0, len(self.seg1[0:0]))
+
 
 class SilenceTests(unittest.TestCase):
     
@@ -498,6 +501,8 @@ class SilenceTests(unittest.TestCase):
     def test_detect_silence_seg1(self):
         silent_ranges = detect_silence(self.seg1, min_silence_len=500, silence_thresh=-10)
         self.assertEqual(silent_ranges, [[0, 775], [3141, 4033], [5516, 6051]])
+
+
 
 
 if __name__ == "__main__":
