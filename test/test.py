@@ -16,6 +16,9 @@ from pydub.exceptions import (
     InvalidID3TagVersion,
     InvalidDuration,
 )
+from pydub.silence import (
+    detect_silence,
+)
 
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -471,6 +474,30 @@ class AudioSegmentTests(unittest.TestCase):
 
         self.assertEqual(info["codec_name"], "vorbis")
         self.assertEqual(info["format_name"], "ogg")
+
+
+class SilenceTests(unittest.TestCase):
+    
+    def setUp(self):
+        global test1
+        if not test1:
+            test1 = AudioSegment.from_mp3(os.path.join(data_dir, 'test1.mp3'))
+
+        self.seg1 = test1
+
+    def test_detect_completely_silent_segment(self):
+        seg = AudioSegment.silent(5000)
+        silent_ranges = detect_silence(seg, min_silence_len=1000, silence_thresh=-10)
+        self.assertEqual(silent_ranges, [[0, 4999]])
+
+    def test_detect_too_long_silence(self):
+        seg = AudioSegment.silent(3000)
+        silent_ranges = detect_silence(seg, min_silence_len=5000, silence_thresh=-10)
+        self.assertEqual(silent_ranges, [])
+
+    def test_detect_silence_seg1(self):
+        silent_ranges = detect_silence(self.seg1, min_silence_len=500, silence_thresh=-10)
+        self.assertEqual(silent_ranges, [[0, 775], [3141, 4033], [5516, 6051]])
 
 
 if __name__ == "__main__":
