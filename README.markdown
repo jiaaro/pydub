@@ -144,6 +144,21 @@ Requires ffmpeg or avconv for encoding and decoding all non-wav files (which wor
 
  - avconv (http://libav.org/)
 
+
+## Getting ffmpeg set up
+
+Mac (using [homebrew](http://brew.sh)):
+
+```bash
+brew install ffmpeg --with-libvorbis --with-ffplay --with-theora
+```
+
+Linux (using aptitude):
+
+```bash
+apt-get install ffmpeg libavcodec-extra-53
+```
+
 ## Important Notes
 
 `AudioSegment` objects are [immutable](http://www.devshed.com/c/a/Python/String-and-List-Python-Object-Types/1/)
@@ -255,19 +270,6 @@ podcast.export("podcast_processed.mp3", format="mp3")
 
 Not bad!
 
-## Getting ffmpeg set up
-
-Mac (using [homebrew](http://brew.sh)):
-
-```bash
-brew install ffmpeg --with-libvorbis --with-ffplay --with-theora
-```
-
-Linux (using aptitude):
-
-```bash
-apt-get install ffmpeg libavcodec-extra-53
-```
 
 ## License ([MIT License](http://opensource.org/licenses/mit-license.php))
 
