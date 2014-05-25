@@ -31,7 +31,8 @@ if sys.version_info >= (3, 0):
     StringIO = BytesIO
 
 AUDIO_FILE_EXT_ALIASES = {
-    "m4a": "mp4"
+    "m4a": "mp4",
+    "wave": "wav",
 }
 
 
