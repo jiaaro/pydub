@@ -250,10 +250,10 @@ class AudioSegment(object):
     @classmethod
     def silent(cls, duration=1000):
         """
-        Generate a silent audio segment. 
+        Generate a silent audio segment.
         duration specified in milliseconds (default: 1000ms).
         """
-        # lowest frame rate I've seen in actual use 
+        # lowest frame rate I've seen in actual use
         frame_rate = 11025
         frames = int(frame_rate * (duration / 1000.0))
         data = b"\0\0" * frames
@@ -268,9 +268,6 @@ class AudioSegment(object):
 
         if format:
             format = AUDIO_FILE_EXT_ALIASES.get(format, format)
-
-        if format == 'wav':
-            return cls.from_wav(file)
 
         input_file = NamedTemporaryFile(mode='wb', delete=False)
         input_file.write(file.read())
@@ -296,7 +293,7 @@ class AudioSegment(object):
 
         subprocess.call(convertion_command, stderr=open(os.devnull))
 
-        obj = cls.from_wav(output)
+        obj = cls._from_safe_wav(output)
 
         input_file.close()
         output.close()
@@ -319,6 +316,10 @@ class AudioSegment(object):
 
     @classmethod
     def from_wav(cls, file):
+        return cls.from_file(file, 'wav')
+
+    @classmethod
+    def _from_safe_wav(cls, file):
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
         file.seek(0)
         return cls(data=file)
