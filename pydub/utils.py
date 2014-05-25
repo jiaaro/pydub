@@ -12,7 +12,7 @@ try:
     import audioop
 except ImportError:
     import pyaudioop as audioop
-    
+
 
 if sys.version_info >= (3, 0):
     basestring = str
@@ -54,19 +54,19 @@ def ratio_to_db(ratio, val2=None):
 def register_pydub_effect(fn, name=None):
     """
     decorator for adding pydub effects to the AudioSegment objects.
-    
+
     example use:
-    
+
         @register_pydub_effect
         def normalize(audio_segment):
             ...
-    
+
     or you can specify a name:
-        
+
         @register_pydub_effect("normalize")
         def normalize_audio_segment(audio_segment):
             ...
-    
+
     """
     if isinstance(fn, basestring):
         name = fn
@@ -84,7 +84,7 @@ def make_chunks(audio_segment, chunk_length):
     """
     Breaks an AudioSegment into chunks that are <chunk_length> milliseconds
     long.
-    
+
     if chunk_length is 50 then you'll get a list of 50 millisecond long audio
     segments back (except the last one, which can be shorter)
     """
@@ -97,6 +97,10 @@ def which(program):
     """
     Mimics behavior of UNIX which command.
     """
+    #Add .exe program extension for windows support
+    if os.name == "nt":
+        program += ".exe"
+
     envdir_list = os.environ["PATH"].split(os.pathsep)
 
     for envdir in envdir_list:
