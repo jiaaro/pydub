@@ -7,6 +7,7 @@ from subprocess import Popen, PIPE
 import sys
 from tempfile import TemporaryFile
 from warnings import warn
+import platform
 
 try:
     import audioop
@@ -97,6 +98,9 @@ def which(program):
     """
     Mimics behavior of UNIX which command.
     """
+    if platform.system() == "Windows" and not program.endswith(".exe"):
+        program += ".exe"
+
     envdir_list = os.environ["PATH"].split(os.pathsep)
 
     for envdir in envdir_list:
