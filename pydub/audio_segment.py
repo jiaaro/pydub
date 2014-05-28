@@ -270,6 +270,12 @@ class AudioSegment(object):
         if format:
             format = AUDIO_FILE_EXT_ALIASES.get(format, format)
 
+        if format == "wav":
+            try:
+                return cls._from_safe_wav(file)
+            except:
+                pass
+
         input_file = NamedTemporaryFile(mode='wb', delete=False)
         input_file.write(file.read())
         input_file.flush()
