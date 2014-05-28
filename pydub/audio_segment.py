@@ -23,6 +23,7 @@ from .exceptions import (
     InvalidDuration,
     InvalidID3TagVersion,
     InvalidTag,
+    CouldntDecodeError,
 )
 
 if sys.version_info >= (3, 0):
@@ -298,7 +299,10 @@ class AudioSegment(object):
             output.name
         ]
 
-        subprocess.call(convertion_command, stderr=open(os.devnull))
+        retcode = subprocess.call(convertion_command, stderr=open(os.devnull))
+
+        if retcode != 0:
+            raise CouldntDecodeError("Decoding failed. ffmpeg returned error code: {0}".format(retcode))
 
         obj = cls._from_safe_wav(output)
 

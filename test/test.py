@@ -15,6 +15,7 @@ from pydub.exceptions import (
     InvalidTag,
     InvalidID3TagVersion,
     InvalidDuration,
+    CouldntDecodeError,
 )
 from pydub.silence import (
     detect_silence,
@@ -303,13 +304,9 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(wav.duration_seconds, self.seg1.duration_seconds)
 
     def test_autodetect_format(self):
-        try:
-            AudioSegment.from_file(
-                os.path.join(data_dir, 'wrong_extension.aac'), 'aac')
-        except EOFError:
-            pass
-        except Exception:
-            self.fail('Expected Exception is not thrown')
+        aac_path = os.path.join(data_dir, 'wrong_extension.aac')
+        fn = partial(AudioSegment.from_file, aac_path, "aac")
+        self.assertRaises(CouldntDecodeError, fn)
 
         # Trying to auto detect input file format
         aac_file = AudioSegment.from_file(
