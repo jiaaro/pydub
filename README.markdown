@@ -36,7 +36,7 @@ ten_seconds = 10 * 1000
 
 first_10_seconds = song[:ten_seconds]
 
-last_5_seconds = song[5000:]
+last_5_seconds = song[-5000:]
 ```
 
 Make the beginning louder and the end quieter
