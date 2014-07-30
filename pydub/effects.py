@@ -6,6 +6,7 @@ from .utils import (
     make_chunks,
     audioop,
 )
+from .silence import split_on_silence
 from .exceptions import TooManyMissingFrames, InvalidDuration
 
 if sys.version_info >= (3, 0):
@@ -77,7 +78,7 @@ def strip_silence(seg, silence_len=1000, silence_thresh=-16, padding=100):
     if padding > silence_len:
         raise InvalidDuration("padding cannot be longer than silence_len")
 
-    chunks = split_on_silence(seg, min_silence_len, silence_thresh, padding)
+    chunks = split_on_silence(seg, silence_len, silence_thresh, padding)
     crossfade = padding / 2
 
     if not len(chunks):
