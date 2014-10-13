@@ -17,4 +17,4 @@ class InvalidID3TagVersion(Exception):
 
 
 class CouldntDecodeError(Exception):
-	pass
+    pass
