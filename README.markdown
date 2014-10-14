@@ -1,4 +1,4 @@
-# Pydub [![Build Status](https://secure.travis-ci.org/jiaaro/pydub.png?branch=master)](http://travis-ci.org/jiaaro/pydub)
+# Pydub [![Build Status](https://travis-ci.org/jiaaro/pydub.svg?branch=master)](https://travis-ci.org/jiaaro/pydub)
 Pydub lets you do stuff to audio in a way that isn't stupid.
 
 ##  Quickstart
