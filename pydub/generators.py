@@ -7,8 +7,8 @@ class method.
 import math
 import array
 import itertools
-from pydub.audio_segment import AudioSegment
-from pydub.utils import db_to_float
+from .audio_segment import AudioSegment
+from .utils import db_to_float
 
 
 
