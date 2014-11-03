@@ -504,6 +504,23 @@ class SilenceTests(unittest.TestCase):
         self.assertEqual(silent_ranges, [[0, 775], [3141, 4033], [5516, 6051]])
 
 
+class GeneratorTests(unittest.TestCase):
+    
+    def test_loudness(self):
+        sine_dbfs = Sine(440).to_audio_segment().dBFS
+        self.assertAlmostEqual(sine_dbfs, 3.0, places=1)
+
+    def test_duration(self):
+        1sec = Sine(440).to_audio_segment(duration=1.0)
+        5sec = Sine(440).to_audio_segment(duration=5.0)
+        half_sec = Sine(440).to_audio_segment(duration=0.5)
+
+        self.assertAlmostEqual(len(1sec), 1000)
+        self.assertAlmostEqual(len(5sec), 5000)
+        self.assertAlmostEqual(len(half_sec), 500)
+
+
+
 
 
 if __name__ == "__main__":
