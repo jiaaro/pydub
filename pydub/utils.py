@@ -28,19 +28,19 @@ def _fd_or_path_or_tempfile(fd, mode='w+b', tempfile=True):
     return fd
 
 
-def db_to_float(db, using_aplitude=True):
+def db_to_float(db, using_amplitude=True):
     """
     Converts the input db to a float, which represents the equivalent
     ratio in power.
     """
     db = float(db)
-    if using_aplitude:
+    if using_amplitude:
         return 10 ** (db / 20)
     else: # using power
         return 10 ** (db / 10)
 
 
-def ratio_to_db(ratio, val2=None, using_aplitude=True):
+def ratio_to_db(ratio, val2=None, using_amplitude=True):
     """
     Converts the input float to db, which represents the equivalent
     to the ratio in power represented by the multiplier passed in.
@@ -51,7 +51,7 @@ def ratio_to_db(ratio, val2=None, using_aplitude=True):
     if val2 is not None:
         ratio = ratio / val2
 
-    if using_aplitude:
+    if using_amplitude:
         return 20 * log(ratio, 10)
     else: # using power
         return 10 * log(ratio, 10)

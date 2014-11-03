@@ -27,12 +27,16 @@ data_dir = os.path.join(os.path.dirname(__file__), 'data')
 class UtilityTests(unittest.TestCase):
 
     def test_db_float_conversions(self):
-        self.assertEqual(db_to_float(10), 10)
+        self.assertEqual(db_to_float(20), 10)
+        self.assertEqual(db_to_float(10, using_amplitude=False), 10)
         self.assertEqual(db_to_float(0), 1)
         self.assertEqual(ratio_to_db(1), 0)
-        self.assertEqual(ratio_to_db(10), 10)
+        self.assertEqual(ratio_to_db(10), 20)
+        self.assertEqual(ratio_to_db(10, using_amplitude=False), 10)
         self.assertEqual(3, db_to_float(ratio_to_db(3)))
         self.assertEqual(12, ratio_to_db(db_to_float(12)))
+        self.assertEqual(3, db_to_float(ratio_to_db(3, using_amplitude=False), using_amplitude=False))
+        self.assertEqual(12, ratio_to_db(db_to_float(12, using_amplitude=False), using_amplitude=False))
 
 
 class FileAccessTests(unittest.TestCase):
@@ -229,7 +233,7 @@ class AudioSegmentTests(unittest.TestCase):
 
         self.assertEqual(len(inf_end), len(seg))
 
-        self.assertTrue(-3 < ratio_to_db(inf_end.rms, seg.rms) < -2)
+        self.assertTrue(-6 < ratio_to_db(inf_end.rms, seg.rms) < -5)
 
         # use a slice out of the middle to make sure there is audio
         seg = self.seg2[2000:8000]
@@ -487,16 +491,16 @@ class SilenceTests(unittest.TestCase):
 
     def test_detect_completely_silent_segment(self):
         seg = AudioSegment.silent(5000)
-        silent_ranges = detect_silence(seg, min_silence_len=1000, silence_thresh=-10)
+        silent_ranges = detect_silence(seg, min_silence_len=1000, silence_thresh=-20)
         self.assertEqual(silent_ranges, [[0, 4999]])
 
     def test_detect_too_long_silence(self):
         seg = AudioSegment.silent(3000)
-        silent_ranges = detect_silence(seg, min_silence_len=5000, silence_thresh=-10)
+        silent_ranges = detect_silence(seg, min_silence_len=5000, silence_thresh=-20)
         self.assertEqual(silent_ranges, [])
 
     def test_detect_silence_seg1(self):
-        silent_ranges = detect_silence(self.seg1, min_silence_len=500, silence_thresh=-10)
+        silent_ranges = detect_silence(self.seg1, min_silence_len=500, silence_thresh=-20)
         self.assertEqual(silent_ranges, [[0, 775], [3141, 4033], [5516, 6051]])
 
 
