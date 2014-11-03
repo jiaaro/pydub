@@ -20,6 +20,9 @@ from pydub.exceptions import (
 from pydub.silence import (
     detect_silence,
 )
+from pydub.generators import (
+    Sine,
+)
 
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
 
