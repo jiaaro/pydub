@@ -1,7 +1,10 @@
 """
-Each generator will return float samples from -1.0 to 1.0, which can be converted
-to actual audio with 8, 16, 24, or 32 bit depth using the AudioSegment.from_generator
-class method.
+Each generator will return float samples from -1.0 to 1.0, which can be 
+converted to actual audio with 8, 16, 24, or 32 bit depth using the
+AudioSegment.from_generator class method.
+
+See Wikipedia's "waveform" page for info on some of the generators included 
+here: http://en.wikipedia.org/wiki/Waveform
 """
 
 import math
@@ -61,21 +64,83 @@ class SignalGenerator(object):
 			"frame_width": sample_width,
 		})
 
+	def generate(self):
+		raise NotImplementedError("SignalGenerator subclasses must implement the generate() method, and *should not* call the superclass implementation.")
+
 		
 
 class Sine(SignalGenerator):
-	def __init__(self, freq, *args, **kwargs):
-		super(Sine, self).__init__(*args, **kwargs)
+	def __init__(self, freq, **kwargs):
+		super(Sine, self).__init__(**kwargs)
 		self.freq = freq
 
 	def generate(self):
-		"""
-		freq in Hz
-		sample_rate in samples/sec
-		"""
 		sample_n = 0
 		while True:
 			sine_of = (self.freq * 2 * math.pi) / self.sample_rate
 			yield math.sin(sine_of * sample_n)
 			sample_n += 1
+
+
+
+class Pulse(SignalGenerator):
+	def __init__(self, freq, duty_cycle=0.5, **kwargs):
+		super(Pulse, self).__init__(**kwargs)
+		self.freq = freq
+		self.duty_cycle = duty_cycle
+
+	def generate(self):
+		sample_n = 0
+
+		# in samples
+		cycle_length = self.sample_rate / float(self.freq)
+		pulse_length = cycle_length * self.duty_cycle
+
+		while True:
+			if (sample_n % cycle_length) < pulse_length:
+				yield 1.0
+			else:
+				yield -1.0
+			sample_n += 1
+
+
+
+class Square(Pulse):
+	def __init__(self, freq, **kwargs):
+		kwargs['duty_cycle'] = 0.5
+		super(Square, self).__init__(freq, **kwargs)
+
+
+
+class Sawtooth(SignalGenerator):
+	def __init__(self, freq, duty_cycle=1.0, **kwargs):
+		super(Sawtooth, self).__init__(**kwargs)
+		self.freq = freq
+		self.duty_cycle = duty_cycle
+
+	def generate(self):
+		sample_n = 0
+
+		# in samples
+		cycle_length = self.sample_rate / float(self.freq)
+		midpoint = cycle_length * self.duty_cycle
+		ascend_length = midpoint
+		descend_length = cycle_length - ascend_length
+
+		while True:
+			cycle_position = sample_n % cycle_length
+			if cycle_position < midpoint:
+				yield (2 * cycle_position / ascend_length) - 1.0
+			else:
+				yield 1.0 - (2 * (cycle_position - midpoint) / descend_length)
+			sample_n += 1
+
+
+
+class Triangle(Sawtooth):
+	def __init__(self, freq, **kwargs):
+		kwargs['duty_cycle'] = 0.5
+		super(Triangle, self).__init__(freq, **kwargs)
+
+
 	
