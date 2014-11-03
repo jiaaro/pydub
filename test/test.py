@@ -511,7 +511,7 @@ class GeneratorTests(unittest.TestCase):
     
     def test_loudness(self):
         sine_dbfs = Sine(440).to_audio_segment().dBFS
-        self.assertAlmostEqual(sine_dbfs, 3.0, places=1)
+        self.assertAlmostEqual(sine_dbfs, -3.0, places=1)
 
     def test_duration(self):
         one_sec = Sine(440).to_audio_segment(duration=1.0)
