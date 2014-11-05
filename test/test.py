@@ -562,6 +562,12 @@ class NoConverterTests(unittest.TestCase):
         func = partial(AudioSegment.from_file, self.mp3_file, format="mp3")
         self.assertRaises(OSError, func)
 
+    def test_exporting(self):
+        seg = AudioSegment.from_wav(self.wave_file)
+        exported = AudioSegment.from_wav(seg.export(format="wav"))
+
+        self.assertEqual(len(exported), len(seg))
+
 
 class FilterTests(unittest.TestCase):
 
