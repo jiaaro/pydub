@@ -22,6 +22,8 @@ from pydub.silence import (
 )
 from pydub.generators import (
     Sine,
+    Square,
+    Triangle,
 )
 
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
@@ -521,6 +523,32 @@ class GeneratorTests(unittest.TestCase):
         self.assertAlmostEqual(len(one_sec), 1000)
         self.assertAlmostEqual(len(five_sec), 5000)
         self.assertAlmostEqual(len(half_sec), 500)
+
+
+class FilterTests(unittest.TestCase):
+
+    def test_highpass_filter_reduces_loudness(self):
+        s = Square(200).to_audio_segment()
+        less_bass = s.high_pass_filter(400)
+        self.assertLess(less_bass.dBFS, s.dBFS)
+
+    def test_highpass_filter_cutoff_frequency(self):
+        # A Sine wave should not be affected by a HPF 3 octaves lower
+        s = Sine(800).to_audio_segment()
+        less_bass = s.high_pass_filter(100)
+        self.assertAlmostEqual(less_bass.dBFS, s.dBFS, places=0)
+
+    def test_lowpass_filter_reduces_loudness(self):
+        s = Square(200).to_audio_segment()
+        less_treble = s.low_pass_filter(400)
+        self.assertLess(less_treble.dBFS, s.dBFS)
+
+    def test_lowpass_filter_cutoff_frequency(self):
+        # A Sine wave should not be affected by a LPF 3 octaves Higher
+        s = Sine(100).to_audio_segment()
+        less_treble = s.low_pass_filter(800)
+        self.assertAlmostEqual(less_treble.dBFS, s.dBFS, places=0)
+
 
 
 

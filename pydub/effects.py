@@ -1,16 +1,22 @@
 import sys
+import math
+import array
 from .utils import (
     db_to_float,
     ratio_to_db,
     register_pydub_effect,
     make_chunks,
     audioop,
+    get_array_type,
+    get_min_max_value
 )
 from .silence import split_on_silence
 from .exceptions import TooManyMissingFrames, InvalidDuration
 
 if sys.version_info >= (3, 0):
     xrange = range
+
+
 
 @register_pydub_effect
 def normalize(seg, headroom=0.1):
@@ -73,6 +79,7 @@ def speedup(seg, playback_speed=1.5, chunk_size=150, crossfade=25):
     out += last_chunk
     return out
     
+
 @register_pydub_effect
 def strip_silence(seg, silence_len=1000, silence_thresh=-16, padding=100):
     if padding > silence_len:
@@ -89,6 +96,7 @@ def strip_silence(seg, silence_len=1000, silence_thresh=-16, padding=100):
         seg.append(chunk, crossfade=crossfade)
 
     return seg
+
 
 @register_pydub_effect
 def compress_dynamic_range(seg, threshold=-20.0, ratio=4.0, attack=5.0, release=50.0):
@@ -163,3 +171,61 @@ def compress_dynamic_range(seg, threshold=-20.0, ratio=4.0, attack=5.0, release=
         output.append(frame)
     
     return seg._spawn(data=b''.join(output))
+
+
+
+# High and low pass filters based on implementation found on Stack Overflow:
+#   http://stackoverflow.com/questions/13882038/implementing-simple-high-and-low-pass-filters-in-c
+
+@register_pydub_effect
+def low_pass_filter(seg, cutoff):
+    """
+        cutoff - Frequency (in Hz) where high frequency signal will begin to
+            be reduced by 6dB per octave (doubling in frequency)
+    """
+    RC = 1.0 / (cutoff * 2 * math.pi)
+    dt = 1.0 / seg.frame_rate
+
+    alpha = dt / (RC + dt)
+
+    array_type = get_array_type(seg.sample_width * 8)
+    
+    original = array.array(array_type, seg._data)
+    filteredArray = array.array(array_type, original)
+    
+    frame_count = int(seg.frame_count())
+
+    last_val = filteredArray[0] = original[0]
+    for i in range(1, frame_count):
+        last_val = last_val + (alpha * (original[i] - last_val))
+        filteredArray[i] = int(last_val)
+    
+    return seg._spawn(data=filteredArray.tostring())
+
+
+@register_pydub_effect
+def high_pass_filter(seg, cutoff):
+    """
+        cutoff - Frequency (in Hz) where high frequency signal will begin to
+            be reduced by 6dB per octave (doubling in frequency)
+    """
+    RC = 1.0 / (cutoff * 2 * math.pi)
+    dt = 1.0 / seg.frame_rate
+
+    alpha = RC / (RC + dt)
+
+    array_type = get_array_type(seg.sample_width * 8)
+    minval, maxval = get_min_max_value(seg.sample_width * 8)
+    
+    original = array.array(array_type, seg._data)
+    filteredArray = array.array(array_type, original)
+    
+    frame_count = int(seg.frame_count())
+
+    last_val = filteredArray[0] = original[0]
+    for i in range(1, frame_count):
+        last_val = alpha * (last_val + original[i] - original[i-1])
+        filteredArray[i] = int(min(max(last_val, minval), maxval))
+    
+    return seg._spawn(data=filteredArray.tostring())
+
