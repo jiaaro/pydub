@@ -527,6 +527,18 @@ class GeneratorTests(unittest.TestCase):
 
 class FilterTests(unittest.TestCase):
 
+    def setUp(self):
+        global test1wav
+        if not test1wav:
+            test1wav = AudioSegment.from_wav(os.path.join(data_dir, 'test1.wav'))
+
+        self.seg1 = test1wav
+
+    def test_highpass_works_on_multichannel_segments(self):
+        self.assertEqual(self.seg1.channels, 2)
+        less_bass = self.seg1.high_pass_filter(800)
+        self.assertLess(less_bass.dBFS, self.seg1.dBFS)
+
     def test_highpass_filter_reduces_loudness(self):
         s = Square(200).to_audio_segment()
         less_bass = s.high_pass_filter(400)

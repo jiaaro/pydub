@@ -195,10 +195,15 @@ def low_pass_filter(seg, cutoff):
     
     frame_count = int(seg.frame_count())
 
-    last_val = filteredArray[0] = original[0]
+    last_val = [0] * seg.channels
+    for i in range(seg.channels):
+        last_val[i] = filteredArray[i] = original[i]
+
     for i in range(1, frame_count):
-        last_val = last_val + (alpha * (original[i] - last_val))
-        filteredArray[i] = int(last_val)
+        for j in range(seg.channels):
+            offset = (i * seg.channels) + j
+            last_val[j] = last_val[j] + (alpha * (original[offset] - last_val[j]))
+            filteredArray[offset] = int(last_val[j])
     
     return seg._spawn(data=filteredArray.tostring())
 
@@ -222,10 +227,17 @@ def high_pass_filter(seg, cutoff):
     
     frame_count = int(seg.frame_count())
 
-    last_val = filteredArray[0] = original[0]
+    last_val = [0] * seg.channels
+    for i in range(seg.channels):
+        last_val[i] = filteredArray[i] = original[i]
+
     for i in range(1, frame_count):
-        last_val = alpha * (last_val + original[i] - original[i-1])
-        filteredArray[i] = int(min(max(last_val, minval), maxval))
+        for j in range(seg.channels):
+            offset = (i * seg.channels) + j
+            offset_minus_1 = ((i-1) * seg.channels) + j
+
+            last_val[j] = alpha * (last_val[j] + original[offset] - original[offset_minus_1])
+            filteredArray[offset] = int(min(max(last_val[j], minval), maxval))
     
     return seg._spawn(data=filteredArray.tostring())
 
