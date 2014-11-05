@@ -180,8 +180,8 @@ def compress_dynamic_range(seg, threshold=-20.0, ratio=4.0, attack=5.0, release=
 @register_pydub_effect
 def low_pass_filter(seg, cutoff):
     """
-        cutoff - Frequency (in Hz) where high frequency signal will begin to
-            be reduced by 6dB per octave (doubling in frequency)
+        cutoff - Frequency (in Hz) where higher frequency signal will begin to
+            be reduced by 6dB per octave (doubling in frequency) above this point
     """
     RC = 1.0 / (cutoff * 2 * math.pi)
     dt = 1.0 / seg.frame_rate
@@ -211,8 +211,8 @@ def low_pass_filter(seg, cutoff):
 @register_pydub_effect
 def high_pass_filter(seg, cutoff):
     """
-        cutoff - Frequency (in Hz) where high frequency signal will begin to
-            be reduced by 6dB per octave (doubling in frequency)
+        cutoff - Frequency (in Hz) where lower frequency signal will begin to
+            be reduced by 6dB per octave (doubling in frequency) below this point
     """
     RC = 1.0 / (cutoff * 2 * math.pi)
     dt = 1.0 / seg.frame_rate
