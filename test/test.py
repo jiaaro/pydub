@@ -537,12 +537,12 @@ class FilterTests(unittest.TestCase):
     def test_highpass_works_on_multichannel_segments(self):
         self.assertEqual(self.seg1.channels, 2)
         less_bass = self.seg1.high_pass_filter(800)
-        self.assertLess(less_bass.dBFS, self.seg1.dBFS)
+        self.assertTrue(less_bass.dBFS < self.seg1.dBFS)
 
     def test_highpass_filter_reduces_loudness(self):
         s = Square(200).to_audio_segment()
         less_bass = s.high_pass_filter(400)
-        self.assertLess(less_bass.dBFS, s.dBFS)
+        self.assertTrue(less_bass.dBFS < s.dBFS)
 
     def test_highpass_filter_cutoff_frequency(self):
         # A Sine wave should not be affected by a HPF 3 octaves lower
@@ -553,7 +553,7 @@ class FilterTests(unittest.TestCase):
     def test_lowpass_filter_reduces_loudness(self):
         s = Square(200).to_audio_segment()
         less_treble = s.low_pass_filter(400)
-        self.assertLess(less_treble.dBFS, s.dBFS)
+        self.assertTrue(less_treble.dBFS < s.dBFS)
 
     def test_lowpass_filter_cutoff_frequency(self):
         # A Sine wave should not be affected by a LPF 3 octaves Higher
