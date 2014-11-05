@@ -302,12 +302,13 @@ class AudioSegment(object):
 
     @classmethod
     def from_file(cls, file, format=None):
+        orig_file = file
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
         if format:
             format = AUDIO_FILE_EXT_ALIASES.get(format, format)
 
-        if format == "wav":
+        if format == "wav" or (isinstance(orig_file, basestring) and orig_file.endswith(".wav")):
             try:
                 return cls._from_safe_wav(file)
             except:

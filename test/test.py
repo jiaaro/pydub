@@ -10,6 +10,7 @@ from pydub.utils import (
     ratio_to_db,
     make_chunks,
     mediainfo,
+    get_encoder_name,
 )
 from pydub.exceptions import (
     InvalidTag,
@@ -525,6 +526,43 @@ class GeneratorTests(unittest.TestCase):
         self.assertAlmostEqual(len(half_sec), 500)
 
 
+class NoConverterTests(unittest.TestCase):
+    
+    def setUp(self):
+        self.wave_file = os.path.join(data_dir, 'test1.wav')
+        self.mp3_file = os.path.join(data_dir, 'test1.mp3')
+        AudioSegment.converter = "definitely-not-a-path-to-anything-asdjklqwop"
+
+    def tearDown(self):
+        AudioSegment.converter = get_encoder_name()
+
+    def test_opening_wav_file(self):
+        seg = AudioSegment.from_wav(self.wave_file)
+        self.assertTrue(len(seg) > 1000)
+
+        seg = AudioSegment.from_file(self.wave_file)
+        self.assertTrue(len(seg) > 1000)
+
+        seg = AudioSegment.from_file(self.wave_file, "wav")
+        self.assertTrue(len(seg) > 1000)
+
+        seg = AudioSegment.from_file(self.wave_file, format="wav")
+        self.assertTrue(len(seg) > 1000)
+
+    def test_opening_mp3_file_fails(self):
+        func = partial(AudioSegment.from_mp3, self.mp3_file)
+        self.assertRaises(OSError, func)
+
+        func = partial(AudioSegment.from_file, self.mp3_file)
+        self.assertRaises(OSError, func)
+
+        func = partial(AudioSegment.from_file, self.mp3_file, "mp3")
+        self.assertRaises(OSError, func)
+        
+        func = partial(AudioSegment.from_file, self.mp3_file, format="mp3")
+        self.assertRaises(OSError, func)
+
+
 class FilterTests(unittest.TestCase):
 
     def setUp(self):
@@ -560,8 +598,6 @@ class FilterTests(unittest.TestCase):
         s = Sine(100).to_audio_segment()
         less_treble = s.low_pass_filter(800)
         self.assertAlmostEqual(less_treble.dBFS, s.dBFS, places=0)
-
-
 
 
 
