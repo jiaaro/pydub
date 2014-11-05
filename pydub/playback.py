@@ -1,6 +1,6 @@
 import subprocess
 from tempfile import NamedTemporaryFile
-from .utils import get_player_name
+from .utils import get_player_name, make_chunks
 
 PLAYER = get_player_name()
 
@@ -21,7 +21,10 @@ def _play_with_pyaudio(seg):
 	                rate=seg.frame_rate,
     	            output=True)
 
-	stream.write(seg._data)
+	# break audio into half-second chunks (to allows keyboard interrupts)
+	for chunk in make_chunks(seg, 500):
+		stream.write(chunk._data)
+
 	stream.stop_stream()  
 	stream.close()  
 
