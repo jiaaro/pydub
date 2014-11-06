@@ -39,6 +39,7 @@ from pydub import AudioSegment
 sound = AudioSegment.from_file("/path/to/sound.wav", format="wav")
 
 file_handle = sound.export("/path/to/output.mp3", format="mp3")
+mp3_file = sound.export(tags={"album": "The Bends", "artist": "Radiohead"}, bitrate="192k")
 ```
 
 No arguments are required. 
