@@ -1,6 +1,8 @@
 # API Documentation
 
-This document is a work in progress. If you're looking for some functionality in particular, it is a *very* good idea to take a look at the source code. Core functionality is mostly in `pydub/audio_segment.py` - a number of `AudioSegment` methods are in the `pydub/effects.py` module, and added to `AudioSegment` via the effect registration process (the `register_pydub_effect()` function)
+This document is a work in progress.
+
+If you're looking for some functionality in particular, it is a *very* good idea to take a look at the source code. Core functionality is mostly in `pydub/audio_segment.py` - a number of `AudioSegment` methods are in the `pydub/effects.py` module, and added to `AudioSegment` via the effect registration process (the `register_pydub_effect()` function)
 
 ## AudioSegment()
 
