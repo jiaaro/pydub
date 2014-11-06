@@ -45,12 +45,13 @@ No arguments are required.
 
 The first agument is the location (as a string) to write the output, **or** a file handle to write to. If you do not pass an output file or path, a temporary file is generated.
 
-
-
 **Supported keyword arguments**:
 
-- `format` [default: `"mp3"`] – example: `"aif"` – Format of the output file, supports `"wav"` natively, requires ffmpeg for all other formats.
+- `format` | example: `"aif"` | default: `"mp3"`
+  Format of the output file, supports `"wav"` natively, requires ffmpeg for all other formats.
 - `bitrate` – example: `"128k"` – for compressed formats, you can pass the bitrate you'd like the encoder to use (requires ffmpeg)
-- `tags` - example: `{"album": "1989", "artist": "Taylor Swift"}` – Allows you to supply media info tags for the encoder (requires ffmpeg). Not all formats can receive tags (mp3 can).
-- `parameters` – example: `["-ac", "2"]` – Pass additional [commpand line parameters](https://www.ffmpeg.org/ffmpeg.html) to the ffmpeg call. These are added to the end of the call (in the output file section).
+- `tags` | example: `{"album": "1989", "artist": "Taylor Swift"}`
+  Allows you to supply media info tags for the encoder (requires ffmpeg). Not all formats can receive tags (mp3 can).
+- `parameters` – example: `["-ac", "2"]`
+  Pass additional [commpand line parameters](https://www.ffmpeg.org/ffmpeg.html) to the ffmpeg call. These are added to the end of the call (in the output file section).
 
