@@ -1,6 +1,6 @@
 # API Documentation
 
-This document is a work in progress
+This document is a work in progress. If you're looking for some functionality in particular, it is a *very* good idea to take a look at the source code. Core functionality is mostly in `pydub/audio_segment.py` - a number of `AudioSegment` methods are in the `pydub/effects.py` module, and added to `AudioSegment` via the effect registration process (the `register_pydub_effect()` function)
 
 ## AudioSegment()
 
@@ -56,4 +56,3 @@ The first agument is the location (as a string) to write the output, **or** a fi
   Allows you to supply media info tags for the encoder (requires ffmpeg). Not all formats can receive tags (mp3 can).
 - `parameters` | example: `["-ac", "2"]`  
   Pass additional [commpand line parameters](https://www.ffmpeg.org/ffmpeg.html) to the ffmpeg call. These are added to the end of the call (in the output file section).
-
