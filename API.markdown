@@ -2,7 +2,7 @@
 
 This document is a work in progress
 
-# AudioSegment()
+## AudioSegment()
 
 `AudioSegment` objects are immutable, and support a number of operators.
 
@@ -30,7 +30,7 @@ beginning = sound1[:5000]
 end = sound1[-5000:]
 ```
 
-## AudioSegment(…).export()
+### AudioSegment(…).export()
 
 Write the `AudioSegment` object to a file – returns a file handle of the output file (you don't have to do anything with it, though).
 
