@@ -59,3 +59,54 @@ The first agument is the location (as a string) to write the output, **or** a fi
   Allows you to supply media info tags for the encoder (requires ffmpeg). Not all formats can receive tags (mp3 can).
 - `parameters` | example: `["-ac", "2"]`  
   Pass additional [commpand line parameters](https://www.ffmpeg.org/ffmpeg.html) to the ffmpeg call. These are added to the end of the call (in the output file section).
+
+### AudioSegment.empty()
+
+Creates a zero-duration `AudioSegment`.
+
+```python
+from pydub import AudioSegment
+empty = AudioSegment.empty()
+
+len(empty) == 0
+```
+
+This is useful for aggregation loops:
+```python
+from pydub import AudioSegment
+
+sounds = [
+  AudioSegment.from_wav("sound1.wav"), 
+  AudioSegment.from_wav("sound2.wav"), 
+  AudioSegment.from_wav("sound3.wav"), 
+]
+
+playlist = AudioSegment.empty()
+for sound in sounds:
+  playlist += sound
+```
+
+### AudioSegment.silent()
+
+Creates a silent audiosegment, which can be used as a placeholder, spacer, or as a canvas to overlay other sounds on top of.
+
+```python
+from pydub import AudioSegment
+ten_second_silence = AudioSegment.silent(duration=10000)
+```
+
+**Supported keyword arguments**:
+
+- `duration` | example: `3000` | default: `1000` (1 second)  
+  Length of the silent `AudioSegment`, in milliseconds
+
+### AudioSegment(…).dBFS
+
+Returns the loudness of the `AudioSegment` in dBFS (db relative to the maximum possible loudness). A Square wave at maximum amplitude will be roughly 0 dBFS (maximum loudness), whereas a Sine Wave at maximum amplitude will be roughly -3 dBFS.
+
+```python
+from pydub import AudioSegment
+
+sound = AudioSegment.from_file("sound1.wav")
+loudness = sound.dBFS
+```
