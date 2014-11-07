@@ -24,7 +24,10 @@ from pydub.silence import (
 from pydub.generators import (
     Sine,
     Square,
+    Pulse,
     Triangle,
+    Sawtooth,
+    WhiteNoise,
 )
 
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
@@ -512,9 +515,24 @@ class SilenceTests(unittest.TestCase):
 
 class GeneratorTests(unittest.TestCase):
     
+    def test_with_smoke(self):
+        Sine(440).to_audio_segment()
+        Square(440).to_audio_segment()
+        Triangle(440).to_audio_segment()
+
+        Pulse(440, duty_cycle=0.75).to_audio_segment()
+        Sawtooth(440, duty_cycle=0.75).to_audio_segment()
+
+        WhiteNoise().to_audio_segment()
+
     def test_loudness(self):
         sine_dbfs = Sine(440).to_audio_segment().dBFS
+        square_dbfs = Square(440).to_audio_segment().dBFS
+        white_noise_dbfs = WhiteNoise().to_audio_segment().dBFS
+
         self.assertAlmostEqual(sine_dbfs, -3.0, places=1)
+        self.assertAlmostEqual(square_dbfs, 0.0, places=1)
+        self.assertAlmostEqual(white_noise_dbfs, -5, places=0)
 
     def test_duration(self):
         one_sec = Sine(440).to_audio_segment(duration=1.0)

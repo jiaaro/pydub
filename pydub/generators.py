@@ -10,6 +10,7 @@ here: http://en.wikipedia.org/wiki/Waveform
 import math
 import array
 import itertools
+import random
 from .audio_segment import AudioSegment
 from .utils import (
 	db_to_float,
@@ -130,4 +131,8 @@ class Triangle(Sawtooth):
 		super(Triangle, self).__init__(freq, **kwargs)
 
 
+class WhiteNoise(SignalGenerator):
+	def generate(self):
+		while True:
+			yield (random.random() * 2) - 1.0
 	
