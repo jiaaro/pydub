@@ -17,6 +17,7 @@ sound2 = AudioSegment.from_file("/path/to/another_sound.wav", format="wav")
 louder = sound1 + 6
 quieter = sound1 - 3.5
 
+# sound1, with sound2 appended
 combined = sound1 + sound2
 
 # sound1 repeated 3 times
