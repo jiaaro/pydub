@@ -4,9 +4,10 @@ Pydub lets you do stuff to audio in a way that isn't stupid.
 **Stuff you might be looking for**:
  - [Installing Pydub](https://github.com/jiaaro/pydub#installation)
  - [API Documentation](https://github.com/jiaaro/pydub/blob/master/API.markdown)
- - [Getting help, asking Questions, reporting Bugs](https://github.com/jiaaro/pydub#bugs--questions)
  - [Dependencies](https://github.com/jiaaro/pydub#dependencies)
  - [Setting up ffmpeg](https://github.com/jiaaro/pydub#getting-ffmpeg-set-up)
+ - [Questions/Bugs](https://github.com/jiaaro/pydub#bugs--questions)
+ 
 
 ##  Quickstart
 
