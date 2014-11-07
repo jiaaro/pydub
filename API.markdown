@@ -53,7 +53,7 @@ The first agument is the location (as a string) to write the output, **or** a fi
 - `format` | example: `"aif"` | default: `"mp3"`  
   Format of the output file, supports `"wav"` natively, requires ffmpeg for all other formats.
 - `bitrate` | example: `"128k"`  
-  for compressed formats, you can pass the bitrate you'd like the encoder to use (requires ffmpeg)
+  For compressed formats, you can pass the bitrate you'd like the encoder to use (requires ffmpeg)
 - `tags` | example: `{"album": "1989", "artist": "Taylor Swift"}`  
   Allows you to supply media info tags for the encoder (requires ffmpeg). Not all formats can receive tags (mp3 can).
 - `parameters` | example: `["-ac", "2"]`  
