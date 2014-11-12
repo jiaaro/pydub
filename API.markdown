@@ -92,6 +92,7 @@ Creates a silent audiosegment, which can be used as a placeholder, spacer, or as
 
 ```python
 from pydub import AudioSegment
+
 ten_second_silence = AudioSegment.silent(duration=10000)
 ```
 
@@ -106,8 +107,8 @@ Returns the loudness of the `AudioSegment` in dBFS (db relative to the maximum p
 
 ```python
 from pydub import AudioSegment
-
 sound = AudioSegment.from_file("sound1.wav")
+
 loudness = sound.dBFS
 ```
 
@@ -117,8 +118,8 @@ Number of channels in this audio segment (1 means mono, 2 means stereo)
 
 ```python
 from pydub import AudioSegment
-
 sound = AudioSegment.from_file("sound1.wav")
+
 channel_count = sound.channels
 ```
 
@@ -128,8 +129,8 @@ Number of bytes in each sample (1 means 8 bit, 2 means 16 bit, etc). CD Audio is
 
 ```python
 from pydub import AudioSegment
-
 sound = AudioSegment.from_file("sound1.wav")
+
 bytes_per_sample = sound.sample_width
 ```
 
@@ -139,8 +140,8 @@ CD Audio has a 44.1kHz sample rate, which means `frame_rate` will be `44100` (sa
 
 ```python
 from pydub import AudioSegment
-
 sound = AudioSegment.from_file("sound1.wav")
+
 frames_per_second = sound.frame_rate
 ```
 
@@ -150,8 +151,8 @@ Number of bytes for each "frame". A frame contains a sample for each channel (so
 
 ```python
 from pydub import AudioSegment
-
 sound = AudioSegment.from_file("sound1.wav")
+
 bytes_per_frame = sound.frame_width
 ```
 
@@ -161,8 +162,8 @@ A measure of loudness. Used to compute dBFS, which is what you should use in mos
 
 ```python
 from pydub import AudioSegment
-
 sound = AudioSegment.from_file("sound1.wav")
+
 loudness = sound.rms
 ```
 
@@ -172,8 +173,8 @@ The highest amplitude of any sample in the `AudioSegment`. Useful for things lik
 
 ```python
 from pydub import AudioSegment
-
 sound = AudioSegment.from_file("sound1.wav")
+
 peak_amplitude = sound.max
 ```
 
