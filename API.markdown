@@ -121,7 +121,7 @@ Number of bytes in each sample (1 means 8 bit, 2 means 16 bit, etc). CD Audio is
 
 ### AudioSegment(…).frame_rate
 
-CD Audio has a 44.1k sample rate, which means `frame_rate` will be `44100` (same as sample rate, see `frame_width`). Common values are `44100` (CD), `48000` (DVD), `22050`, `24000`, `12000` and `11025`.
+CD Audio has a 44.1kHz sample rate, which means `frame_rate` will be `44100` (same as sample rate, see `frame_width`). Common values are `44100` (CD), `48000` (DVD), `22050`, `24000`, `12000` and `11025`.
 
 ### AudioSegment(…).frame_width
 
