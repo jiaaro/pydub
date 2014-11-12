@@ -110,3 +110,40 @@ from pydub import AudioSegment
 sound = AudioSegment.from_file("sound1.wav")
 loudness = sound.dBFS
 ```
+
+### AudioSegment(…).channels
+
+Number of channels in this audio segment (1 means mono, 2 means stereo)
+
+### AudioSegment(…).sample_width
+
+Number of bytes in each sample (1 means 8 bit, 2 means 16 bit, etc). CD Audio is 16 bit, (sample width of 2 bytes).
+
+### AudioSegment(…).frame_rate
+
+CD Audio has a 44.1k sample rate, which means `frame_rate` will be `44100` (same as sample rate, see `frame_width`). Common values are `44100` (CD), `48000` (DVD), `22050`, `24000`, `12000` and `11025`.
+
+### AudioSegment(…).frame_width
+
+Number of bytes for each "frame". A frame contains the sample for each channel (so for stereo you have 2 samples per frame, which are played simultaneously). `frame_width` is equal to `channels * sample_width`. For CD Audio it'll be `4` (2 channels times 2 bytes per sample).
+
+### AudioSegment(…).rms
+
+A measure of loudness. Used to compute dBFS, which is what you should use in most cases. Loudness is logarithmic (rms is not), which makes dB a much more natural scale.
+
+### AudioSegment(…).max
+
+The highest amplitude of any sample in the `AudioSegment`. Useful for things like normalization (which is provided in `pydub.effects.normalize`).
+
+### AudioSegment(…).frame_count()
+### AudioSegment(…).set_sample_width()
+### AudioSegment(…).set_frame_rate()
+### AudioSegment(…).set_channels()
+### AudioSegment(…).duration_seconds
+### AudioSegment(…).apply_gain()
+### AudioSegment(…).overlay()
+### AudioSegment(…).append()
+### AudioSegment(…).fade()
+### AudioSegment(…).fade_out()
+### AudioSegment(…).fade_in()
+### AudioSegment(…).reverse()
