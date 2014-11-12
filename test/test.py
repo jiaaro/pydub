@@ -535,9 +535,9 @@ class GeneratorTests(unittest.TestCase):
         self.assertAlmostEqual(white_noise_dbfs, -5, places=0)
 
     def test_duration(self):
-        one_sec = Sine(440).to_audio_segment(duration=1.0)
-        five_sec = Sine(440).to_audio_segment(duration=5.0)
-        half_sec = Sine(440).to_audio_segment(duration=0.5)
+        one_sec = Sine(440).to_audio_segment(duration=1000)
+        five_sec = Sine(440).to_audio_segment(duration=5000)
+        half_sec = Sine(440).to_audio_segment(duration=500)
 
         self.assertAlmostEqual(len(one_sec), 1000)
         self.assertAlmostEqual(len(five_sec), 5000)
