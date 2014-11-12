@@ -26,9 +26,9 @@ class SignalGenerator(object):
 		self.sample_rate = sample_rate
 		self.bit_depth = bit_depth
 
-	def to_audio_segment(self, duration=1.0, volume=0.0):
+	def to_audio_segment(self, duration=1000.0, volume=0.0):
 		"""
-		Duration in seconds
+		Duration in milliseconds
 			(default: 1 second)
 		Volume in DB relative to maximum amplitude
 			(default 0.0 dBFS, which is the maximum value)
@@ -38,7 +38,7 @@ class SignalGenerator(object):
 		array_type = get_array_type(self.bit_depth)
 		
 		gain = db_to_float(volume)
-		sample_count = int(self.sample_rate * duration)
+		sample_count = int(self.sample_rate * (duration / 1000.0))
 
 		sample_data = (int(val * maxval * gain) for val in self.generate())
 		sample_data = itertools.islice(sample_data, 0, sample_count)
