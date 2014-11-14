@@ -155,16 +155,16 @@ Requires ffmpeg or avconv for encoding and decoding all non-wav files (which wor
 
 ## Getting ffmpeg set up
 
-You may use **libav or ffmpeg**. We recommend libav.
+You may use **libav or ffmpeg**. libav is recommended.
 
 Mac (using [homebrew](http://brew.sh)):
 
 ```bash
 # libav
 brew install libav --with-libvorbis --with-sdl --with-theora
-```
-OR
-```bash
+
+####    OR    #####
+
 # ffmpeg
 brew install ffmpeg --with-libvorbis --with-ffplay --with-theora
 ```
@@ -174,9 +174,9 @@ Linux (using aptitude):
 ```bash
 # libav
 apt-get install libav-tools libavcodec-extra-53
-```
-OR
-```bash
+
+####    OR    #####
+
 # ffmpeg
 apt-get install ffmpeg libavcodec-extra-53
 ```
