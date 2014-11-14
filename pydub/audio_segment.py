@@ -588,7 +588,7 @@ class AudioSegment(object):
         return self._spawn(data=audioop.mul(self._data, self.sample_width,
                                             db_to_float(float(volume_change))))
 
-    def overlay(self, seg, position=0, loop=False, loops=None):
+    def overlay(self, seg, position=0, loop=False, times=None):
         """
         Overlay the provided segment on to this segment starting at the
         specificed position and using the specfied looping beahvior.
@@ -604,19 +604,21 @@ class AudioSegment(object):
             Loop seg as many times as necessary to match this segment's length.
             Overrides loops param.
 
-        loops (optional int):
+        times (optional int):
             Loop seg the specified number of times or until it matches this
-            segment's length. Value matches common audio looping semantics,
-            i.e. play through once and then do the specified number of loops.
-            -1: "infinite"
-             0: none
-             1: loop once
-             n: loop n times
+            segment's length. 1 means once, 2 means twice, ... 0 would make the
+            call a no-op
         """
 
         if loop:
-            # match loop=True's behavior with new loops (count)
-            loops = -1
+            # match loop=True's behavior with new times (count) mechinism.
+            times = -1
+        elif times is None:
+            # no times specified, just once through
+            times = 1
+        elif times == 0:
+            # it's a no-op, make a copy since we never mutate
+            return self._spawn(self._data)
 
         output = TemporaryFile()
 
@@ -632,21 +634,21 @@ class AudioSegment(object):
         pos = 0
         seg1_len = len(seg1)
         seg2_len = len(seg2)
-        while True:
+        while times:
             remaining = max(0, seg1_len - pos)
             if seg2_len >= remaining:
                 seg2 = seg2[:remaining]
                 seg2_len = remaining
-                # we've hit the end, we're done looping (if we were)
-                loops = 0
+                # we've hit the end, we're done looping (if we were) and this
+                # is our last go-around
+                times = 1
 
             output.write(audioop.add(seg1[pos:pos + seg2_len], seg2,
                                      sample_width))
             pos += seg2_len
 
-            if not loops:
-                break
-            loops -= 1
+            # dec times to break our while loop (eventually)
+            times -= 1
 
         output.write(seg1[pos:])
 
