@@ -153,7 +153,7 @@ Requires ffmpeg or avconv for encoding and decoding all non-wav files (which wor
  - avconv (http://libav.org/)
 
 
-## Getting libav/ffmpeg set up
+## Getting ffmpeg set up
 
 You may use **libav or ffmpeg**. We recommend libav.
 
