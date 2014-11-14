@@ -622,8 +622,6 @@ class AudioSegment(object):
         return spawn(data=output)
 
     def append(self, seg, crossfade=100):
-        output = TemporaryFile()
-
         seg1, seg2 = AudioSegment._sync(self, seg)
 
         if not crossfade:
@@ -631,6 +629,8 @@ class AudioSegment(object):
 
         xf = seg1[-crossfade:].fade(to_gain=-120, start=0, end=float('inf'))
         xf *= seg2[:crossfade].fade(from_gain=-120, start=0, end=float('inf'))
+
+        output = TemporaryFile()
 
         output.write(seg1[:-crossfade]._data)
         output.write(xf._data)
