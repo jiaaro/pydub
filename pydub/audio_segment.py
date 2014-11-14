@@ -588,7 +588,36 @@ class AudioSegment(object):
         return self._spawn(data=audioop.mul(self._data, self.sample_width,
                                             db_to_float(float(volume_change))))
 
-    def overlay(self, seg, position=0, loop=False):
+    def overlay(self, seg, position=0, loop=False, loops=None):
+        """
+        Overlay the provided segment on to this segment starting at the
+        specificed position and using the specfied looping beahvior.
+
+        seg (AudioSegment):
+            The audio segment to overlay on to this one.
+
+        position (optional int):
+            The position to start overlaying the provided segment in to this
+            one.
+
+        loop (optional bool):
+            Loop seg as many times as necessary to match this segment's length.
+            Overrides loops param.
+
+        loops (optional int):
+            Loop seg the specified number of times or until it matches this
+            segment's length. Value matches common audio looping semantics,
+            i.e. play through once and then do the specified number of loops.
+            -1: "infinite"
+             0: none
+             1: loop once
+             n: loop n times
+        """
+
+        if loop:
+            # match loop=True's behavior with new loops (count)
+            loops = -1
+
         output = TemporaryFile()
 
         seg1, seg2 = AudioSegment._sync(self, seg)
@@ -608,14 +637,16 @@ class AudioSegment(object):
             if seg2_len >= remaining:
                 seg2 = seg2[:remaining]
                 seg2_len = remaining
-                loop = False
+                # we've hit the end, we're done looping (if we were)
+                loops = 0
 
             output.write(audioop.add(seg1[pos:pos + seg2_len], seg2,
                                      sample_width))
             pos += seg2_len
 
-            if not loop:
+            if not loops:
                 break
+            loops -= 1
 
         output.write(seg1[pos:])
 
