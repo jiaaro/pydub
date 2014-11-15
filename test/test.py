@@ -140,6 +140,69 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(len(seg_mult), 5000)
         self.assertEqual(len(seg_over), 5000)
 
+    def test_overlay_times(self):
+        # infinite
+        seg_mult = self.seg1[:5000] * self.seg2[:3000]
+        seg_over = self.seg1[:5000].overlay(self.seg2[:3000], times=99999999)
+        self.assertEqual(len(seg_mult), len(seg_over))
+        self.assertEqual(len(seg_over), 5000)
+        self.assertTrue(seg_mult._data == seg_over._data)
+
+        # no times, no-op
+        piece = self.seg2[:1000]
+        seg_manual = self.seg1[:4000]
+        seg_over = self.seg1[:4000].overlay(piece, times=0)
+        self.assertEqual(len(seg_manual), len(seg_over))
+        self.assertEqual(len(seg_over), 4000)
+        self.assertFalse(seg_mult._data == seg_over._data)
+
+        # 1 loop
+        seg_manual = self.seg1[:4000].overlay(piece, position=500)
+        seg_over = self.seg1[:4000].overlay(piece, times=1)
+        self.assertEqual(len(seg_manual), len(seg_over))
+        self.assertEqual(len(seg_over), 4000)
+        self.assertFalse(seg_mult._data == seg_over._data)
+
+        # 2 loops
+        seg_manual = self.seg1[:4000].overlay(piece, position=500) \
+            .overlay(piece, position=1500)
+        seg_over = self.seg1[:4000].overlay(piece, times=2)
+        self.assertEqual(len(seg_manual), len(seg_over))
+        self.assertEqual(len(seg_over), 4000)
+        self.assertFalse(seg_mult._data == seg_over._data)
+
+        # 3 loops
+        seg_manual = self.seg1[:4000].overlay(piece, position=500) \
+            .overlay(piece, position=1500).overlay(piece, position=2500)
+        seg_over = self.seg1[:4000].overlay(piece, times=3)
+        self.assertEqual(len(seg_manual), len(seg_over))
+        self.assertEqual(len(seg_over), 4000)
+        self.assertFalse(seg_mult._data == seg_over._data)
+
+        # 4 loops (last will pass end)
+        seg_manual = self.seg1[:4000].overlay(piece, position=500) \
+            .overlay(piece, position=1500).overlay(piece, position=2500) \
+            .overlay(piece, position=3500)
+        seg_over = self.seg1[:4000].overlay(piece, times=4)
+        self.assertEqual(len(seg_manual), len(seg_over))
+        self.assertEqual(len(seg_over), 4000)
+        self.assertFalse(seg_mult._data == seg_over._data)
+
+        # 5 loops (last won't happen b/c past end)
+        seg_manual = self.seg1[:4000].overlay(piece, position=500) \
+            .overlay(piece, position=1500).overlay(piece, position=2500) \
+            .overlay(piece, position=3500).overlay(piece, position=3500)
+        seg_over = self.seg1[:4000].overlay(piece, times=5)
+        self.assertEqual(len(seg_manual), len(seg_over))
+        self.assertEqual(len(seg_over), 4000)
+        self.assertFalse(seg_mult._data == seg_over._data)
+
+        # ~infinite, same (as 4 and 5 really)
+        seg_over = self.seg1[:4000].overlay(piece, times=999999999)
+        self.assertEqual(len(seg_manual), len(seg_over))
+        self.assertEqual(len(seg_over), 4000)
+        self.assertFalse(seg_mult._data == seg_over._data)
+
     def test_slicing(self):
         empty = self.seg1[:0]
         second_long_slice = self.seg1[:1000]
