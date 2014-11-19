@@ -258,45 +258,6 @@ out_f = open("%s_minute_playlist.mp3" % playlist_length, 'wb')
 playlist.export(out_f, format='mp3')
 ```
 
-### Yet another Example?
-
-Let's say you have a weekly podcast and you want to do the processing automatically.
-
-For this example we're going to:
-
-  - Strip out the silence
-  - Add on the bumpers (intro/outro theme music)
-
-```python
-from pydub import AudioSegment
-from pydub.utils import db_to_float
-
-# Let's load up the audio we need...
-podcast = AudioSegment.from_mp3("podcast.mp3")
-intro = AudioSegment.from_wav("intro.wav")
-outro = AudioSegment.from_wav("outro.wav")
-
-# Let's consider anything that is 30 decibels quieter than
-# the average volume of the podcast to be silence
-average_loudness = podcast.rms
-silence_threshold = average_loudness * db_to_float(-30)
-
-# filter out the silence
-podcast_parts = (ms for ms in podcast if ms.rms > silence_threshold)
-
-# combine all the chunks back together
-podcast = reduce(lambda a, b: a + b, podcast_parts)
-
-# add on the bumpers
-podcast = intro + podcast + outro
-
-# save the result
-podcast.export("podcast_processed.mp3", format="mp3")
-```
-
-Not bad!
-
-
 ## License ([MIT License](http://opensource.org/licenses/mit-license.php))
 
 Copyright © 2011 James Robert, http://jiaaro.com
