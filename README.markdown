@@ -244,7 +244,7 @@ playlist = beginning_of_song
 for song in playlist_songs:
 
     # We don't want an abrupt stop at the end, so let's do a 10 second crossfades
-    playlist.append(song, crossfade=(10 * 1000))
+    playlist = playlist.append(song, crossfade=(10 * 1000))
 
 # let's fade out the end of the last song
 playlist = playlist.fade_out(30)
