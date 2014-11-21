@@ -8,8 +8,6 @@ If you're looking for some functionality in particular, it is a *very* good idea
 
 `AudioSegment` objects are immutable, and support a number of operators.
 
-Any operations that combine multiple `AudioSegment` objects in *any* way will first ensure that they have the same number of channels, frame rate, sample rate, bit depth, etc. In cases where these do not match, the lower quality sound is upsampled, to preserve the quality of the higher quality sound. Mono is converted to stereo, bit depth and frame rate/sample rate are increased as needed. If you do not want this behavior, you may explicitly reduce the number of channels, bits, etc using the appropriate `AudioSegment` methods.
-
 ```python
 from pydub import AudioSegment
 sound1 = AudioSegment.from_file("/path/to/sound.wav", format="wav")
@@ -34,6 +32,8 @@ beginning = sound1[:5000]
 # last 5 seconds of sound1
 end = sound1[-5000:]
 ```
+
+Any operations that combine multiple `AudioSegment` objects in *any* way will first ensure that they have the same number of channels, frame rate, sample rate, bit depth, etc. When these things do not match, the lower quality sound is modified to match the quality of the higher quality sound so that quality is not lost: mono is converted to stereo, bit depth and frame rate/sample rate are increased as needed. If you do not want this behavior, you may explicitly reduce the number of channels, bits, etc using the appropriate `AudioSegment` methods.
 
 ### AudioSegment(…).export()
 
