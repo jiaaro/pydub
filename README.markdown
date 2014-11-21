@@ -144,13 +144,7 @@ Copy the pydub directory into your python path. Zip [here](https://github.com/ji
 
 ## Dependencies
 
-Requires ffmpeg or avconv for encoding and decoding all non-wav files (which work natively)
-
- - ffmpeg (http://www.ffmpeg.org/)
-
- -OR-
-
- - avconv (http://libav.org/)
+You can open and save WAV files with pure python. For opening and saving non-wav files – like mp3 – you'll need [ffmpeg](http://www.ffmpeg.org/) or [libav](http://libav.org/).
 
 
 ## Getting ffmpeg set up
