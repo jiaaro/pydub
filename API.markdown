@@ -8,6 +8,8 @@ If you're looking for some functionality in particular, it is a *very* good idea
 
 `AudioSegment` objects are immutable, and support a number of operators.
 
+Any operations that combine multiple `AudioSegment` objects in *any* way will first ensure that they have the same number of channels, frame rate, sample rate, bit depth, etc. In cases where these do not match, the lower quality sound is upsampled, to preserve the quality of the higher quality sound. Mono is converted to stereo, bit depth and frame rate/sample rate are increased as needed. If you do not want this behavior, you may explicitly reduce the number of channels, bits, etc using the appropriate `AudioSegment` methods.
+
 ```python
 from pydub import AudioSegment
 sound1 = AudioSegment.from_file("/path/to/sound.wav", format="wav")
@@ -209,7 +211,9 @@ number_of_frames_in_200ms_of_sound = sound.frame_count(ms=200)
 
 ### AudioSegment(…).append()
 
-Returns a new `AudioSegment`, created by appending another `AudioSegment` to this one – Optionally using a crossfade. `.append()` is used internally when adding `AudioSegment` objects together. By default a 100ms (0.1 second) crossfade is used to eliminate pops and crackles.
+Returns a new `AudioSegment`, created by appending another `AudioSegment` to this one (i.e., adding it to the end), Optionally using a crossfade. `AudioSegment(…).append()` is used internally when adding `AudioSegment` objects together with the `+` operator.
+
+By default a 100ms (0.1 second) crossfade is used to eliminate pops and crackles.
 
 ```python
 from pydub import AudioSegment
@@ -235,6 +239,19 @@ no_crossfade2 = sound1 + sound2
   When specified, method returns number of frames in X milliseconds of the `AudioSegment`
 
 ### AudioSegment(…).overlay()
+
+Overlays an `AudioSegment` onto this one. In the resulting `AudioSegment` they will play simultaneously. If the overlaid `AudioSegment` is longer than this one, the result will be truncated (so the end of the overlaid sound will be cut off).
+
+Since `AudioSegment` objects are immutable, you can get around this by overlaying the shorter sound on the longer one, or by creating a silent `AudioSegment` with the appropriate duration, and overlaying both sounds on to that one.
+
+```python
+from pydub import AudioSegment
+sound1 = AudioSegment.from_file("sound1.wav")
+sound2 = AudioSegment.from_file("sound2.wav")
+
+played_togther = sound1.overlay(sound2)
+```
+
 ### AudioSegment(…).apply_gain()
 ### AudioSegment(…).fade()
 ### AudioSegment(…).fade_out()
