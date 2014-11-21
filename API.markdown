@@ -240,7 +240,7 @@ no_crossfade2 = sound1 + sound2
 
 ### AudioSegment(…).overlay()
 
-Overlays an `AudioSegment` onto this one. In the resulting `AudioSegment` they will play simultaneously. If the overlaid `AudioSegment` is longer than this one, the result will be truncated (so the end of the overlaid sound will be cut off).
+Overlays an `AudioSegment` onto this one. In the resulting `AudioSegment` they will play simultaneously. If the overlaid `AudioSegment` is longer than this one, the result will be truncated (so the end of the overlaid sound will be cut off). The result is always the same length as this `AudioSegment` even when using the `loop`, and `times` keyword arguments.
 
 Since `AudioSegment` objects are immutable, you can get around this by overlaying the shorter sound on the longer one, or by creating a silent `AudioSegment` with the appropriate duration, and overlaying both sounds on to that one.
 
@@ -250,7 +250,26 @@ sound1 = AudioSegment.from_file("sound1.wav")
 sound2 = AudioSegment.from_file("sound2.wav")
 
 played_togther = sound1.overlay(sound2)
+
+sound2_starts_after_delay = sound1.overlay(sound2, position=5000)
+
+sound2_repeats_until_sound1_ends = sound1.overlay(sound2, loop=true)
+
+sound2_plays_twice = sound1.overlay(sound2, times=2)
+sound2_plays_a_lot = sound1.overlay(sound2, times=10000)
+
+# assume sound1 is 30 sec long and sound 2 is 5 sec long:
+len(sound1) == len(sound2_plays_a_lot)
 ```
+
+**Supported keyword arguments**:
+
+- `position` | example: `3000` | default: `0` (beginning of this `AudioSegment`)  
+  The overlaid `AudioSegment` will not begin until X milliseconds have passed
+- `loop` | example: `True` | default: `False` (entire duration of `AudioSegment`)  
+  The overlaid `AudioSegment` will repeat (starting at `position`) until the end of this `AudioSegment`
+- `times` | example: `4` | default: `1` (entire duration of `AudioSegment`)  
+  The overlaid `AudioSegment` will repeat X times (starting at `position`) but will still be truncated to the length of this `AudioSegment`
 
 ### AudioSegment(…).apply_gain()
 ### AudioSegment(…).fade()
