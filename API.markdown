@@ -256,9 +256,9 @@ sound2_starts_after_delay = sound1.overlay(sound2, position=5000)
 sound2_repeats_until_sound1_ends = sound1.overlay(sound2, loop=true)
 
 sound2_plays_twice = sound1.overlay(sound2, times=2)
-sound2_plays_a_lot = sound1.overlay(sound2, times=10000)
 
-# assume sound1 is 30 sec long and sound 2 is 5 sec long:
+# assume sound1 is 30 sec long and sound2 is 5 sec long:
+sound2_plays_a_lot = sound1.overlay(sound2, times=10000)
 len(sound1) == len(sound2_plays_a_lot)
 ```
 
