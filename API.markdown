@@ -207,13 +207,39 @@ number_of_frames_in_200ms_of_sound = sound.frame_count(ms=200)
 - `ms` | example: `3000` | default: `None` (entire duration of `AudioSegment`)  
   When specified, method returns number of frames in X milliseconds of the `AudioSegment`
 
-### AudioSegment(…).set_sample_width()
-### AudioSegment(…).set_frame_rate()
-### AudioSegment(…).set_channels()
-### AudioSegment(…).apply_gain()
-### AudioSegment(…).overlay()
 ### AudioSegment(…).append()
+
+Returns a new `AudioSegment`, created by appending another `AudioSegment` to this one – Optionally using a crossfade. `.append()` is used internally when adding `AudioSegment` objects together. By default a 100ms (0.1 second) crossfade is used to eliminate pops and crackles.
+
+```python
+from pydub import AudioSegment
+sound1 = AudioSegment.from_file("sound1.wav")
+sound2 = AudioSegment.from_file("sound2.wav")
+
+# default 100 ms crossfade
+combined = sound1.append(sound2)
+
+# 5000 ms crossfade
+combined_with_5_sec_crossfade = sound1.append(sound2, crossfade=5000)
+
+# no crossfade
+no_crossfade1 = sound1.append(sound2, crossfade=0)
+
+# no crossfade
+no_crossfade2 = sound1 + sound2
+```
+
+**Supported keyword arguments**:
+
+- `crossfade` | example: `3000` | default: `100` (entire duration of `AudioSegment`)  
+  When specified, method returns number of frames in X milliseconds of the `AudioSegment`
+
+### AudioSegment(…).overlay()
+### AudioSegment(…).apply_gain()
 ### AudioSegment(…).fade()
 ### AudioSegment(…).fade_out()
 ### AudioSegment(…).fade_in()
 ### AudioSegment(…).reverse()
+### AudioSegment(…).set_sample_width()
+### AudioSegment(…).set_frame_rate()
+### AudioSegment(…).set_channels()
