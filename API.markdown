@@ -178,11 +178,38 @@ sound = AudioSegment.from_file("sound1.wav")
 peak_amplitude = sound.max
 ```
 
+### AudioSegment(…).duration_seconds
+
+Returns the duration of the `AudioSegment` in seconds (`len(sound)` returns milliseconds). This is provided for convenience; it calls `len()` internally.
+
+```python
+from pydub import AudioSegment
+sound = AudioSegment.from_file("sound1.wav")
+
+assert sound.duration_seconds == (len(sound) / 1000.0)
+```
+
 ### AudioSegment(…).frame_count()
+
+Returns the number of frames in the `AudioSegment`. Optionally you may pass in a `ms` keywork argument to retrieve the number of frames in that number of milliseconds of audio in the `AudioSegment` (useful for slicing, etc).
+
+```python
+from pydub import AudioSegment
+sound = AudioSegment.from_file("sound1.wav")
+
+number_of_frames_in_sound = sound.frame_count()
+
+number_of_frames_in_200ms_of_sound = sound.frame_count(ms=200)
+```
+
+**Supported keyword arguments**:
+
+- `ms` | example: `3000` | default: `None` (entire duration of `AudioSegment`)  
+  When specified, method returns number of frames in X milliseconds of the `AudioSegment`
+
 ### AudioSegment(…).set_sample_width()
 ### AudioSegment(…).set_frame_rate()
 ### AudioSegment(…).set_channels()
-### AudioSegment(…).duration_seconds
 ### AudioSegment(…).apply_gain()
 ### AudioSegment(…).overlay()
 ### AudioSegment(…).append()
