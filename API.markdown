@@ -272,10 +272,46 @@ len(sound1) == len(sound2_plays_a_lot)
   The overlaid `AudioSegment` will repeat X times (starting at `position`) but will still be truncated to the length of this `AudioSegment`
 
 ### AudioSegment(…).apply_gain()
+
+Change the amplitude (generally, loudness) of the `AudioSegment`. Gain is specified in dB. This method is used internally by the `+` operator.
+
+```python
+from pydub import AudioSegment
+sound1 = AudioSegment.from_file("sound1.wav")
+
+# make sound1 louder by 3.5 dB
+louder_via_method = sound1.apply_gain(+3.5)
+louder_via_operator = sound1 + 3.5
+
+# make sound1 quieter by 5.7 dB
+quieter_via_method = sound1.apply_gain(-5.7)
+quieter_via_operator = sound1 - 5.7
+```
+
 ### AudioSegment(…).fade()
+
+A more general (more flexible) fade method. 
+
 ### AudioSegment(…).fade_out()
+
+Fade out (to silent) the end of this `AudioSegment`
+
 ### AudioSegment(…).fade_in()
+
+Fade in (from silent) the beginning of this `AudioSegment`
+
 ### AudioSegment(…).reverse()
+
+Make a copy of this `AudioSegment` that plays backwards. Useful for Pink Floyd, screwing around, and some audio processing algorithms.
+
 ### AudioSegment(…).set_sample_width()
+
+Creates an equivalent version of this `AudioSegment` with the specified sample width (in bytes). Increasing this value does not generally cause a reduction in quality. Reducing it *definitely* does cause a loss in quality. Higher Sample width means more dynamic range.
+
 ### AudioSegment(…).set_frame_rate()
+
+Creates an equivalent version of this `AudioSegment` with the specified frame rate (in Hz). Increasing this value does not generally cause a reduction in quality. Reducing it *definitely does* cause a loss in quality. Higher frame rate means larger frequency response (higher frequencies can be represented).
+
 ### AudioSegment(…).set_channels()
+
+Creates an equivalent version of this `AudioSegment` with the specified number of chanels (1 is Mono, 2 is Stereo). Converting from mono to stereo does not cause any audible change. Converting from stereo to mono may result in loss of quality (but only if the left and right chanels differ).
