@@ -174,7 +174,7 @@ class AudioSegment(object):
         from the end of the audio segment like a python list.
         This is intentional.
         """
-        max_val = self.frame_count()
+        max_val = int(self.frame_count())
 
         def bounded(val, default):
             if val is None:
