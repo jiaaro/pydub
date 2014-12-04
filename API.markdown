@@ -4,6 +4,15 @@ This document is a work in progress.
 
 If you're looking for some functionality in particular, it is a *very* good idea to take a look at the [source code](https://github.com/jiaaro/pydub). Core functionality is mostly in `pydub/audio_segment.py` – a number of `AudioSegment` methods are in the `pydub/effects.py` module, and added to `AudioSegment` via the effect registration process (the `register_pydub_effect()` decorator function)
 
+Things to add:
+
+- Silence utilities (strip silence, etc - `pydub.silence`)
+- Signal generators (Sine, Square, Sawtooth, Whitenoise, etc - `pydub.generators`)
+- Playback (`pydub.playback`)
+- Signal Processing (compression, EQ, normalize, speed change - `pydub.effects`)
+- Effect registration system (`pydub.effects`)
+
+
 ## AudioSegment()
 
 `AudioSegment` objects are immutable, and support a number of operators.
