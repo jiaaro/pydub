@@ -345,11 +345,21 @@ fade_out_the_hard_way = sound1.fade(to_gain=-120.0, end=0, duration=5000)
 
 ### AudioSegment(…).fade_out()
 
-Fade out (to silent) the end of this `AudioSegment`. Uses `.fade()` internally
+Fade out (to silent) the end of this `AudioSegment`. Uses `.fade()` internally.
+
+**Supported keyword arguments**:
+
+- `duration` | example: `5000` | NO DEFAULT  
+  How long (in milliseconds) the fade should last. Passed directly to `.fade()` internally
 
 ### AudioSegment(…).fade_in()
 
-Fade in (from silent) the beginning of this `AudioSegment`. Uses `.fade()` internally
+Fade in (from silent) the beginning of this `AudioSegment`. Uses `.fade()` internally.
+
+**Supported keyword arguments**:
+
+- `duration` | example: `5000` | NO DEFAULT  
+  How long (in milliseconds) the fade should last. Passed directly to `.fade()` internally
 
 ### AudioSegment(…).reverse()
 
