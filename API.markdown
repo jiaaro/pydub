@@ -67,7 +67,7 @@ The first agument is the location (as a string) to write the output, **or** a fi
 - `codec` | example: `"libvorbis"`  
   For formats that may contain content encoded with different codecs, you can specify the codec you'd like the encoder to use. For example, the "ogg" format is often used with the "libvorbis" codec. (requires ffmpeg)
 - `bitrate` | example: `"128k"`  
-  For compressed formats, you can pass the bitrate you'd like the encoder to use (requires ffmpeg)
+  For compressed formats, you can pass the bitrate you'd like the encoder to use (requires ffmpeg). Each codec accepts different bitrate arguments, take a look at the [ffmpeg documentation](https://www.ffmpeg.org/ffmpeg-codecs.html#Audio-Encoders) for details.
 - `tags` | example: `{"album": "1989", "artist": "Taylor Swift"}`  
   Allows you to supply media info tags for the encoder (requires ffmpeg). Not all formats can receive tags (mp3 can).
 - `parameters` | example: `["-ac", "2"]`  
