@@ -387,7 +387,10 @@ class AudioSegment(object):
             Codec used to encoding for the destination.
 
         bitrate (string)
-            Bitrate used when encoding destination file. (128, 256, 312k...)
+            Bitrate used when encoding destination file. (64, 92, 128, 256, 312k...)
+            Each codec accepts different bitrate arguments so take a look at the 
+            ffmpeg documentation for details (bitrate usually shown as -b, -ba or 
+            -a:b).
 
         parameters (string)
             Aditional ffmpeg/avconv parameters
