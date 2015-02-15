@@ -173,6 +173,13 @@ def compress_dynamic_range(seg, threshold=-20.0, ratio=4.0, attack=5.0, release=
     return seg._spawn(data=b''.join(output))
 
 
+# Invert the phase of the signal.
+
+@register_pydub_effect
+def invert(seg):
+    inverted = audioop.mul(seg._data, seg.sample_width, -1.0)  
+    return seg._spawn(data=inverted)
+
 
 # High and low pass filters based on implementation found on Stack Overflow:
 #   http://stackoverflow.com/questions/13882038/implementing-simple-high-and-low-pass-filters-in-c
