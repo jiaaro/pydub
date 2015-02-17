@@ -144,13 +144,7 @@ Copy the pydub directory into your python path. Zip [here](https://github.com/ji
 
 ## Dependencies
 
-Requires ffmpeg or avconv for encoding and decoding all non-wav files (which work natively)
-
- - ffmpeg (http://www.ffmpeg.org/)
-
- -OR-
-
- - avconv (http://libav.org/)
+You can open and save WAV files with pure python. For opening and saving non-wav files – like mp3 – you'll need [ffmpeg](http://www.ffmpeg.org/) or [libav](http://libav.org/).
 
 
 ## Getting ffmpeg set up
@@ -244,7 +238,7 @@ playlist = beginning_of_song
 for song in playlist_songs:
 
     # We don't want an abrupt stop at the end, so let's do a 10 second crossfades
-    playlist.append(song, crossfade=(10 * 1000))
+    playlist = playlist.append(song, crossfade=(10 * 1000))
 
 # let's fade out the end of the last song
 playlist = playlist.fade_out(30)
@@ -257,45 +251,6 @@ out_f = open("%s_minute_playlist.mp3" % playlist_length, 'wb')
 
 playlist.export(out_f, format='mp3')
 ```
-
-### Yet another Example?
-
-Let's say you have a weekly podcast and you want to do the processing automatically.
-
-For this example we're going to:
-
-  - Strip out the silence
-  - Add on the bumpers (intro/outro theme music)
-
-```python
-from pydub import AudioSegment
-from pydub.utils import db_to_float
-
-# Let's load up the audio we need...
-podcast = AudioSegment.from_mp3("podcast.mp3")
-intro = AudioSegment.from_wav("intro.wav")
-outro = AudioSegment.from_wav("outro.wav")
-
-# Let's consider anything that is 30 decibels quieter than
-# the average volume of the podcast to be silence
-average_loudness = podcast.rms
-silence_threshold = average_loudness * db_to_float(-30)
-
-# filter out the silence
-podcast_parts = (ms for ms in podcast if ms.rms > silence_threshold)
-
-# combine all the chunks back together
-podcast = reduce(lambda a, b: a + b, podcast_parts)
-
-# add on the bumpers
-podcast = intro + podcast + outro
-
-# save the result
-podcast.export("podcast_processed.mp3", format="mp3")
-```
-
-Not bad!
-
 
 ## License ([MIT License](http://opensource.org/licenses/mit-license.php))
 
