@@ -620,7 +620,7 @@ class AudioSegment(object):
             # it's a no-op, make a copy since we never mutate
             return self._spawn(self._data)
 
-        output = TemporaryFile()
+        output = StringIO()
 
         seg1, seg2 = AudioSegment._sync(self, seg)
         sample_width = seg1.sample_width
