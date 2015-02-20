@@ -329,20 +329,6 @@ fade_out_the_hard_way = sound1.fade(to_gain=-120.0, end=0, duration=5000)
 - `duration` | example: `4` | NO DEFAULT
   You can use `start` or `end` with duration, instead of specifying both - provided as a convenience.
 
-        to_gain (float):
-            resulting volume_change in db
-        from_gain (float):
-            resulting volume_change in db
-        start (int):
-            default = beginning of the segment
-            when in this segment to start fading in milliseconds
-        end (int):
-            default = end of the segment
-            when in this segment to start fading in milliseconds
-        duration (int):
-            default = until the end of the audio segment
-            the duration of the fade
-
 ### AudioSegment(…).fade_out()
 
 Fade out (to silent) the end of this `AudioSegment`. Uses `.fade()` internally.
