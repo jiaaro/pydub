@@ -176,7 +176,7 @@ def compress_dynamic_range(seg, threshold=-20.0, ratio=4.0, attack=5.0, release=
 # Invert the phase of the signal.
 
 @register_pydub_effect
-def invert(seg):
+def invert_phase(seg):
     inverted = audioop.mul(seg._data, seg.sample_width, -1.0)  
     return seg._spawn(data=inverted)
 
