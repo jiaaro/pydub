@@ -553,10 +553,10 @@ class AudioSegmentTests(unittest.TestCase):
 
     def test_invert(self):
         s = Sine(100).to_audio_segment()
-        s_inv = s.invert()
+        s_inv = s.invert_phase()
         self.assertFalse(s == s_inv)
         self.assertTrue(s.rms == s_inv.rms)
-        self.assertTrue(s == s_inv.invert())
+        self.assertTrue(s == s_inv.invert_phase())
 
         
 class SilenceTests(unittest.TestCase):
