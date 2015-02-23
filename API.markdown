@@ -362,3 +362,12 @@ Creates an equivalent version of this `AudioSegment` with the specified frame ra
 ### AudioSegment(…).set_channels()
 
 Creates an equivalent version of this `AudioSegment` with the specified number of chanels (1 is Mono, 2 is Stereo). Converting from mono to stereo does not cause any audible change. Converting from stereo to mono may result in loss of quality (but only if the left and right chanels differ).
+
+
+## Effects
+
+Collection of DSP effects that are implemented by `AudioSegment` objects.
+
+### AudioSegment(…).invert_phase
+
+Make a copy of this `AudioSegment` and inverts the phase of the signal. Can generate anti-phase waves for noise suppression or cancellation.
