@@ -558,6 +558,9 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertTrue(s.rms == s_inv.rms)
         self.assertTrue(s == s_inv.invert_phase())
 
+    def test_max_dBFS(self):
+        pass
+
         
 class SilenceTests(unittest.TestCase):
     
