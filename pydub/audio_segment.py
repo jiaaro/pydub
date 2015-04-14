@@ -584,8 +584,8 @@ class AudioSegment(object):
         return max_possible_val / 2
         
     @property
-    def peak(self):
-        return round(ratio_to_db(self.max, self.max_possible_amplitude), 1)
+    def max_dBFS(self):
+        return ratio_to_db(self.max, self.max_possible_amplitude)
 
     @property
     def duration_seconds(self):
