@@ -582,6 +582,10 @@ class AudioSegment(object):
 
         # since half is above 0 and half is below the max amplitude is divided
         return max_possible_val / 2
+        
+    @property
+    def max_dBFS(self):
+        return ratio_to_db(self.max, self.max_possible_amplitude)
 
     @property
     def duration_seconds(self):

@@ -558,9 +558,15 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertTrue(s.rms == s_inv.rms)
         self.assertTrue(s == s_inv.invert_phase())
 
-        
+    def test_max_dBFS(self):
+        sine_0_dbfs = Sine(1000).to_audio_segment()
+        sine_minus_3_dbfs = Sine(1000).to_audio_segment(volume=-3.0)
+        self.assertAlmostEqual(-0.0, sine_0_dbfs.max_dBFS, 2)
+        self.assertAlmostEqual(-3.0, sine_minus_3_dbfs.max_dBFS, 2)
+
+
 class SilenceTests(unittest.TestCase):
-    
+
     def setUp(self):
         global test1wav
         if not test1wav:
@@ -584,7 +590,7 @@ class SilenceTests(unittest.TestCase):
 
 
 class GeneratorTests(unittest.TestCase):
-    
+
     def test_with_smoke(self):
         Sine(440).to_audio_segment()
         Square(440).to_audio_segment()
@@ -615,7 +621,7 @@ class GeneratorTests(unittest.TestCase):
 
 
 class NoConverterTests(unittest.TestCase):
-    
+
     def setUp(self):
         self.wave_file = os.path.join(data_dir, 'test1.wav')
         self.mp3_file = os.path.join(data_dir, 'test1.mp3')
@@ -646,7 +652,7 @@ class NoConverterTests(unittest.TestCase):
 
         func = partial(AudioSegment.from_file, self.mp3_file, "mp3")
         self.assertRaises(OSError, func)
-        
+
         func = partial(AudioSegment.from_file, self.mp3_file, format="mp3")
         self.assertRaises(OSError, func)
 

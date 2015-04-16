@@ -191,6 +191,17 @@ sound = AudioSegment.from_file("sound1.wav")
 peak_amplitude = sound.max
 ```
 
+### AudioSegment(…).max_dBFS
+
+The highest amplitude of any sample in the `AudioSegment`, in dBFS (relative to the highest possible amplitude value). Useful for things like normalization (which is provided in `pydub.effects.normalize`).
+
+```python
+from pydub import AudioSegment
+sound = AudioSegment.from_file("sound1.wav")
+
+normalized_sound = sound.apply_gain(-sound.max_dBFS)
+```
+
 ### AudioSegment(…).duration_seconds
 
 Returns the duration of the `AudioSegment` in seconds (`len(sound)` returns milliseconds). This is provided for convenience; it calls `len()` internally.
