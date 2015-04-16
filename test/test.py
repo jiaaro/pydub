@@ -561,8 +561,8 @@ class AudioSegmentTests(unittest.TestCase):
     def test_max_dBFS(self):
         sine_0_dbfs = Sine(1000).to_audio_segment()
         sine_minus_3_dbfs = Sine(1000).to_audio_segment(volume=-3.0)
-        self.assertEqual(-0.0, sine_0_dbfs.max_dBFS)
-        self.assertEqual(-3.0, sine_minus_3_dbfs.max_dBFS)
+        self.assertAlmostEqual(-0.0, sine_0_dbfs.max_dBFS, 2)
+        self.assertAlmostEqual(-3.0, sine_minus_3_dbfs.max_dBFS, 2)
 
 
 class SilenceTests(unittest.TestCase):
