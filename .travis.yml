@@ -14,8 +14,6 @@ python:
   - "3.3"
   - "3.4"
   - "pypy"
-allow_failures:
-    - python: "pypy"
 script:
   - python test/test.py
 #  - coverage run --source=pydub --omit="pydub/pyaudioop.py" test/test.py
