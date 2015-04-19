@@ -110,13 +110,17 @@ Save the results with tags (metadata)
 awesome.export("mashup.mp3", format="mp3", tags={'artist': 'Various artists', 'album': 'Best of 2011', 'comments': 'This album is awesome!'})
 ```
 
-You can pass an optional bitrate argument to export using any syntax ffmpeg supports.
+You can pass an optional bitrate argument to export using any syntax ffmpeg 
+supports.
 
 ```python
 awesome.export("mashup.mp3", format="mp3", bitrate="192k")
 ```
 
-Any further arguments supported by ffmpeg can be passed as a list in a 'parameters' argument, with switch first, argument second. Note that no validation takes place on these parameters, and you may be limited by what your particular build of ffmpeg supports.
+Any further arguments supported by ffmpeg can be passed as a list in a 
+'parameters' argument, with switch first, argument second. Note that no 
+validation takes place on these parameters, and you may be limited by what 
+your particular build of ffmpeg/avlib supports.
 
 ```python
 # Use preset mp3 quality 0 (equivalent to lame V0)
@@ -128,11 +132,15 @@ awesome.export("mashup.mp3", format="mp3", parameters=["-ac", "2", "-vol", "150"
 
 ## Bugs & Questions
 
-You can file bugs in our [github issues tracker](https://github.com/jiaaro/pydub/issues), and ask any technical questions on [Stack Overflow using the pydub tag](http://stackoverflow.com/questions/ask?tags=pydub). We keep an eye on both.
+You can file bugs in our [github issues tracker](https://github.com/jiaaro/pydub/issues), 
+and ask any technical questions on 
+[Stack Overflow using the pydub tag](http://stackoverflow.com/questions/ask?tags=pydub). 
+We keep an eye on both.
 
 ## Installation
 
-Copy the pydub directory into your python path. Zip [here](https://github.com/jiaaro/pydub/zipball/master)
+Copy the pydub directory into your python path. Zip 
+[here](https://github.com/jiaaro/pydub/zipball/master)
 
 -OR-
 
@@ -144,8 +152,9 @@ Copy the pydub directory into your python path. Zip [here](https://github.com/ji
 
 ## Dependencies
 
-You can open and save WAV files with pure python. For opening and saving non-wav files – like mp3 – you'll need [ffmpeg](http://www.ffmpeg.org/) or [libav](http://libav.org/).
-
+You can open and save WAV files with pure python. For opening and saving non-wav 
+files – like mp3 – you'll need [ffmpeg](http://www.ffmpeg.org/) or 
+[libav](http://libav.org/).
 
 ## Getting ffmpeg set up
 
