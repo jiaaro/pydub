@@ -130,6 +130,27 @@ awesome.export("mashup.mp3", format="mp3", parameters=["-q:a", "0"])
 awesome.export("mashup.mp3", format="mp3", parameters=["-ac", "2", "-vol", "150"])
 ```
 
+## Debugging
+
+Most issues people run into are related to converting between formats using
+ffmpeg/avlib. Pydub provides a logger that outputs the subprocess calls to 
+help you track down issues:
+
+```python
+>>> import logging
+
+>>> l = logging.getLogger("pydub.converter")
+>>> l.setLevel(logging.DEBUG)
+>>> l.addHandler(logging.StreamHandler())
+
+>>> AudioSegment.from_file("./test/data/test1.mp3")
+subprocess.call(['ffmpeg', '-y', '-i', '/var/folders/71/42k8g72x4pq09tfp920d033r0000gn/T/tmpeZTgMy', '-vn', '-f', 'wav', '/var/folders/71/42k8g72x4pq09tfp920d033r0000gn/T/tmpK5aLcZ'])
+<pydub.audio_segment.AudioSegment object at 0x101b43e10>
+```
+
+Don't worry about the temporary files used in the conversion. They're cleaned up 
+automatically.
+
 ## Bugs & Questions
 
 You can file bugs in our [github issues tracker](https://github.com/jiaaro/pydub/issues), 
