@@ -5,6 +5,7 @@ import subprocess
 from tempfile import TemporaryFile, NamedTemporaryFile
 import wave
 import sys
+from .logging_utils import log_conversion
 
 try:
     from StringIO import StringIO
@@ -335,6 +336,8 @@ class AudioSegment(object):
             "-f", "wav",  # output options (filename last)
             output.name
         ]
+        
+        log_conversion(convertion_command)
 
         retcode = subprocess.call(convertion_command, stderr=open(os.devnull))
 
@@ -472,7 +475,9 @@ class AudioSegment(object):
         convertion_command.extend([
             "-f", format, output.name,  # output options (filename last)
         ])
-
+        
+        log_conversion(convertion_command)
+        
         # read stdin / write stdout
         subprocess.call(convertion_command,
                         # make converter shut up
