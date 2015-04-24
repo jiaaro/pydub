@@ -577,7 +577,12 @@ class SilenceTests(unittest.TestCase):
     def test_detect_completely_silent_segment(self):
         seg = AudioSegment.silent(5000)
         silent_ranges = detect_silence(seg, min_silence_len=1000, silence_thresh=-20)
-        self.assertEqual(silent_ranges, [[0, 4999]])
+        self.assertEqual(silent_ranges, [[0, 5000]])
+
+    def test_detect_tight_silent_segment(self):
+        seg = AudioSegment.silent(1000)
+        silent_ranges = detect_silence(seg, min_silence_len=1000, silence_thresh=-20)
+        self.assertEqual(silent_ranges, [[0, 1000]])
 
     def test_detect_too_long_silence(self):
         seg = AudioSegment.silent(3000)
