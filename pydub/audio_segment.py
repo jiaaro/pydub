@@ -313,7 +313,7 @@ class AudioSegment(object):
             try:
                 return cls._from_safe_wav(file)
             except:
-                pass
+                file.seek(0)
 
         input_file = NamedTemporaryFile(mode='wb', delete=False)
         input_file.write(file.read())
