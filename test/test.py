@@ -254,6 +254,21 @@ class AudioSegmentTests(unittest.TestCase):
                                    len(self.seg1) + len(self.seg2) - 100,
                                    tolerance=1)
 
+    def test_split_to_mono(self):
+        seg = self.seg1
+        mono_segments = seg.split_to_mono()
+        seg_lchannel = mono_segments[0]
+        seg_rchannel = mono_segments[1]
+
+        self.assertEqual(len(seg_lchannel) * 2, len(seg))
+        self.assertEqual(len(seg_rchannel) * 2, len(seg))
+        
+        self.assertEqual(seg_lchannel.frame_rate, seg.frame_rate)
+        self.assertEqual(seg_rchannel.frame_rate, seg.frame_rate)
+
+        self.assertEqual(seg_lchannel.frame_count() * 2, seg.frame_count())
+        self.assertEqual(seg_rchannel.frame_count() * 2, seg.frame_count())
+
     def test_export_as_mp3(self):
         seg = self.seg1
         exported_mp3 = seg.export()
