@@ -382,6 +382,6 @@ Splits a stereo `AudioSegment` into two, one for each channel (Left/Right). Retu
 
 Collection of DSP effects that are implemented by `AudioSegment` objects.
 
-### AudioSegment(…).invert_phase
+### AudioSegment(…).invert_phase()
 
 Make a copy of this `AudioSegment` and inverts the phase of the signal. Can generate anti-phase waves for noise suppression or cancellation.
