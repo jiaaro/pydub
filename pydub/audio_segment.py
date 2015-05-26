@@ -564,15 +564,17 @@ class AudioSegment(object):
 
     def split_to_mono(self):
         if self.channels == 1:
-            return self
+            return [self]
 
         left_channel = audioop.tomono(self._data, self.sample_width, 1, 0)
         right_channel = audioop.tomono(self._data, self.sample_width, 0, 1)
 
         return [self._spawn(data=left_channel,
-                            overrides={'channels': 1}),
+                            overrides={'channels': 1,
+                                       'frame_width': self.sample_width}),
                 self._spawn(data=right_channel,
-                            overrides={'channels': 1})]
+                            overrides={'channels': 1,
+                                       'frame_width': self.sample_width})]
 
     @property
     def rms(self):
