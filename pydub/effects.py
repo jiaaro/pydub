@@ -276,13 +276,13 @@ def pan(seg, pan_amount):
     boost_db = boost_db / 2.0
     
     if pan_amount < 0:
-        return seg.set_gain(boost_db, reduce_db)
+        return seg.apply_gain_stereo(boost_db, reduce_db)
     else:
-        return seg.set_gain(reduce_db, boost_db)
+        return seg.apply_gain_stereo(reduce_db, boost_db)
     
     
 @register_pydub_effect
-def set_gain(seg, left_gain=0.0, right_gain=0.0):
+def apply_gain_stereo(seg, left_gain=0.0, right_gain=0.0):
     """
     left_gain - amount of gain to apply to the left channel (in dB)
     right_gain - amount of gain to apply to the right channel (in dB)

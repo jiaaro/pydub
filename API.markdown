@@ -378,15 +378,33 @@ Creates an equivalent version of this `AudioSegment` with the specified number o
 
 Splits a stereo `AudioSegment` into two, one for each channel (Left/Right). Returns a list with the new `AudioSegment` objects with the left channel at index 0 and the right channel at index 1. 
 
-### AudioSegment(…).set_gain(left_channel_gain, right_channel_gain)
+### AudioSegment(…).apply_gain_stereo()
 
+```python
+from pydub import AudioSegment
+sound1 = AudioSegment.from_file("sound1.wav")
+
+# make left channel 6dB quieter and right channe 2dB louder
+stereo_balance_adjusted = sound1.apply_gain_stereo(-6, +2)
+```
 Apply gain to the left and right channel of a stereo `AudioSegment`. If the `AudioSegment` is mono, it will be converted to stereo before applying the gain.
 
 Both gain arguments are specified in dB.
 
-### AudioSegment(…).pan(pan_amount)
+### AudioSegment(…).pan()
 
-Takes one argument, `pan_amount`, which should be between -1.0 (100% left) and +1.0 (100% right)
+```python
+from pydub import AudioSegment
+sound1 = AudioSegment.from_file("sound1.wav")
+
+# pan the sound 15% to the right
+panned_right = sound1.pan(+0.15)
+
+# pan the sound 50% to the left
+panned_left = sound1.pan(-0.50)
+```
+
+Takes one positional argument, *pan amount*, which should be between -1.0 (100% left) and +1.0 (100% right)
     
 When pan_amount == 0.0 the left/right balance is not changed.
 

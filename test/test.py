@@ -270,7 +270,7 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(seg_rchannel.frame_count(), seg.frame_count())
     
     
-    def test_set_gain(self):
+    def test_apply_gain_stereo(self):
         seg = self.seg1
         
         orig_l, orig_r = seg.split_to_mono()
@@ -286,8 +286,8 @@ class AudioSegmentTests(unittest.TestCase):
             else:
                 self.assertAlmostEqual(v1, v2, **kwargs)
         
-        def test_gain(left_dbfs_change, right_dbfs_change):
-            panned = seg.set_gain(left_dbfs_change, right_dbfs_change)
+        def check_stereo_gain(left_dbfs_change, right_dbfs_change):
+            panned = seg.apply_gain_stereo(left_dbfs_change, right_dbfs_change)
             self.assertEqual(panned.channels, 2)
             
             l, r = panned.split_to_mono()
@@ -295,11 +295,11 @@ class AudioSegmentTests(unittest.TestCase):
             assertAlmostEqual(r.dBFS, orig_dbfs_r + right_dbfs_change, places=2)
         
         # hard left
-        test_gain(0.0, -inf)
-        test_gain(0.0, -6.0)
-        test_gain(0.0, 0.0)
-        test_gain(-6.0, 0.0)
-        test_gain(-inf, 0.0)
+        check_stereo_gain(0.0, -inf)
+        check_stereo_gain(0.0, -6.0)
+        check_stereo_gain(0.0, 0.0)
+        check_stereo_gain(-6.0, 0.0)
+        check_stereo_gain(-inf, 0.0)
         
     def test_pan(self):
         seg = self.seg1
