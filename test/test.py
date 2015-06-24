@@ -268,6 +268,54 @@ class AudioSegmentTests(unittest.TestCase):
 
         self.assertEqual(seg_lchannel.frame_count(), seg.frame_count())
         self.assertEqual(seg_rchannel.frame_count(), seg.frame_count())
+    
+    def test_set_gain(self):
+        seg = self.seg1
+        
+        orig_l, orig_r = seg.split_to_mono()
+        orig_dbfs_l = orig_l.dBFS
+        orig_dbfs_r = orig_r.dBFS
+        
+        def test_gain(left_dbfs_change, right_dbfs_change):
+            panned = seg.set_gain(left_dbfs_change, right_dbfs_change)
+            self.assertEqual(panned.channels, 2)
+            
+            l, r = panned.split_to_mono()
+            self.assertAlmostEqual(l.dBFS, orig_dbfs_l + left_dbfs_change, places=2)
+            self.assertAlmostEqual(r.dBFS, orig_dbfs_r + right_dbfs_change, places=2)
+            
+        # for readability: infinity
+        inf = float("inf")
+        
+        # hard left
+        test_gain(0.0, -inf)
+        test_gain(0.0, -6.0)
+        test_gain(0.0, 0.0)
+        test_gain(-6.0, 0.0)
+        test_gain(-inf, 0.0)
+        
+    def test_pan(self):
+        seg = self.seg1
+
+        orig_l, orig_r = seg.split_to_mono()
+        orig_dbfs_l = orig_l.dBFS
+        orig_dbfs_r = orig_r.dBFS
+
+        # for readability: infinity
+        inf = float("inf")
+        
+        def check_pan(pan, left_dbfs_change, right_dbfs_change):
+            panned = seg.pan(pan)
+            
+            l, r = panned.split_to_mono()
+            self.assertAlmostEqual(l.dBFS, orig_dbfs_l + left_dbfs_change, places=1)
+            self.assertAlmostEqual(r.dBFS, orig_dbfs_r + right_dbfs_change, places=1)
+        
+        check_pan(-1.0, 3.0, -inf)
+        check_pan(-0.5, 1.5, -4.65)
+        check_pan(0.0, 0.0, 0.0)
+        check_pan(0.5, -4.65, 1.5)
+        check_pan(1.0, -inf, 3.0)
 
     def test_export_as_mp3(self):
         seg = self.seg1

@@ -378,6 +378,23 @@ Creates an equivalent version of this `AudioSegment` with the specified number o
 
 Splits a stereo `AudioSegment` into two, one for each channel (Left/Right). Returns a list with the new `AudioSegment` objects with the left channel at index 0 and the right channel at index 1. 
 
+### AudioSegment(…).set_gain(left_channel_gain, right_channel_gain)
+
+Apply gain to the left and right channel of a stereo `AudioSegment`. If the `AudioSegment` is mono, it will be converted to stereo before applying the gain.
+
+Both gain arguments are specified in dB.
+
+### AudioSegment(…).pan(pan_amount)
+
+Takes one argument, `pan_amount`, which should be between -1.0 (100% left) and +1.0 (100% right)
+    
+When pan_amount == 0.0 the left/right balance is not changed.
+
+Panning does not alter the *perceived* loundness, but since loudness
+is decreasing on one side, the other side needs to get louder to
+compensate. When panned hard left, the left channel will be 3dB louder and
+the right channel will be silent (and vice versa).
+
 ## Effects
 
 Collection of DSP effects that are implemented by `AudioSegment` objects.

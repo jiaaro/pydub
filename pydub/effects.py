@@ -248,3 +248,63 @@ def high_pass_filter(seg, cutoff):
     
     return seg._spawn(data=filteredArray.tostring())
 
+
+@register_pydub_effect
+def pan(seg, pan_amount):
+    """
+    pan_amount should be between -1.0 (100% left) and +1.0 (100% right)
+    
+    When pan_amount == 0.0 the left/right balance is not changed.
+    
+    Panning does not alter the *perceived* loundness, but since loudness
+    is decreasing on one side, the other side needs to get louder to
+    compensate. When panned hard left, the left channel will be 3dB louder.
+    """
+    if not -1.0 <= pan_amount <= 1.0:
+        raise ValueError("pan_amount should be between -1.0 (100% left) and +1.0 (100% right)")
+    
+    max_boost_db = ratio_to_db(2.0)
+    boost_db = abs(pan_amount) * max_boost_db
+    
+    boost_factor = db_to_float(boost_db)
+    reduce_factor = db_to_float(max_boost_db) - boost_factor
+    
+    reduce_db = ratio_to_db(reduce_factor)
+    
+    # Cut boost in half (max boost== 3dB) - in reality 2 speakers
+    #   do not sum to a full 6 dB.
+    boost_db = boost_db / 2.0
+    
+    if pan_amount < 0:
+        return seg.set_gain(boost_db, reduce_db)
+    else:
+        return seg.set_gain(reduce_db, boost_db)
+    
+    
+@register_pydub_effect
+def set_gain(seg, left_gain=0.0, right_gain=0.0):
+    """
+    left_gain - amount of gain to apply to the left channel (in dB)
+    right_gain - amount of gain to apply to the right channel (in dB)
+    
+    note: mono audio segments will be converted to stereo
+    """
+    if seg.channels == 1:
+        left = right = seg
+    elif seg.channels == 2:
+        left, right = seg.split_to_mono()
+    
+    l_mult_factor = db_to_float(left_gain)
+    r_mult_factor = db_to_float(right_gain)
+    
+    left_data = audioop.mul(left._data, left.sample_width, l_mult_factor)
+    left_data = audioop.tostereo(left_data, left.sample_width, 1, 0)
+    
+    right_data = audioop.mul(right._data, right.sample_width, r_mult_factor)
+    right_data = audioop.tostereo(right_data, right.sample_width, 0, 1)
+    
+    output = audioop.add(left_data, right_data, seg.sample_width)
+    
+    return seg._spawn(data=output,
+                overrides={'channels': 2,
+                           'frame_width': 2 * seg.sample_width})
