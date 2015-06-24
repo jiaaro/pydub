@@ -269,6 +269,7 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(seg_lchannel.frame_count(), seg.frame_count())
         self.assertEqual(seg_rchannel.frame_count(), seg.frame_count())
     
+    
     def test_set_gain(self):
         seg = self.seg1
         
@@ -276,16 +277,22 @@ class AudioSegmentTests(unittest.TestCase):
         orig_dbfs_l = orig_l.dBFS
         orig_dbfs_r = orig_r.dBFS
         
+        # for readability: infinity
+        inf = float("inf")
+        
+        def assertAlmostEqual(v1, v2, **kwargs):
+            if v1 in (inf, -inf):
+                self.assertEqual(v1, v2)
+            else:
+                self.assertAlmostEqual(v1, v2, **kwargs)
+        
         def test_gain(left_dbfs_change, right_dbfs_change):
             panned = seg.set_gain(left_dbfs_change, right_dbfs_change)
             self.assertEqual(panned.channels, 2)
             
             l, r = panned.split_to_mono()
-            self.assertAlmostEqual(l.dBFS, orig_dbfs_l + left_dbfs_change, places=2)
-            self.assertAlmostEqual(r.dBFS, orig_dbfs_r + right_dbfs_change, places=2)
-            
-        # for readability: infinity
-        inf = float("inf")
+            assertAlmostEqual(l.dBFS, orig_dbfs_l + left_dbfs_change, places=2)
+            assertAlmostEqual(r.dBFS, orig_dbfs_r + right_dbfs_change, places=2)
         
         # hard left
         test_gain(0.0, -inf)
@@ -304,12 +311,18 @@ class AudioSegmentTests(unittest.TestCase):
         # for readability: infinity
         inf = float("inf")
         
+        def assertAlmostEqual(v1, v2, **kwargs):
+            if v1 in (inf, -inf):
+                self.assertEqual(v1, v2)
+            else:
+                self.assertAlmostEqual(v1, v2, **kwargs)
+        
         def check_pan(pan, left_dbfs_change, right_dbfs_change):
             panned = seg.pan(pan)
             
             l, r = panned.split_to_mono()
-            self.assertAlmostEqual(l.dBFS, orig_dbfs_l + left_dbfs_change, places=1)
-            self.assertAlmostEqual(r.dBFS, orig_dbfs_r + right_dbfs_change, places=1)
+            assertAlmostEqual(l.dBFS, orig_dbfs_l + left_dbfs_change, places=1)
+            assertAlmostEqual(r.dBFS, orig_dbfs_r + right_dbfs_change, places=1)
         
         check_pan(-1.0, 3.0, -inf)
         check_pan(-0.5, 1.5, -4.65)
