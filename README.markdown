@@ -160,16 +160,22 @@ We keep an eye on both.
 
 ## Installation
 
-Copy the pydub directory into your python path. Zip 
-[here](https://github.com/jiaaro/pydub/zipball/master)
-
--OR-
+Installing pydub is easy, but don't forget to install ffmpeg/avlib (the next section in this doc)
 
     pip install pydub
+
+Or install the latest dev version from github (or replace `@master` with a [release version like `@v0.12.0`](https://github.com/jiaaro/pydub/releases))…
+
+    pip install git+https://github.com/jiaaro/pydub.git@master
 
 -OR-
 
     git clone https://github.com/jiaaro/pydub.git
+
+-OR-
+
+Copy the pydub directory into your python path. Zip 
+[here](https://github.com/jiaaro/pydub/zipball/master)
 
 ## Dependencies
 
