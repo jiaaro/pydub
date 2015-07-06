@@ -199,11 +199,14 @@ def mediainfo(filepath):
 
     from .audio_segment import AudioSegment
 
-    command = "{0} -v quiet -show_format -show_streams {1}".format(
+    command = [
         get_prober_name(),
+        "-v", "quiet",
+        "-show_format",
+        "-show_streams",
         filepath
-    )
-    output = Popen(command.split(), stdout=PIPE).communicate()[0].decode("utf-8")
+    ]
+    output = Popen(command, stdout=PIPE).communicate()[0].decode("utf-8")
 
     rgx = re.compile(r"(?:(?P<inner_dict>.*?):)?(?P<key>.*?)\=(?P<value>.*?)$")
     info = {}
