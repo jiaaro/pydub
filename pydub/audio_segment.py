@@ -114,7 +114,7 @@ class AudioSegment(object):
             self.frame_width = self.channels * self.sample_width
 
             raw.rewind()
-            self._data = raw.readframes(float('inf'))
+            self._data = raw.readframes(float('inf')) or b''
 
         super(AudioSegment, self).__init__(*args, **kwargs)
 
