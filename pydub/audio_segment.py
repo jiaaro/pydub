@@ -114,7 +114,10 @@ class AudioSegment(object):
             self.frame_width = self.channels * self.sample_width
 
             raw.rewind()
-            self._data = raw.readframes(float('inf'))
+            
+            # the "or b''" base case is a work-around for a python 3.4
+            # see https://github.com/jiaaro/pydub/pull/107
+            self._data = raw.readframes(float('inf')) or b''
 
         super(AudioSegment, self).__init__(*args, **kwargs)
 
