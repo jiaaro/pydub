@@ -342,7 +342,8 @@ class AudioSegment(object):
         
         log_conversion(convertion_command)
 
-        retcode = subprocess.call(convertion_command, stderr=open(os.devnull))
+        retcode = subprocess.call(convertion_command, stderr=open(os.devnull),
+		                          stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
         if retcode != 0:
             raise CouldntDecodeError("Decoding failed. ffmpeg returned error code: {0}".format(retcode))
@@ -484,7 +485,10 @@ class AudioSegment(object):
         # read stdin / write stdout
         subprocess.call(convertion_command,
                         # make converter shut up
-                        stderr=open(os.devnull)
+                        stderr=open(os.devnull),
+                        # windows fix
+						stdin=subprocess.PIPE,
+						stdout=subprocess.PIPE)
                         )
 
         output.seek(0)
