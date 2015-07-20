@@ -487,9 +487,8 @@ class AudioSegment(object):
                         # make converter shut up
                         stderr=open(os.devnull),
                         # windows fix
-						stdin=subprocess.PIPE,
-						stdout=subprocess.PIPE)
-                        )
+			stdin=subprocess.PIPE,
+			stdout=subprocess.PIPE))
 
         output.seek(0)
         out_f.write(output.read())
