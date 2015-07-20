@@ -25,6 +25,7 @@ from .exceptions import (
     InvalidID3TagVersion,
     InvalidTag,
     CouldntDecodeError,
+    CouldntEncodeError,
 )
 
 if sys.version_info >= (3, 0):
@@ -324,28 +325,29 @@ class AudioSegment(object):
 
         output = NamedTemporaryFile(mode="rb", delete=False)
 
-        convertion_command = [cls.converter,
+        conversion_command = [cls.converter,
                               '-y',  # always overwrite existing files
                               ]
 
         # If format is not defined
         # ffmpeg/avconv will detect it automatically
         if format:
-            convertion_command += ["-f", format]
+            conversion_command += ["-f", format]
 
-        convertion_command += [
+        conversion_command += [
             "-i", input_file.name,  # input_file options (filename last)
             "-vn",  # Drop any video streams if there are any
             "-f", "wav",  # output options (filename last)
             output.name
         ]
         
-        log_conversion(convertion_command)
+        log_conversion(conversion_command)
 
-        retcode = subprocess.call(convertion_command, stderr=open(os.devnull))
+        p = subprocess.Popen(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p_out, p_err = p.communicate()
 
-        if retcode != 0:
-            raise CouldntDecodeError("Decoding failed. ffmpeg returned error code: {0}".format(retcode))
+        if p.returncode != 0:
+            raise CouldntDecodeError("Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(p.returncode, p_err))
 
         obj = cls._from_safe_wav(output)
 
@@ -436,7 +438,7 @@ class AudioSegment(object):
         output = NamedTemporaryFile(mode="w+b", delete=False)
 
         # build converter command to export
-        convertion_command = [
+        conversion_command = [
             self.converter,
             '-y',  # always overwrite existing files
             "-f", "wav", "-i", data.name,  # input options (filename last)
@@ -447,14 +449,14 @@ class AudioSegment(object):
 
         if codec is not None:
             # force audio encoder
-            convertion_command.extend(["-acodec", codec])
+            conversion_command.extend(["-acodec", codec])
 
         if bitrate is not None:
-            convertion_command.extend(["-b:a", bitrate])
+            conversion_command.extend(["-b:a", bitrate])
 
         if parameters is not None:
             # extend arguments with arbitrary set
-            convertion_command.extend(parameters)
+            conversion_command.extend(parameters)
 
         if tags is not None:
             if not isinstance(tags, dict):
@@ -463,7 +465,7 @@ class AudioSegment(object):
                 # Extend converter command with tags
                 # print(tags)
                 for key, value in tags.items():
-                    convertion_command.extend(
+                    conversion_command.extend(
                         ['-metadata', '{0}={1}'.format(key, value)])
 
                 if format == 'mp3':
@@ -471,21 +473,22 @@ class AudioSegment(object):
                     if id3v2_version not in id3v2_allowed_versions:
                         raise InvalidID3TagVersion(
                             "id3v2_version not allowed, allowed versions: %s" % id3v2_allowed_versions)
-                    convertion_command.extend([
+                    conversion_command.extend([
                         "-id3v2_version",  id3v2_version
                     ])
 
-        convertion_command.extend([
+        conversion_command.extend([
             "-f", format, output.name,  # output options (filename last)
         ])
         
-        log_conversion(convertion_command)
+        log_conversion(conversion_command)
         
         # read stdin / write stdout
-        subprocess.call(convertion_command,
-                        # make converter shut up
-                        stderr=open(os.devnull)
-                        )
+        p = subprocess.Popen(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p_out, p_err = p.communicate()
+
+        if p.returncode != 0:
+            raise CouldntEncodeError("Encoding failed. ffmpeg/avlib returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(p.returncode, p_err))
 
         output.seek(0)
         out_f.write(output.read())
