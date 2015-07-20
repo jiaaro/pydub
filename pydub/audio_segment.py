@@ -488,7 +488,7 @@ class AudioSegment(object):
                         stderr=open(os.devnull),
                         # windows fix
 			stdin=subprocess.PIPE,
-			stdout=subprocess.PIPE))
+			stdout=subprocess.PIPE)
 
         output.seek(0)
         out_f.write(output.read())
