@@ -185,7 +185,7 @@ files – like mp3 – you'll need [ffmpeg](http://www.ffmpeg.org/) or
 
 ## Getting ffmpeg set up
 
-You may use **libav or ffmpeg**. libav is recommended.
+You may use **libav or ffmpeg**.
 
 Mac (using [homebrew](http://brew.sh)):
 
