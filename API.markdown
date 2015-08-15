@@ -63,7 +63,7 @@ The first agument is the location (as a string) to write the output, **or** a fi
 **Supported keyword arguments**:
 
 - `format` | example: `"aif"` | default: `"mp3"`  
-  Format of the output file, supports `"wav"` natively, requires ffmpeg for all other formats.
+  Format of the output file, supports `"wav"` and `"raw"` natively, requires ffmpeg for all other formats.
 - `codec` | example: `"libvorbis"`  
   For formats that may contain content encoded with different codecs, you can specify the codec you'd like the encoder to use. For example, the "ogg" format is often used with the "libvorbis" codec. (requires ffmpeg)
 - `bitrate` | example: `"128k"`  

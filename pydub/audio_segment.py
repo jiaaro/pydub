@@ -32,7 +32,7 @@ if sys.version_info >= (3, 0):
     basestring = str
     xrange = range
     StringIO = BytesIO
-    
+
 
 class ClassPropertyDescriptor(object):
 
@@ -55,7 +55,7 @@ class ClassPropertyDescriptor(object):
         if not isinstance(func, (classmethod, staticmethod)):
             func = classmethod(func)
         self.fset = func
-        return self    
+        return self
 
 def classproperty(func):
     if not isinstance(func, (classmethod, staticmethod)):
@@ -88,7 +88,7 @@ class AudioSegment(object):
     @classproperty
     def ffmpeg(cls):
         return cls.converter
-    
+
     @ffmpeg.setter
     def ffmpeg(cls, val):
         cls.converter = val
@@ -115,7 +115,7 @@ class AudioSegment(object):
             self.frame_width = self.channels * self.sample_width
 
             raw.rewind()
-            
+
             # the "or b''" base case is a work-around for a python 3.4
             # see https://github.com/jiaaro/pydub/pull/107
             self._data = raw.readframes(float('inf')) or b''
@@ -306,7 +306,7 @@ class AudioSegment(object):
                                    "frame_width": 2})
 
     @classmethod
-    def from_file(cls, file, format=None):
+    def from_file(cls, file, format=None, **kwargs):
         orig_file = file
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
@@ -318,6 +318,17 @@ class AudioSegment(object):
                 return cls._from_safe_wav(file)
             except:
                 file.seek(0)
+        elif format == "raw" or (isinstance(orig_file, basestring) and orig_file.endswith(".raw")):
+            sample_width = kwargs['sample_width']
+            frame_rate = kwargs['frame_rate']
+            channels = kwargs['channels']
+            metadata = {
+                'sample_width': sample_width,
+                'frame_rate': frame_rate,
+                'channels': channels,
+                'frame_width': channels * sample_width
+            }
+            return cls(data=file.read(), metadata=metadata)
 
         input_file = NamedTemporaryFile(mode='wb', delete=False)
         input_file.write(file.read())
@@ -340,7 +351,7 @@ class AudioSegment(object):
             "-f", "wav",  # output options (filename last)
             output.name
         ]
-        
+
         log_conversion(conversion_command)
 
         p = subprocess.Popen(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -375,6 +386,10 @@ class AudioSegment(object):
         return cls.from_file(file, 'wav')
 
     @classmethod
+    def from_raw(cls, data, **kwargs):
+        return cls.from_file(data, 'raw', sample_width=kwargs['sample_width'], frame_rate=kwargs['frame_rate'], channels=kwargs['channels'])
+
+    @classmethod
     def _from_safe_wav(cls, file):
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
         file.seek(0)
@@ -389,15 +404,15 @@ class AudioSegment(object):
 
         format (string)
             Format for destination audio file.
-            ('mp3', 'wav', 'ogg' or other ffmpeg/avconv supported files)
+            ('mp3', 'wav', 'raw', 'ogg' or other ffmpeg/avconv supported files)
 
         codec (string)
             Codec used to encoding for the destination.
 
         bitrate (string)
             Bitrate used when encoding destination file. (64, 92, 128, 256, 312k...)
-            Each codec accepts different bitrate arguments so take a look at the 
-            ffmpeg documentation for details (bitrate usually shown as -b, -ba or 
+            Each codec accepts different bitrate arguments so take a look at the
+            ffmpeg documentation for details (bitrate usually shown as -b, -ba or
             -a:b).
 
         parameters (string)
@@ -414,6 +429,11 @@ class AudioSegment(object):
 
         out_f = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
+
+        if format == "raw":
+            out_f.write(self._data)
+            out_f.seek(0)
+            return out_f
 
         # for wav output we can just write the data directly to out_f
         if format == "wav":
@@ -480,9 +500,9 @@ class AudioSegment(object):
         conversion_command.extend([
             "-f", format, output.name,  # output options (filename last)
         ])
-        
+
         log_conversion(conversion_command)
-        
+
         # read stdin / write stdout
         p = subprocess.Popen(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         p_out, p_err = p.communicate()
@@ -607,7 +627,7 @@ class AudioSegment(object):
 
         # since half is above 0 and half is below the max amplitude is divided
         return max_possible_val / 2
-        
+
     @property
     def max_dBFS(self):
         return ratio_to_db(self.max, self.max_possible_amplitude)
