@@ -44,6 +44,39 @@ end = sound1[-5000:]
 
 Any operations that combine multiple `AudioSegment` objects in *any* way will first ensure that they have the same number of channels, frame rate, sample rate, bit depth, etc. When these things do not match, the lower quality sound is modified to match the quality of the higher quality sound so that quality is not lost: mono is converted to stereo, bit depth and frame rate/sample rate are increased as needed. If you do not want this behavior, you may explicitly reduce the number of channels, bits, etc using the appropriate `AudioSegment` methods.
 
+### AudioSegment(…).from_file()
+
+Open an audio file as an `AudioSegment` instance and return it. there are also a number of wrappers provided for convenience, but you should probably just use this directly.
+
+```python
+from pydub import AudioSegment
+
+# wave and raw don’t use ffmpeg
+wav_audio = AudioSegment.from_file("/path/to/sound.wav", format="wav")
+raw_audio = AudioSegment.from_file("/path/to/sound.raw", format="raw", frame_rate=44100, channels=2, sample_width=2)
+
+# all other formats use ffmpeg
+mp3_audio = AudioSegment.from_file("/path/to/sound.mp3", format="mp3")
+
+# use a file you've already opened (advanced …ish)
+with open("/path/to/sound.wav", "rb") as wav_file:
+    audio_segment = AudioSegment.from_file(wav_file, format="wav")
+```
+
+The first argument is the path (as a string) of the file to read, **or** a file handle to read from.
+
+**Supported keyword arguments**:
+
+- `format` | example: `”aif”` | default: `”mp3”`  
+  Format of the output file. Supports `”wav”` and `”raw”` natively, requires ffmpeg for all other formats. `”raw”` files require 3 additional keyword arguments, `sample_width`, `frame_rate`, and `channels`, denoted below with: **`raw` only**. This extra info is required because raw audio files do not have headers to include this info in the file itself like wav files do.
+- `sample_width` | example: `2`
+  **`raw` only** — Use `1` for 8-bit audio `2` for 16-bit (CD quality) and `4` for 32-bit. It’s the number of bytes per sample.
+- `channels` | example: `1`
+  **`raw` only** — `1` for mono, `2` for stereo.
+- `frame_rate` | example: `2`
+  **`raw` only** — Also known as sample rate, common values are `44100` (44.1kHz - CD audio), and `48000` (48kHz - DVD audio)
+
+
 ### AudioSegment(…).export()
 
 Write the `AudioSegment` object to a file – returns a file handle of the output file (you don't have to do anything with it, though).
@@ -56,15 +89,12 @@ file_handle = sound.export("/path/to/output.mp3", format="mp3")
 mp3_file = sound.export(tags={"album": "The Bends", "artist": "Radiohead"}, bitrate="192k")
 ```
 
-No arguments are required. 
-
-The first agument is the location (as a string) to write the output, **or** a file handle to write to. If you do not pass an output file or path, a temporary file is generated.
+The first argument is the location (as a string) to write the output, **or** a file handle to write to. If you do not pass an output file or path, a temporary file is generated.
 
 **Supported keyword arguments**:
 
 - `format` | example: `"aif"` | default: `"mp3"`  
-  Format of the output file. Supports `"wav"` and `"raw"` natively, requires ffmpeg for all other formats. 
-  `"raw"` file require 3 additional keyword arguments, `sample_width`, `frame_rate`, and `channels`, denoted below with: **`raw` only**. This extra info is required because raw audio files do not have headers to include this info in the file itself like wav files do.
+  Format of the output file. Supports `"wav"` and `"raw"` natively, requires ffmpeg for all other formats.
 - `codec` | example: `"libvorbis"`  
   For formats that may contain content encoded with different codecs, you can specify the codec you'd like the encoder to use. For example, the "ogg" format is often used with the "libvorbis" codec. (requires ffmpeg)
 - `bitrate` | example: `"128k"`  
@@ -73,12 +103,6 @@ The first agument is the location (as a string) to write the output, **or** a fi
   Allows you to supply media info tags for the encoder (requires ffmpeg). Not all formats can receive tags (mp3 can).
 - `parameters` | example: `["-ac", "2"]`  
   Pass additional [commpand line parameters](https://www.ffmpeg.org/ffmpeg.html) to the ffmpeg call. These are added to the end of the call (in the output file section).
-- `sample_width` | example: `2`
-  **`raw` only** — Use `1` for 8-bit audio `2` for 16-bit (CD quality) and `4` for 32-bit. It’s the number of bytes per sample.
-- `channels` | example: `1`
-  **`raw` only** — `1` for mono, `2` for stereo.
-- `frame_rate` | example: `2`
-  **`raw` only** — Also known as sample rate, common values are `44100` (44.1kHz - CD audio), and `48000` (48kHz - DVD audio) 
 
 ### AudioSegment.empty()
 
