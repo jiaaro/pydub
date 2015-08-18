@@ -2,7 +2,7 @@
 
 This document is a work in progress.
 
-If you're looking for some functionality in particular, it is a *very* good idea to take a look at the [source code](https://github.com/jiaaro/pydub). Core functionality is mostly in `pydub/audio_segment.py` – a number of `AudioSegment` methods are in the `pydub/effects.py` module, and added to `AudioSegment` via the effect registration process (the `register_pydub_effect()` decorator function)
+If you're looking for some functionality in particular, it's a good idea to take a look at the [source code](https://github.com/jiaaro/pydub). Core functionality is mostly in `pydub/audio_segment.py` – a number of `AudioSegment` methods are in the `pydub/effects.py` module, and added to `AudioSegment` via the effect registration process (the `register_pydub_effect()` decorator function)
 
 Currently Undocumented:
 
@@ -63,7 +63,8 @@ The first agument is the location (as a string) to write the output, **or** a fi
 **Supported keyword arguments**:
 
 - `format` | example: `"aif"` | default: `"mp3"`  
-  Format of the output file, supports `"wav"` and `"raw"` natively, requires ffmpeg for all other formats.
+  Format of the output file. Supports `"wav"` and `"raw"` natively, requires ffmpeg for all other formats. 
+  `"raw"` file require 3 additional keyword arguments, `sample_width`, `frame_rate`, and `channels`, denoted below with: **`raw` only**. This extra info is required because raw audio files do not have headers to include this info in the file itself like wav files do.
 - `codec` | example: `"libvorbis"`  
   For formats that may contain content encoded with different codecs, you can specify the codec you'd like the encoder to use. For example, the "ogg" format is often used with the "libvorbis" codec. (requires ffmpeg)
 - `bitrate` | example: `"128k"`  
@@ -72,6 +73,12 @@ The first agument is the location (as a string) to write the output, **or** a fi
   Allows you to supply media info tags for the encoder (requires ffmpeg). Not all formats can receive tags (mp3 can).
 - `parameters` | example: `["-ac", "2"]`  
   Pass additional [commpand line parameters](https://www.ffmpeg.org/ffmpeg.html) to the ffmpeg call. These are added to the end of the call (in the output file section).
+- `sample_width` | example: `2`
+  **`raw` only** — Use `1` for 8-bit audio `2` for 16-bit (CD quality) and `4` for 32-bit. It’s the number of bytes per sample.
+- `channels` | example: `1`
+  **`raw` only** — `1` for mono, `2` for stereo.
+- `frame_rate` | example: `2`
+  **`raw` only** — Also known as sample rate, common values are `44100` (44.1kHz - CD audio), and `48000` (48kHz - DVD audio) 
 
 ### AudioSegment.empty()
 

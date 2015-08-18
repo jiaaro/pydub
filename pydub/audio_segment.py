@@ -311,14 +311,23 @@ class AudioSegment(object):
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
         if format:
+            format = format.lower()
             format = AUDIO_FILE_EXT_ALIASES.get(format, format)
+            
+        def is_format(f):
+            f = f.lower()
+            if format == f:
+                return True
+            if isinstance(orig_file, basestring):
+                return orig_file.lower().endswith(".{0}".format(f))
+            return False
 
-        if format == "wav" or (isinstance(orig_file, basestring) and orig_file.endswith(".wav")):
+        if is_format("wav"):
             try:
                 return cls._from_safe_wav(file)
             except:
                 file.seek(0)
-        elif format == "raw" or (isinstance(orig_file, basestring) and orig_file.endswith(".raw")):
+        elif is_format("raw") or is_format("pcm"):
             sample_width = kwargs['sample_width']
             frame_rate = kwargs['frame_rate']
             channels = kwargs['channels']
@@ -613,7 +622,7 @@ class AudioSegment(object):
     def dBFS(self):
         rms = self.rms
         if not rms:
-            return - float("infinity")
+            return -float("infinity")
         return ratio_to_db(self.rms / self.max_possible_amplitude)
 
     @property
