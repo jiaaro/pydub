@@ -262,45 +262,45 @@ class AudioSegmentTests(unittest.TestCase):
 
         self.assertEqual(len(seg_lchannel), len(seg))
         self.assertEqual(len(seg_rchannel), len(seg))
-        
+
         self.assertEqual(seg_lchannel.frame_rate, seg.frame_rate)
         self.assertEqual(seg_rchannel.frame_rate, seg.frame_rate)
 
         self.assertEqual(seg_lchannel.frame_count(), seg.frame_count())
         self.assertEqual(seg_rchannel.frame_count(), seg.frame_count())
-    
-    
+
+
     def test_apply_gain_stereo(self):
         seg = self.seg1
-        
+
         orig_l, orig_r = seg.split_to_mono()
         orig_dbfs_l = orig_l.dBFS
         orig_dbfs_r = orig_r.dBFS
-        
+
         # for readability: infinity
         inf = float("inf")
-        
+
         def assertAlmostEqual(v1, v2, **kwargs):
             if v1 in (inf, -inf):
                 self.assertEqual(v1, v2)
             else:
                 self.assertAlmostEqual(v1, v2, **kwargs)
-        
+
         def check_stereo_gain(left_dbfs_change, right_dbfs_change):
             panned = seg.apply_gain_stereo(left_dbfs_change, right_dbfs_change)
             self.assertEqual(panned.channels, 2)
-            
+
             l, r = panned.split_to_mono()
             assertAlmostEqual(l.dBFS, orig_dbfs_l + left_dbfs_change, places=2)
             assertAlmostEqual(r.dBFS, orig_dbfs_r + right_dbfs_change, places=2)
-        
+
         # hard left
         check_stereo_gain(0.0, -inf)
         check_stereo_gain(0.0, -6.0)
         check_stereo_gain(0.0, 0.0)
         check_stereo_gain(-6.0, 0.0)
         check_stereo_gain(-inf, 0.0)
-        
+
     def test_pan(self):
         seg = self.seg1
 
@@ -310,20 +310,20 @@ class AudioSegmentTests(unittest.TestCase):
 
         # for readability: infinity
         inf = float("inf")
-        
+
         def assertAlmostEqual(v1, v2, **kwargs):
             if v1 in (inf, -inf):
                 self.assertEqual(v1, v2)
             else:
                 self.assertAlmostEqual(v1, v2, **kwargs)
-        
+
         def check_pan(pan, left_dbfs_change, right_dbfs_change):
             panned = seg.pan(pan)
-            
+
             l, r = panned.split_to_mono()
             assertAlmostEqual(l.dBFS, orig_dbfs_l + left_dbfs_change, places=1)
             assertAlmostEqual(r.dBFS, orig_dbfs_r + right_dbfs_change, places=1)
-        
+
         check_pan(-1.0, 3.0, -inf)
         check_pan(-0.5, 1.5, -4.65)
         check_pan(0.0, 0.0, 0.0)
@@ -345,6 +345,15 @@ class AudioSegmentTests(unittest.TestCase):
         seg_exported_wav = AudioSegment.from_wav(exported_wav)
 
         self.assertWithinTolerance(len(seg_exported_wav),
+                                   len(seg),
+                                   percentage=0.01)
+
+    def test_export_as_raw(self):
+        seg = self.seg1
+        exported_raw = seg.export(format='raw')
+        seg_exported_raw = AudioSegment.from_raw(exported_raw, sample_width=seg.sample_width, frame_rate=seg.frame_rate, channels = seg.channels)
+
+        self.assertWithinTolerance(len(seg_exported_raw),
                                    len(seg),
                                    percentage=0.01)
 
@@ -706,6 +715,7 @@ class NoConverterTests(unittest.TestCase):
     def setUp(self):
         self.wave_file = os.path.join(data_dir, 'test1.wav')
         self.mp3_file = os.path.join(data_dir, 'test1.mp3')
+        self.raw_file = os.path.join(data_dir, 'test1.raw')
         AudioSegment.converter = "definitely-not-a-path-to-anything-asdjklqwop"
 
     def tearDown(self):
@@ -723,6 +733,20 @@ class NoConverterTests(unittest.TestCase):
 
         seg = AudioSegment.from_file(self.wave_file, format="wav")
         self.assertTrue(len(seg) > 1000)
+
+    def test_opening_raw_file(self):
+        seg = AudioSegment.from_raw(self.raw_file, sample_width=2, frame_rate=32000, channels=2)
+        self.assertTrue(len(seg) > 1000)
+
+        seg = AudioSegment.from_file(self.raw_file, "raw", sample_width=2, frame_rate=32000, channels=2)
+        self.assertTrue(len(seg) > 1000)
+
+        seg = AudioSegment.from_file(self.raw_file, format="raw", sample_width=2, frame_rate=32000, channels=2)
+        self.assertTrue(len(seg) > 1000)
+
+    def test_opening_raw_file_with_missing_args_fails(self):
+        func = partial(AudioSegment.from_raw, self.raw_file)
+        self.assertRaises(KeyError, func)
 
     def test_opening_mp3_file_fails(self):
         func = partial(AudioSegment.from_mp3, self.mp3_file)
