@@ -70,11 +70,11 @@ The first argument is the path (as a string) of the file to read, **or** a file 
 
 - `format` | example: `"aif"` | default: `"mp3"`  
   Format of the output file. Supports `"wav"` and `"raw"` natively, requires ffmpeg for all other formats. `"raw"` files require 3 additional keyword arguments, `sample_width`, `frame_rate`, and `channels`, denoted below with: **`raw` only**. This extra info is required because raw audio files do not have headers to include this info in the file itself like wav files do.
-- `sample_width` | example: `2`
+- `sample_width` | example: `2`  
   **`raw` only** — Use `1` for 8-bit audio `2` for 16-bit (CD quality) and `4` for 32-bit. It’s the number of bytes per sample.
-- `channels` | example: `1`
+- `channels` | example: `1`  
   **`raw` only** — `1` for mono, `2` for stereo.
-- `frame_rate` | example: `2`
+- `frame_rate` | example: `2`  
   **`raw` only** — Also known as sample rate, common values are `44100` (44.1kHz - CD audio), and `48000` (48kHz - DVD audio)
 
 
