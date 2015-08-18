@@ -53,7 +53,11 @@ from pydub import AudioSegment
 
 # wave and raw don’t use ffmpeg
 wav_audio = AudioSegment.from_file("/path/to/sound.wav", format="wav")
-raw_audio = AudioSegment.from_file("/path/to/sound.raw", format="raw", frame_rate=44100, channels=2, sample_width=2)
+raw_audio = AudioSegment.from_file("/path/to/sound.raw",
+                                   format="raw",
+                                   frame_rate=44100,
+                                   channels=2,
+                                   sample_width=2)
 
 # all other formats use ffmpeg
 mp3_audio = AudioSegment.from_file("/path/to/sound.mp3", format="mp3")
