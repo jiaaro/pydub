@@ -762,7 +762,7 @@ class NoConverterTests(unittest.TestCase):
         self.assertRaises(OSError, func)
     
     def test_creating_AudioSegment_from_data(self):
-        seg = AudioSegment.from_data(b"\0" * 34, sample_width=2, frame_rate=4, channels=1)
+        seg = AudioSegment.from_data("\0" * 34, sample_width=2, frame_rate=4, channels=1)
         
         self.assertEqual(seg.duration_seconds, 4.25)
         
@@ -773,7 +773,7 @@ class NoConverterTests(unittest.TestCase):
     
     def test_creating_AudioSegment_from_data_with_bad_values_fails(self):
         
-        func = partial(AudioSegment.from_data, b"\0" * 14, sample_width=4, frame_rate=2, channels=1)
+        func = partial(AudioSegment.from_data, "\0" * 14, sample_width=4, frame_rate=2, channels=1)
         self.assertRaises(ValueError, func)
     
         
