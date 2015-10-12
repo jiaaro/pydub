@@ -395,8 +395,43 @@ class AudioSegment(object):
         return cls.from_file(file, 'wav')
 
     @classmethod
-    def from_raw(cls, data, **kwargs):
-        return cls.from_file(data, 'raw', sample_width=kwargs['sample_width'], frame_rate=kwargs['frame_rate'], channels=kwargs['channels'])
+    def from_raw(cls, file, **kwargs):
+        return cls.from_file(file, 'raw', sample_width=kwargs['sample_width'], frame_rate=kwargs['frame_rate'], channels=kwargs['channels'])
+    
+    @classmethod
+    def from_data(cls, data, sample_width, frame_rate, channels):
+        """
+        Build an AudioSegment from a buffer of data.
+        
+        **Parameters:**
+        
+        `data`, string: audio data
+        
+        `sample_width`, int: size in bytes of one single sample
+        
+        `frame_rate`, int : number of audio frames per second of audio data
+        
+        `channels`, int: number of channels
+        
+        Note that `data` must contain a integer number of frames, so `len(data)` must a multiple of `(sample_width * channels)`.
+        """ 
+        
+        if not isinstance(data, basestring):
+            raise TypeError("data must be a string buffer")
+        
+        if len(data) % (sample_width * channels) != 0:
+            raise ValueError("data length must be a multiple of (sample_width * channels)")
+        
+        metadata = {
+            'sample_width': sample_width,
+            'frame_rate': frame_rate,
+            'channels': channels,
+            'frame_width': channels * sample_width
+        }
+        return cls(data=data, metadata=metadata)
+        
+        
+        
 
     @classmethod
     def _from_safe_wav(cls, file):
