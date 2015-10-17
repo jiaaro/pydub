@@ -416,7 +416,7 @@ class AudioSegment(object):
 
     @classmethod
     def from_raw(cls, file, **kwargs):
-        return cls.from_file(data, 'raw', sample_width=kwargs['sample_width'], frame_rate=kwargs['frame_rate'], channels=kwargs['channels'])
+        return cls.from_file(file, 'raw', sample_width=kwargs['sample_width'], frame_rate=kwargs['frame_rate'], channels=kwargs['channels'])
           
     @classmethod
     def _from_safe_wav(cls, file):
