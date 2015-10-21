@@ -103,8 +103,10 @@ class AudioSegment(object):
         self.frame_rate = kwargs.pop("frame_rate", None)
         self.channels = kwargs.pop("channels", None)
         
+        audio_params = (self.sample_width, self.frame_rate, self.channels)
+        
         # prevent partial specification of arguments
-        if None in (self.sample_width, self.frame_rate, self.channels):
+        if any(audio_params) and None in audio_params:
             raise MissingAudioParameter("Either all audio parameters or no parameter must be specified")
 
         # all arguments are given
