@@ -21,3 +21,6 @@ class CouldntDecodeError(Exception):
     
 class CouldntEncodeError(Exception):
     pass
+
+class MissingAudioParameter(Exception):
+    pass

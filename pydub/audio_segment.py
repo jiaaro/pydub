@@ -26,6 +26,7 @@ from .exceptions import (
     InvalidTag,
     CouldntDecodeError,
     CouldntEncodeError,
+    MissingAudioParameter,
 )
 
 if sys.version_info >= (3, 0):
@@ -98,7 +99,26 @@ class AudioSegment(object):
     }
 
     def __init__(self, data=None, *args, **kwargs):
-        if kwargs.get('metadata', False):
+        
+        self.sample_width = kwargs.pop("sample_width", None)
+        self.frame_rate = kwargs.pop("frame_rate", None)
+        self.channels = kwargs.pop("channels", None)
+        
+        # all arguments are given
+        if self.sample_width and self.frame_rate and self.channels is not None:
+            if len(data) % (self.sample_width * self.channels) != 0:
+                raise ValueError("data length must be a multiple of '(sample_width * channels)'")
+            
+            self.frame_width = self.channels * self.sample_width
+            self._data = data
+            
+        # prevent partial specification of arguments
+        elif self.sample_width or self.frame_rate or self.channels is not None:
+            raise MissingAudioParameter("Either all audio parameters or no parameter must be specified")
+        
+        # keep support for 'metadata'
+        # this should be removed
+        elif kwargs.get('metadata', False):
             # internal use only
             self._data = data
             for attr, val in kwargs.pop('metadata').items():
@@ -395,9 +415,9 @@ class AudioSegment(object):
         return cls.from_file(file, 'wav')
 
     @classmethod
-    def from_raw(cls, data, **kwargs):
-        return cls.from_file(data, 'raw', sample_width=kwargs['sample_width'], frame_rate=kwargs['frame_rate'], channels=kwargs['channels'])
-
+    def from_raw(cls, file, **kwargs):
+        return cls.from_file(file, 'raw', sample_width=kwargs['sample_width'], frame_rate=kwargs['frame_rate'], channels=kwargs['channels'])
+          
     @classmethod
     def _from_safe_wav(cls, file):
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
