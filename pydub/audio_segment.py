@@ -99,25 +99,23 @@ class AudioSegment(object):
     }
 
     def __init__(self, data=None, *args, **kwargs):
-        
         self.sample_width = kwargs.pop("sample_width", None)
         self.frame_rate = kwargs.pop("frame_rate", None)
         self.channels = kwargs.pop("channels", None)
         
+        # prevent partial specification of arguments
+        if None in (self.sample_width, self.frame_rate, self.channels):
+            raise MissingAudioParameter("Either all audio parameters or no parameter must be specified")
+
         # all arguments are given
-        if self.sample_width and self.frame_rate and self.channels is not None:
+        elif self.sample_width is not None:
             if len(data) % (self.sample_width * self.channels) != 0:
                 raise ValueError("data length must be a multiple of '(sample_width * channels)'")
             
             self.frame_width = self.channels * self.sample_width
-            self._data = data
-            
-        # prevent partial specification of arguments
-        elif self.sample_width or self.frame_rate or self.channels is not None:
-            raise MissingAudioParameter("Either all audio parameters or no parameter must be specified")
-        
-        # keep support for 'metadata'
-        # this should be removed
+            self._data = data  
+
+        # keep support for 'metadata' until audio params are used everywhere
         elif kwargs.get('metadata', False):
             # internal use only
             self._data = data
