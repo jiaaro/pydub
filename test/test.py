@@ -649,6 +649,24 @@ class AudioSegmentTests(unittest.TestCase):
         sine_minus_3_dbfs = Sine(1000).to_audio_segment(volume=-3.0)
         self.assertAlmostEqual(-0.0, sine_0_dbfs.max_dBFS, 2)
         self.assertAlmostEqual(-3.0, sine_minus_3_dbfs.max_dBFS, 2)
+        
+    def test_array_type(self):
+        self.assertEqual(self.seg1.array_type, "h")
+        self.assertEqual(self.seg2.array_type, "h")
+        self.assertEqual(self.seg3.array_type, "h")
+        self.assertEqual(self.mp3_seg_party.array_type, "h")
+        
+        silence = AudioSegment.silent(50)
+        self.assertEqual(silence.array_type, "h")
+        self.assertEqual(silence.set_sample_width(1).array_type, "b")
+        self.assertEqual(silence.set_sample_width(4).array_type, "i")
+    
+    def test_sample_array(self):
+        samples = self.seg1[500].get_array_of_samples()
+        self.assertEqual(
+            list(samples[:8]),
+            [335, -871, 143, -920, -59, -952, -274, -997]
+        )
 
 
 class SilenceTests(unittest.TestCase):

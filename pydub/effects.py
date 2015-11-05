@@ -7,7 +7,6 @@ from .utils import (
     register_pydub_effect,
     make_chunks,
     audioop,
-    get_array_type,
     get_min_max_value
 )
 from .silence import split_on_silence
@@ -194,11 +193,9 @@ def low_pass_filter(seg, cutoff):
     dt = 1.0 / seg.frame_rate
 
     alpha = dt / (RC + dt)
-
-    array_type = get_array_type(seg.sample_width * 8)
     
-    original = array.array(array_type, seg._data)
-    filteredArray = array.array(array_type, original)
+    original = seg.get_array_of_samples()
+    filteredArray = array.array(seg.array_type, original)
     
     frame_count = int(seg.frame_count())
 
@@ -226,11 +223,10 @@ def high_pass_filter(seg, cutoff):
 
     alpha = RC / (RC + dt)
 
-    array_type = get_array_type(seg.sample_width * 8)
     minval, maxval = get_min_max_value(seg.sample_width * 8)
     
-    original = array.array(array_type, seg._data)
-    filteredArray = array.array(array_type, original)
+    original = seg.get_array_of_samples()
+    filteredArray = array.array(seg.array_type, original)
     
     frame_count = int(seg.frame_count())
 

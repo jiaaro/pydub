@@ -1,5 +1,6 @@
 from __future__ import division
 
+import array
 import os
 import subprocess
 from tempfile import TemporaryFile, NamedTemporaryFile
@@ -17,6 +18,7 @@ from .utils import (
     db_to_float,
     ratio_to_db,
     get_encoder_name,
+    get_array_type,
     audioop,
 )
 from .exceptions import (
@@ -141,7 +143,25 @@ class AudioSegment(object):
             self._data = raw.readframes(float('inf')) or b''
 
         super(AudioSegment, self).__init__(*args, **kwargs)
+    
+    @property
+    def raw_data(self):
+        """
+        public access to the raw audio data as a bytestring
+        """
+        return self._data
+        
 
+    def get_array_of_samples(self):
+        """
+        returns the raw_data as an array of samples
+        """
+        return array.array(self.array_type, self._data)
+    
+    @property
+    def array_type(self):
+        return get_array_type(self.sample_width * 8)
+    
     def __len__(self):
         """
         returns the length of this audio segment in milliseconds

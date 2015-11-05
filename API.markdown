@@ -245,6 +245,19 @@ sound = AudioSegment.from_file("sound1.wav")
 assert sound.duration_seconds == (len(sound) / 1000.0)
 ```
 
+### AudioSegment(…).raw_data
+
+The raw audio data of the AudioSegment. Useful for interacting with other audio libraries or weird APIs that want audio data in the form of a bytestring. Also comes in handy if you’re implementing effects or other direct signal processing.
+
+You probably don’t need this, but if you do… you’ll know.
+
+```python
+from pydub import AudioSegment
+sound = AudioSegment.from_file("sound1.wav")
+
+raw_audio_data = sound.raw_data
+```
+
 ### AudioSegment(…).frame_count()
 
 Returns the number of frames in the `AudioSegment`. Optionally you may pass in a `ms` keywork argument to retrieve the number of frames in that number of milliseconds of audio in the `AudioSegment` (useful for slicing, etc).
@@ -444,6 +457,19 @@ Panning does not alter the *perceived* loundness, but since loudness
 is decreasing on one side, the other side needs to get louder to
 compensate. When panned hard left, the left channel will be 3dB louder and
 the right channel will be silent (and vice versa).
+
+### AudioSegment(…).get_array_of_samples()
+
+Returns the raw audio data as an array of (numeric) samples. Note: if the audio has multiple channels, the samples for each channel will be serialized – for example, stereo audio would look like `[sample_1_L, sample_1_R, sample_2_L, sample_2_R, …]`.
+
+This method is mainly for use in implementing effects, and other processing.
+
+```python
+from pydub import AudioSegment
+sound = AudioSegment.from_file(“sound1.wav”)
+
+samples = sound.get_array_of_samples()
+```
 
 ## Effects
 
