@@ -144,7 +144,7 @@ def which(program):
     if os.name == "nt" and not program.endswith(".exe"):
         program += ".exe"
 
-    envdir_list = os.environ["PATH"].split(os.pathsep)
+    envdir_list = os.environ["PATH"].split(os.pathsep) + [os.curdir]
 
     for envdir in envdir_list:
         program_path = os.path.join(envdir, program)
