@@ -662,10 +662,10 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(silence.set_sample_width(4).array_type, "i")
     
     def test_sample_array(self):
-        samples = self.seg1[500].get_array_of_samples()
+        samples = Sine(450).to_audio_segment().get_array_of_samples()
         self.assertEqual(
             list(samples[:8]),
-            [335, -871, 143, -920, -59, -952, -274, -997]
+            [0, 2099, 4190, 6263, 8311, 10325, 12296, 14217]
         )
 
 
