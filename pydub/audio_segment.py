@@ -309,8 +309,9 @@ class AudioSegment(object):
         seg1 = seg1.set_sample_width(sample_width)
         seg2 = seg2.set_sample_width(sample_width)
 
-        assert(len(seg1) == s1_len)
-        assert(len(seg2) == s2_len)
+        msg = "Adjusting the frame rate of one of the segments might be needed. ({} != {})"
+        assert len(seg1) == s1_len, msg.format(seg1, s1_len)
+        assert len(seg2) == s2_len, msg.format(seg2, s2_len)
 
         return seg1, seg2
 
@@ -331,13 +332,11 @@ class AudioSegment(object):
         })
 
     @classmethod
-    def silent(cls, duration=1000):
+    def silent(cls, duration=1000, frame_rate=11025):
         """
         Generate a silent audio segment.
-        duration specified in milliseconds (default: 1000ms).
+        duration specified in milliseconds (default duration: 1000ms, default frame_rate: 11025).
         """
-        # lowest frame rate I've seen in actual use
-        frame_rate = 11025
         frames = int(frame_rate * (duration / 1000.0))
         data = b"\0\0" * frames
         return cls(data, metadata={"channels": 1,
