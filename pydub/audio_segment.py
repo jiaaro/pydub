@@ -309,10 +309,6 @@ class AudioSegment(object):
         seg1 = seg1.set_sample_width(sample_width)
         seg2 = seg2.set_sample_width(sample_width)
 
-        msg = "Adjusting the frame rate of one of the segments might be needed. ({} != {})"
-        assert len(seg1) == s1_len, msg.format(seg1, s1_len)
-        assert len(seg2) == s2_len, msg.format(seg2, s2_len)
-
         return seg1, seg2
 
     def _parse_position(self, val):
