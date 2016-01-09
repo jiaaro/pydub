@@ -151,6 +151,8 @@ ten_second_silence = AudioSegment.silent(duration=10000)
 
 - `duration` | example: `3000` | default: `1000` (1 second)  
   Length of the silent `AudioSegment`, in milliseconds
+- `frame_rate` | example `44100` | default: `11025` (11.025 kHz)
+  Frame rate (i.e., sample rate) of the silent `AudioSegment` in Hz
 
 ### AudioSegment(…).dBFS
 
