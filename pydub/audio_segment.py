@@ -127,7 +127,7 @@ class AudioSegment(object):
                 setattr(self, attr, val)
         else:
             # normal construction
-            data = data if isinstance(data, basestring) else data.read()
+            data = data if isinstance(data, basestring) or isinstance(data, bytes) else data.read()
             raw = wave.open(StringIO(data), 'rb')
 
             raw.rewind()
