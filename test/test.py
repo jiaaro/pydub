@@ -101,6 +101,13 @@ class AudioSegmentTests(unittest.TestCase):
         upper_bound = val + tolerance
         self.assertWithinRange(val, lower_bound, upper_bound)
 
+    def test_direct_instantiation_with_bytes(self):
+        seg = AudioSegment(b'RIFF\x28\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x02\x00\x00}\x00\x00\x00\xf4\x01\x00\x04\x00\x10\x00data\x04\x00\x00\x00\x00\x00\x00\x00')
+        self.assertEqual(seg.frame_count(), 1)
+        self.assertEqual(seg.channels, 2)
+        self.assertEqual(seg.sample_width, 2)
+        self.assertEqual(seg.frame_rate, 32000)
+
     def test_concat(self):
         catted_audio = self.seg1 + self.seg2
 
