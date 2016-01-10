@@ -108,6 +108,12 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(seg.sample_width, 2)
         self.assertEqual(seg.frame_rate, 32000)
 
+    def test_24_bit_audio(self):
+        seg24 = AudioSegment._from_safe_wav(os.path.join(data_dir, 'test1-24bit.wav'))
+
+        # should have been converted to 32 bit
+        self.assertEqual(seg24.sample_width, 4)
+
     def test_concat(self):
         catted_audio = self.seg1 + self.seg2
 
@@ -740,6 +746,7 @@ class NoConverterTests(unittest.TestCase):
 
     def setUp(self):
         self.wave_file = os.path.join(data_dir, 'test1.wav')
+        self.wave24_file = os.path.join(data_dir, 'test1-24bit.wav')
         self.mp3_file = os.path.join(data_dir, 'test1.mp3')
         self.raw_file = os.path.join(data_dir, 'test1.raw')
         AudioSegment.converter = "definitely-not-a-path-to-anything-asdjklqwop"
@@ -758,6 +765,19 @@ class NoConverterTests(unittest.TestCase):
         self.assertTrue(len(seg) > 1000)
 
         seg = AudioSegment.from_file(self.wave_file, format="wav")
+        self.assertTrue(len(seg) > 1000)
+
+    def test_opening_wav24_file(self):
+        seg = AudioSegment.from_wav(self.wave24_file)
+        self.assertTrue(len(seg) > 1000)
+
+        seg = AudioSegment.from_file(self.wave24_file)
+        self.assertTrue(len(seg) > 1000)
+
+        seg = AudioSegment.from_file(self.wave24_file, "wav")
+        self.assertTrue(len(seg) > 1000)
+
+        seg = AudioSegment.from_file(self.wave24_file, format="wav")
         self.assertTrue(len(seg) > 1000)
 
     def test_opening_raw_file(self):

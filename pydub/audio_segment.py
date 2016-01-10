@@ -13,6 +13,11 @@ try:
 except:
     from io import StringIO, BytesIO
 
+try:
+    from itertools import izip
+except:
+    izip = zip
+
 from .utils import (
     _fd_or_path_or_tempfile,
     db_to_float,
@@ -141,6 +146,21 @@ class AudioSegment(object):
             # the "or b''" base case is a work-around for a python 3.4
             # see https://github.com/jiaaro/pydub/pull/107
             self._data = raw.readframes(float('inf')) or b''
+
+        # Convert 24-bit audio to 32-bit audio.
+        # (stdlib audioop and array modules do not support 24-bit data)
+        if self.sample_width == 3:
+            # Pad each triplet of bytes with one more byte, either 0 or 0xFF.
+            padding = {False: b'\x00', True: b'\xFF'}
+            pad_byte = lambda b: bytes(b) + padding[b[-1] > b'\x7f'[0]]
+
+            i = iter(self._data)
+            # This conversion maintains the 24 bit values.  The values are
+            # not scaled up to the 32 bit range.  Other conversions could be
+            # implemented.
+            self._data = b''.join(pad_byte(t) for t in izip(i, i, i))
+            self.sample_width = 4
+            self.frame_width = self.channels * self.sample_width
 
         super(AudioSegment, self).__init__(*args, **kwargs)
     
