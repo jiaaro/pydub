@@ -268,8 +268,8 @@ class AudioSegment(object):
         """
         if rarg == 0:
             return self
-        else:
-            return self.__add__(rarg)
+        raise TypeError("Gains must be the second addend after the "
+                        "AudioSegment")
 
     def __sub__(self, arg):
         if isinstance(arg, AudioSegment):
