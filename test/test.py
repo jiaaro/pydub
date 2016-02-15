@@ -127,6 +127,20 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(len(merged1), len(self.seg1) + len(self.seg3) - 100)
         self.assertEqual(len(merged2), len(self.seg2) + len(self.seg3) - 100)
 
+    def test_sum(self):
+        def gen():
+            yield self.seg1
+            yield self.seg2
+            yield self.seg3
+
+        try:
+            summed = sum(gen())
+        except TypeError as e:
+            if "unsupported operand" in str(e):
+                self.fail("Could not sum() audio segments.")
+            else:
+                raise
+
     def test_volume_with_add_sub(self):
         quieter = self.seg1 - 6
         self.assertAlmostEqual(ratio_to_db(quieter.rms, self.seg1.rms),
@@ -242,7 +256,7 @@ class AudioSegmentTests(unittest.TestCase):
         for part in short:
             rebuilt1 += part
 
-        rebuilt2 = sum([part for part in short], short[:0])
+        rebuilt2 = sum([part for part in short])
 
         self.assertTrue(short._data == rebuilt1._data)
         self.assertTrue(short._data == rebuilt2._data)
@@ -662,18 +676,18 @@ class AudioSegmentTests(unittest.TestCase):
         sine_minus_3_dbfs = Sine(1000).to_audio_segment(volume=-3.0)
         self.assertAlmostEqual(-0.0, sine_0_dbfs.max_dBFS, 2)
         self.assertAlmostEqual(-3.0, sine_minus_3_dbfs.max_dBFS, 2)
-        
+
     def test_array_type(self):
         self.assertEqual(self.seg1.array_type, "h")
         self.assertEqual(self.seg2.array_type, "h")
         self.assertEqual(self.seg3.array_type, "h")
         self.assertEqual(self.mp3_seg_party.array_type, "h")
-        
+
         silence = AudioSegment.silent(50)
         self.assertEqual(silence.array_type, "h")
         self.assertEqual(silence.set_sample_width(1).array_type, "b")
         self.assertEqual(silence.set_sample_width(4).array_type, "i")
-    
+
     def test_sample_array(self):
         samples = Sine(450).to_audio_segment().get_array_of_samples()
         self.assertEqual(
@@ -806,34 +820,34 @@ class NoConverterTests(unittest.TestCase):
 
         func = partial(AudioSegment.from_file, self.mp3_file, format="mp3")
         self.assertRaises(OSError, func)
-    
+
     def test_init_AudioSegment_data_buffer(self):
         seg = AudioSegment(data = "\0" * 34, sample_width=2, frame_rate=4, channels=1)
-        
+
         self.assertEqual(seg.duration_seconds, 4.25)
-        
+
         self.assertEqual(seg.sample_width, 2)
-        
+
         self.assertEqual(seg.frame_rate, 4)
-    
-    
+
+
     def test_init_AudioSegment_data_buffer_with_missing_args_fails(self):
-        
+
         func = partial(AudioSegment, data = "\0" * 16, sample_width=2, frame_rate=2)
         self.assertRaises(MissingAudioParameter, func)
-        
+
         func = partial(AudioSegment, data = "\0" * 16, sample_width=2, channels=1)
         self.assertRaises(MissingAudioParameter, func)
-        
+
         func = partial(AudioSegment, data = "\0" * 16, frame_rate=2, channels=1)
         self.assertRaises(MissingAudioParameter, func)
-        
-    
+
+
     def test_init_AudioSegment_data_buffer_with_bad_values_fails(self):
-        
+
         func = partial(AudioSegment, data = "\0" * 14, sample_width=4, frame_rate=2, channels=1)
         self.assertRaises(ValueError, func)
-    
+
 
     def test_exporting(self):
         seg = AudioSegment.from_wav(self.wave_file)
