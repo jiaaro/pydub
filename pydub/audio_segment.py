@@ -268,6 +268,8 @@ class AudioSegment(object):
         """
         if rarg == 0:
             return self
+        else:
+            return self.__add__(rarg)
 
     def __sub__(self, arg):
         if isinstance(arg, AudioSegment):
