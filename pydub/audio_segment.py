@@ -109,9 +109,9 @@ class AudioSegment(object):
         self.sample_width = kwargs.pop("sample_width", None)
         self.frame_rate = kwargs.pop("frame_rate", None)
         self.channels = kwargs.pop("channels", None)
-        
+
         audio_params = (self.sample_width, self.frame_rate, self.channels)
-        
+
         # prevent partial specification of arguments
         if any(audio_params) and None in audio_params:
             raise MissingAudioParameter("Either all audio parameters or no parameter must be specified")
@@ -120,9 +120,9 @@ class AudioSegment(object):
         elif self.sample_width is not None:
             if len(data) % (self.sample_width * self.channels) != 0:
                 raise ValueError("data length must be a multiple of '(sample_width * channels)'")
-            
+
             self.frame_width = self.channels * self.sample_width
-            self._data = data  
+            self._data = data
 
         # keep support for 'metadata' until audio params are used everywhere
         elif kwargs.get('metadata', False):
@@ -163,25 +163,25 @@ class AudioSegment(object):
             self.frame_width = self.channels * self.sample_width
 
         super(AudioSegment, self).__init__(*args, **kwargs)
-    
+
     @property
     def raw_data(self):
         """
         public access to the raw audio data as a bytestring
         """
         return self._data
-        
+
 
     def get_array_of_samples(self):
         """
         returns the raw_data as an array of samples
         """
         return array.array(self.array_type, self._data)
-    
+
     @property
     def array_type(self):
         return get_array_type(self.sample_width * 8)
-    
+
     def __len__(self):
         """
         returns the length of this audio segment in milliseconds
@@ -261,6 +261,15 @@ class AudioSegment(object):
             return self.append(arg, crossfade=0)
         else:
             return self.apply_gain(arg)
+
+    def __radd__(self, rarg):
+        """
+        Permit use of sum() builtin with an iterable of AudioSegments
+        """
+        if rarg == 0:
+            return self
+        raise TypeError("Gains must be the second addend after the "
+                        "AudioSegment")
 
     def __sub__(self, arg):
         if isinstance(arg, AudioSegment):
@@ -368,7 +377,7 @@ class AudioSegment(object):
         if format:
             format = format.lower()
             format = AUDIO_FILE_EXT_ALIASES.get(format, format)
-            
+
         def is_format(f):
             f = f.lower()
             if format == f:
@@ -452,7 +461,7 @@ class AudioSegment(object):
     @classmethod
     def from_raw(cls, file, **kwargs):
         return cls.from_file(file, 'raw', sample_width=kwargs['sample_width'], frame_rate=kwargs['frame_rate'], channels=kwargs['channels'])
-          
+
     @classmethod
     def _from_safe_wav(cls, file):
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
