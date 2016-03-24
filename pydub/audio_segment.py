@@ -6,12 +6,15 @@ import subprocess
 from tempfile import TemporaryFile, NamedTemporaryFile
 import wave
 import sys
+import struct
 from .logging_utils import log_conversion
 
 try:
     from StringIO import StringIO
 except:
-    from io import StringIO, BytesIO
+    from io import StringIO
+
+from io import BytesIO
 
 try:
     from itertools import izip
@@ -150,15 +153,24 @@ class AudioSegment(object):
         # Convert 24-bit audio to 32-bit audio.
         # (stdlib audioop and array modules do not support 24-bit data)
         if self.sample_width == 3:
-            # Pad each triplet of bytes with one more byte, either 0 or 0xFF.
-            padding = {False: b'\x00', True: b'\xFF'}
-            pad_byte = lambda b: bytes(b) + padding[b[-1] > b'\x7f'[0]]
+            byte_buffer = BytesIO()
 
-            i = iter(self._data)
+            # Workaround for python 2 vs python 3. _data in 2.x are length-1 strings,
+            # And in 3.x are ints.
+            pack_fmt = 'BBB' if isinstance(self._data[0], int) else 'ccc'
+
             # This conversion maintains the 24 bit values.  The values are
             # not scaled up to the 32 bit range.  Other conversions could be
             # implemented.
-            self._data = b''.join(pad_byte(t) for t in izip(i, i, i))
+            i = iter(self._data)
+            padding = {False: b'\x00', True: b'\xFF'}
+            for b0, b1, b2 in izip(i, i, i):
+                byte_buffer.write(padding[b2 > b'\x7f'[0]])
+                old_bytes = struct.pack(pack_fmt, b0, b1, b2)
+                byte_buffer.write(old_bytes)
+
+
+            self._data = byte_buffer.getvalue()
             self.sample_width = 4
             self.frame_width = self.channels * self.sample_width
 
