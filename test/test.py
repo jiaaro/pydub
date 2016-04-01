@@ -3,6 +3,7 @@ import mimetypes
 import os
 import unittest
 from tempfile import NamedTemporaryFile
+import struct
 
 from pydub import AudioSegment
 from pydub.utils import (
@@ -109,10 +110,17 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(seg.frame_rate, 32000)
 
     def test_24_bit_audio(self):
-        seg24 = AudioSegment._from_safe_wav(os.path.join(data_dir, 'test1-24bit.wav'))
+        path24 = os.path.join(data_dir, 'test1-24bit.wav')
+        seg24 = AudioSegment._from_safe_wav(path24)
+        # The data length lies at bytes 40-44
+        with open(path24, 'rb') as f:
+            raw24 = f.read()
+        len24 = struct.unpack("<L", raw24[40:44])[0]
 
         # should have been converted to 32 bit
         self.assertEqual(seg24.sample_width, 4)
+        # the data length should have grown by exactly 4:3 (24 bits turn into 32 bits)
+        self.assertEqual(len(seg24.raw_data) * 3, len24 * 4)
 
     def test_concat(self):
         catted_audio = self.seg1 + self.seg2
