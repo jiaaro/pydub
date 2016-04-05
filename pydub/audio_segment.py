@@ -571,7 +571,7 @@ class AudioSegment(object):
                 # print(tags)
                 for key, value in tags.items():
                     conversion_command.extend(
-                        ['-metadata', '{0}={1}'.format(key, value)])
+                        ['-metadata', u'{0}={1}'.format(key, value)])
 
                 if format == 'mp3':
                     # set id3v2 tag version
