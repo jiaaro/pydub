@@ -568,14 +568,18 @@ class AudioSegment(object):
                 raise InvalidTag("Tags must be a dictionary.")
             else:
                 # Extend converter command with tags.
-                # Make sure we can handle unicode strings.
+                # Make sure we can handle unicode strings in Python
+                # 2.x (In Python 3, these are handled correctly by 
+                # default.)
                 def encode_unicode(s):
-                    """ Leaves simple non-unicode strings untouched.
-                    Converts unicode strings to non-unicode strings by
-                    encoding them in the default encoding of the file
-                    system.
+                    """ In Python 3: leaves all input untouched. 
+                    In Python 2.x: Leaves simple non-unicode strings 
+                    untouched. Converts unicode strings to non-unicode
+                    strings by encoding them in the default encoding 
+                    of the file system.
                     """
-                    if isinstance(s, unicode):
+                    if sys.version_info[0] < 3 \
+                            and isinstance(s, unicode):
                         s = s.encode(sys.getfilesystemencoding())
                     return s
 
