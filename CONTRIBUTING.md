@@ -10,7 +10,9 @@ Don't be shy!
 2. Commit changes
 3. Send a Pull Request
 
-you did it!
+you did it! 
+
+don't forget to append your name to the AUTHORS file ;)
 
 There _are_ a few things that will make your Pull Request more likely to be merged:
 
