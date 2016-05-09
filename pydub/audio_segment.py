@@ -332,7 +332,7 @@ class AudioSegment(object):
             'channels': self.channels
         }
         metadata.update(overrides)
-        return AudioSegment(data=data, metadata=metadata)
+        return self.__class__(data=data, metadata=metadata)
 
     @classmethod
     def _sync(cls, seg1, seg2):
