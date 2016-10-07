@@ -35,7 +35,14 @@ def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16):
     current_range_start = prev_i
 
     for silence_start_i in silence_starts:
-        if silence_start_i != prev_i + 1:
+        continuous = (silence_start_i == prev_i + 1)
+
+        # sometimes two small blips are enough for one particular slice to be
+        # non-silent, despite the silence all running together. Just combine
+        # the two overlapping silent ranges.
+        silence_has_gap = silence_start_i > (prev_i + min_silence_len)
+
+        if not continuous and silence_has_gap:
             silent_ranges.append([current_range_start,
                                   prev_i + min_silence_len])
             current_range_start = silence_start_i

@@ -66,7 +66,7 @@ class FileAccessTests(unittest.TestCase):
         self.assertTrue(len(seg1) > 0)
 
 
-test1wav = test1 = test2 = test3 = testparty = None
+test1wav = test4wav = test1 = test2 = test3 = testparty = None
 
 
 class AudioSegmentTests(unittest.TestCase):
@@ -707,11 +707,14 @@ class AudioSegmentTests(unittest.TestCase):
 class SilenceTests(unittest.TestCase):
 
     def setUp(self):
-        global test1wav
+        global test1wav, test4wav
         if not test1wav:
             test1wav = AudioSegment.from_wav(os.path.join(data_dir, 'test1.wav'))
+        if not test4wav:
+            test4wav = AudioSegment.from_wav(os.path.join(data_dir, 'test4.wav'))
 
         self.seg1 = test1wav
+        self.seg4 = test4wav
 
     def test_detect_completely_silent_segment(self):
         seg = AudioSegment.silent(5000)
@@ -731,6 +734,14 @@ class SilenceTests(unittest.TestCase):
     def test_detect_silence_seg1(self):
         silent_ranges = detect_silence(self.seg1, min_silence_len=500, silence_thresh=-20)
         self.assertEqual(silent_ranges, [[0, 775], [3141, 4033], [5516, 6051]])
+
+    def test_realistic_audio(self):
+        silent_ranges = detect_silence(self.seg4, min_silence_len=1000, silence_thresh=self.seg4.dBFS)
+
+        prev_end = -1
+        for start, end in silent_ranges:
+            self.assertGreater(start, prev_end)
+            prev_end = end
 
 
 class GeneratorTests(unittest.TestCase):
