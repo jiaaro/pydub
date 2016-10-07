@@ -740,7 +740,7 @@ class SilenceTests(unittest.TestCase):
 
         prev_end = -1
         for start, end in silent_ranges:
-            self.assertGreater(start, prev_end)
+            self.assertTrue(start > prev_end)
             prev_end = end
 
 
