@@ -925,7 +925,7 @@ class AudioSegment(object):
     def _repr_html_(self):
             src = """
                     <audio controls>
-                        <source src="data:audio/wav;base64,{base64}" type="audio/wav" />
+                        <source src="data:audio/mpeg;base64,{base64}" type="audio/mpeg"/>
                         Your browser does not support the audio element.
                     </audio>
                   """
