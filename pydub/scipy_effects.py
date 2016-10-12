@@ -4,9 +4,10 @@ as well as an additional band_pass_filter.
 
 Of course, you will need to install scipy for these to work.
 
-When this module is imported the high and low pass filters are used when calling
-audio_segment.high_pass_filter() and audio_segment.high_pass_filter() instead
-of the slower, less powerful versions provided by pydub.effects.
+When this module is imported the high and low pass filters from this module
+will be used when calling audio_segment.high_pass_filter() and 
+audio_segment.high_pass_filter() instead of the slower, less powerful versions 
+provided by pydub.effects.
 """
 from scipy.signal import butter, sosfilt
 from .utils import register_pydub_effect
