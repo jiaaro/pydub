@@ -16,6 +16,21 @@ if sys.version_info >= (3, 0):
     xrange = range
 
 
+@register_pydub_effect
+def apply_mono_filter_to_each_channel(seg, filter_fn):
+    n_channels = seg.channels
+
+    channel_segs = seg.split_to_mono()
+    channel_segs = [filter_fn(channel_seg) for channel_seg in channel_segs]
+
+    out_data = seg.get_array_of_samples()
+    for channel_i, channel_seg in enumerate(channel_segs):
+        for sample_i, sample in enumerate(channel_seg.get_array_of_samples()):
+            index = (sample_i * n_channels) + channel_i
+            out_data[index] = sample
+
+    return seg._spawn(out_data.tostring())
+
 
 @register_pydub_effect
 def normalize(seg, headroom=0.1):
