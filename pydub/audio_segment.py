@@ -136,7 +136,16 @@ class AudioSegment(object):
                 setattr(self, attr, val)
         else:
             # normal construction
-            data = data if isinstance(data, (basestring, bytes)) else data.read()
+            try:
+                data = data if isinstance(data, (basestring, bytes)) else data.read()
+            except(OSError):
+                d = b''
+                reader = data.read(2**31-1)
+                while reader:
+                    d += reader
+                    reader = data.read(2**31-1)
+                data = d
+
             raw = wave.open(StringIO(data), 'rb')
 
             raw.rewind()
@@ -417,7 +426,17 @@ class AudioSegment(object):
             return cls(data=file.read(), metadata=metadata)
 
         input_file = NamedTemporaryFile(mode='wb', delete=False)
-        input_file.write(file.read())
+        try:
+            input_file.write(file.read())
+        except(OSError):
+            input_file.flush()
+            input_file.close()
+            input_file = NamedTemporaryFile(mode='wb', delete=False, buffering=2**31-1)
+            file = open(orig_file, buffering=2**13-1, mode='rb')
+            reader = file.read(2**31-1)
+            while reader:
+                input_file.write(reader)
+                reader = file.read(2**31-1)
         input_file.flush()
 
         output = NamedTemporaryFile(mode="rb", delete=False)
