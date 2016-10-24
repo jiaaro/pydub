@@ -140,10 +140,10 @@ class AudioSegment(object):
                 data = data if isinstance(data, (basestring, bytes)) else data.read()
             except(OSError):
                 d = b''
-                reader = data.read(2**30-1)
+                reader = data.read(2**31-1)
                 while reader:
                     d += reader
-                    reader = data.read(2**30-1)
+                    reader = data.read(2**31-1)
                 data = d
 
             raw = wave.open(StringIO(data), 'rb')
@@ -431,12 +431,12 @@ class AudioSegment(object):
         except(OSError):
             input_file.flush()
             input_file.close()
-            input_file = NamedTemporaryFile(mode='wb', delete=False, buffering=2**13-1)
+            input_file = NamedTemporaryFile(mode='wb', delete=False, buffering=2**31-1)
             file = open(orig_file, buffering=2**13-1, mode='rb')
-            reader = file.read(2**13-1)
+            reader = file.read(2**31-1)
             while reader:
                 input_file.write(reader)
-                reader = file.read(2**13-1)
+                reader = file.read(2**31-1)
         input_file.flush()
 
         output = NamedTemporaryFile(mode="rb", delete=False)
