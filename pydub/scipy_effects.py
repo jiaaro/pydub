@@ -41,7 +41,10 @@ def _mk_butter_filter(freq, type, order):
         sos = butter(order, freqs, btype=type, output='sos')
         y = sosfilt(sos, seg.get_array_of_samples())
 
-        return seg._spawn(y.astype(seg.array_type).tostring())
+        try:
+            return seg._spawn(y.astype(seg.array_type).tobytes())            
+        except:
+            return seg._spawn(y.astype(seg.array_type).tostring())
 
     return filter_fn
 
