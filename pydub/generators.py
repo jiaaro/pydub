@@ -140,4 +140,3 @@ class WhiteNoise(SignalGenerator):
     def generate(self):
         while True:
             yield (random.random() * 2) - 1.0
-            
