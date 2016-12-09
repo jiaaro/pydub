@@ -136,16 +136,7 @@ class AudioSegment(object):
                 setattr(self, attr, val)
         else:
             # normal construction
-            try:
-                data = data if isinstance(data, (basestring, bytes)) else data.read()
-            except(OSError):
-                d = b''
-                reader = data.read(2**31-1)
-                while reader:
-                    d += reader
-                    reader = data.read(2**31-1)
-                data = d
-
+            data = data if isinstance(data, (basestring, bytes)) else data.read()
             raw = wave.open(StringIO(data), 'rb')
 
             raw.rewind()
@@ -426,17 +417,7 @@ class AudioSegment(object):
             return cls(data=file.read(), metadata=metadata)
 
         input_file = NamedTemporaryFile(mode='wb', delete=False)
-        try:
-            input_file.write(file.read())
-        except(OSError):
-            input_file.flush()
-            input_file.close()
-            input_file = NamedTemporaryFile(mode='wb', delete=False, buffering=2**31-1)
-            file = open(orig_file, buffering=2**13-1, mode='rb')
-            reader = file.read(2**31-1)
-            while reader:
-                input_file.write(reader)
-                reader = file.read(2**31-1)
+        input_file.write(file.read())
         input_file.flush()
 
         output = NamedTemporaryFile(mode="rb", delete=False)
@@ -500,7 +481,7 @@ class AudioSegment(object):
         file.seek(0)
         return cls(data=file)
 
-    def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None, id3v2_version='4'):
+    def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None, id3v2_version='4', cover=None):
         """
         Export an AudioSegment to a file with given options
 
@@ -571,6 +552,11 @@ class AudioSegment(object):
 
         if codec is None:
             codec = self.DEFAULT_CODECS.get(format, None)
+#Put your tag code Here
+
+		if cover is not None:
+			conversion_command.extend(["-i" , cover, "-map", "0", "-map", "1"])
+
 
         if codec is not None:
             # force audio encoder
