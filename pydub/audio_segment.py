@@ -512,7 +512,7 @@ class AudioSegment(object):
             Set ID3v2 version for tags. (default: '4')
 
         cover (file)
-            Set cover for audio file from png image file.
+            Set cover for audio file from image file. (png or jpg)
         """
         id3v2_allowed_versions = ['3', '4']
 
