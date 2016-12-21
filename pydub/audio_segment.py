@@ -510,6 +510,9 @@ class AudioSegment(object):
 
         id3v2_version (string)
             Set ID3v2 version for tags. (default: '4')
+
+        cover (file)
+            Set cover for audio file from png image file.
         """
         id3v2_allowed_versions = ['3', '4']
 
@@ -553,9 +556,8 @@ class AudioSegment(object):
         if codec is None:
             codec = self.DEFAULT_CODECS.get(format, None)
 #Put your tag code Here
-
-		if cover is not None:
-			conversion_command.extend(["-i" , cover, "-map", "0", "-map", "1"])
+        if cover is not None:
+            conversion_command.extend(["-i" , cover, "-map", "0", "-map", "1"])
 
 
         if codec is not None:
