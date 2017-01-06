@@ -1,3 +1,6 @@
+# v0.16.7
+- Make `pydub.AudioSegment()._spawn()` accept array.array instances containing audio samples
+
 # v0.16.6
 - Make `pydub.AudioSegment()` objects playable inline in ipython notebooks.
 - Add scipy powered high pass, low pass, and band pass filters, which can be high order filters (they take `order` as a keyword argument). They are used for `pydub.AudioSegment().high_pass_filter()`, `pydub.AudioSegment().low_pass_filter()`, `pydub.AudioSegment().band_pass_filter()` when the `pydub.scipy_effects` module is imported.
