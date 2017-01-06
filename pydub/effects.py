@@ -28,10 +28,8 @@ def apply_mono_filter_to_each_channel(seg, filter_fn):
         for sample_i, sample in enumerate(channel_seg.get_array_of_samples()):
             index = (sample_i * n_channels) + channel_i
             out_data[index] = sample
-    try:
-        return seg._spawn(out_data.tobytes())
-    except:
-        return seg._spawn(out_data.tostring())
+
+    return seg._spawn(out_data)
 
 
 @register_pydub_effect
@@ -225,10 +223,8 @@ def low_pass_filter(seg, cutoff):
             offset = (i * seg.channels) + j
             last_val[j] = last_val[j] + (alpha * (original[offset] - last_val[j]))
             filteredArray[offset] = int(last_val[j])
-    try:
-        return seg._spawn(data=filteredArray.tobytes())
-    except:
-        return seg._spawn(data=filteredArray.tostring())
+
+    return seg._spawn(data=filteredArray)
 
 
 @register_pydub_effect
@@ -260,12 +256,10 @@ def high_pass_filter(seg, cutoff):
 
             last_val[j] = alpha * (last_val[j] + original[offset] - original[offset_minus_1])
             filteredArray[offset] = int(min(max(last_val[j], minval), maxval))
-    try:
-        return seg._spawn(data=filteredArray.tobytes())        
-    except:
-        return seg._spawn(data=filteredArray.tostring())
 
-
+    return seg._spawn(data=filteredArray)
+    
+    
 @register_pydub_effect
 def pan(seg, pan_amount):
     """

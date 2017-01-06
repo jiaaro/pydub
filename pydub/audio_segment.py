@@ -329,6 +329,12 @@ class AudioSegment(object):
         if isinstance(data, list):
             data = b''.join(data)
 
+        if isinstance(data, array.array):
+            try:
+                data = data.tobytes()
+            except:
+                data = data.tostring()
+
         # accept file-like objects
         if hasattr(data, 'read'):
             if hasattr(data, 'seek'):

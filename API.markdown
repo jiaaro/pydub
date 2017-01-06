@@ -480,6 +480,10 @@ from pydub import AudioSegment
 sound = AudioSegment.from_file(“sound1.wav”)
 
 samples = sound.get_array_of_samples()
+
+# then modify samples...
+
+new_sound = sound._spawn(samples)
 ```
 
 ## Effects

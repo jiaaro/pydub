@@ -5,8 +5,8 @@ as well as an additional band_pass_filter.
 Of course, you will need to install scipy for these to work.
 
 When this module is imported the high and low pass filters from this module
-will be used when calling audio_segment.high_pass_filter() and 
-audio_segment.high_pass_filter() instead of the slower, less powerful versions 
+will be used when calling audio_segment.high_pass_filter() and
+audio_segment.high_pass_filter() instead of the slower, less powerful versions
 provided by pydub.effects.
 """
 from scipy.signal import butter, sosfilt
@@ -41,10 +41,7 @@ def _mk_butter_filter(freq, type, order):
         sos = butter(order, freqs, btype=type, output='sos')
         y = sosfilt(sos, seg.get_array_of_samples())
 
-        try:
-            return seg._spawn(y.astype(seg.array_type).tobytes())            
-        except:
-            return seg._spawn(y.astype(seg.array_type).tostring())
+        return seg._spawn(y.astype(seg.array_type))
 
     return filter_fn
 
