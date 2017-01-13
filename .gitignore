@@ -9,3 +9,4 @@ env
 .idea
 
 /build/
+.remote-sync.json
