@@ -576,10 +576,10 @@ class AudioSegment(object):
             codec = self.DEFAULT_CODECS.get(format, None)
 
         if cover is not None:
-            if cover.lower().endswith(('.png', '.jpg', '.jpeg')):
+            if cover.lower().endswith(('.png', '.jpg', '.jpeg')) and format == "mp3":
                 conversion_command.extend(["-i" , cover, "-map", "0", "-map", "1"])
             else:
-                raise AttributeError("Only .jpg, .jpeg and .png file types are supported")
+                raise AttributeError("Only .tif, .jpg, .jpeg and .png image file types are supported and mp3 sound files.")
 
         if codec is not None:
             # force audio encoder
