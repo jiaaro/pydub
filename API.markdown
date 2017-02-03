@@ -480,7 +480,32 @@ from pydub import AudioSegment
 sound = AudioSegment.from_file(“sound1.wav”)
 
 samples = sound.get_array_of_samples()
+
+# then modify samples...
+
+new_sound = sound._spawn(samples)
 ```
+
+### AudioSegment(…).get_dc_offset()
+
+Returns a value between -1.0 and 1.0 representing the DC offset of a channel. This is calculated using `audioop.avg()` and normalizing the result by samples max value.
+
+**Supported keyword arguments**:
+
+- `channel` | example: `2` | default: `1`  
+  Selects left (1) or right (2) channel to calculate DC offset. If segment is mono, this value is ignored.
+  
+### AudioSegment(…).remove_dc_offset()
+
+Removes DC offset from channel(s). This is done by using `audioop.bias()`, so watch out for overflows.
+
+**Supported keyword arguments**:
+
+- `channel` | example: `2` | default: None  
+  Selects left (1) or right (2) channel remove DC offset. If value if None, removes from all available channels. If segment is mono, this value is ignored.
+  
+- `offset` | example: `-0.1` | default: None  
+  Offset to be removed from channel(s). Calculates offset if it's None. Offset values must be between -1.0 and 1.0.
 
 ## Effects
 
