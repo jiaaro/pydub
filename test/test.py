@@ -558,7 +558,7 @@ class AudioSegmentTests(unittest.TestCase):
             AudioSegment.from_file(self.mp4_file_path).export(tmp_wav_file,
                                                               format="mp3")
             tmp_file_type, _ = mimetypes.guess_type(tmp_wav_file.name)
-            self.assertIn(tmp_file_type, ['audio/x-wav', 'audio/wav'])
+            self.assertEqual(tmp_file_type in ['audio/x-wav', 'audio/wav'], True)
 
     def test_export_mp4_as_mp3_with_tags(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
