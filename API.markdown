@@ -68,13 +68,13 @@ The first argument is the path (as a string) of the file to read, **or** a file 
 
 **Supported keyword arguments**:
 
-- `format` | example: `"aif"` | default: `"mp3"`  
+- `format` | example: `"aif"` | default: `"mp3"`
   Format of the output file. Supports `"wav"` and `"raw"` natively, requires ffmpeg for all other formats. `"raw"` files require 3 additional keyword arguments, `sample_width`, `frame_rate`, and `channels`, denoted below with: **`raw` only**. This extra info is required because raw audio files do not have headers to include this info in the file itself like wav files do.
-- `sample_width` | example: `2`  
+- `sample_width` | example: `2`
   **`raw` only** — Use `1` for 8-bit audio `2` for 16-bit (CD quality) and `4` for 32-bit. It’s the number of bytes per sample.
-- `channels` | example: `1`  
+- `channels` | example: `1`
   **`raw` only** — `1` for mono, `2` for stereo.
-- `frame_rate` | example: `2`  
+- `frame_rate` | example: `2`
   **`raw` only** — Also known as sample rate, common values are `44100` (44.1kHz - CD audio), and `48000` (48kHz - DVD audio)
 
 
@@ -90,28 +90,31 @@ sound = AudioSegment.from_file("/path/to/sound.wav", format="wav")
 file_handle = sound.export("/path/to/output.mp3", format="mp3")
 
 # more complex export
-file_handle = sound.export("/path/to/output.mp3", 
+file_handle = sound.export("/path/to/output.mp3",
                            format="mp3",
                            bitrate="192k",
-                           tags={"album": "The Bends", "artist": "Radiohead"})
+                           tags={"album": "The Bends", "artist": "Radiohead"},
+                           cover="/path/to/albumcovers/radioheadthebends.jpg")
 ```
 
 The first argument is the location (as a string) to write the output, **or** a file handle to write to. If you do not pass an output file or path, a temporary file is generated.
 
 **Supported keyword arguments**:
 
-- `format` | example: `"aif"` | default: `"mp3"`  
+- `format` | example: `"aif"` | default: `"mp3"`
   Format of the output file. Supports `"wav"` and `"raw"` natively, requires ffmpeg for all other formats.
-- `codec` | example: `"libvorbis"`  
+- `codec` | example: `"libvorbis"`
   For formats that may contain content encoded with different codecs, you can specify the codec you'd like the encoder to use. For example, the "ogg" format is often used with the "libvorbis" codec. (requires ffmpeg)
-- `bitrate` | example: `"128k"`  
+- `bitrate` | example: `"128k"`
   For compressed formats, you can pass the bitrate you'd like the encoder to use (requires ffmpeg). Each codec accepts different bitrate arguments so take a look at the [ffmpeg documentation](https://www.ffmpeg.org/ffmpeg-codecs.html#Audio-Encoders) for details (bitrate usually shown as `-b`, `-ba` or `-a:b`).
-- `tags` | example: `{"album": "1989", "artist": "Taylor Swift"}`  
+- `tags` | example: `{"album": "1989", "artist": "Taylor Swift"}`
   Allows you to supply media info tags for the encoder (requires ffmpeg). Not all formats can receive tags (mp3 can).
-- `parameters` | example: `["-ac", "2"]`  
+- `parameters` | example: `["-ac", "2"]`
   Pass additional [commpand line parameters](https://www.ffmpeg.org/ffmpeg.html) to the ffmpeg call. These are added to the end of the call (in the output file section).
-- `id3v2_version` | example: `"3"` | default: `"4"`  
+- `id3v2_version` | example: `"3"` | default: `"4"`
   Set the ID3v2 version used by ffmpeg to add tags to the output file. If you want Windows Exlorer to display tags, use `"3"` here ([source](http://superuser.com/a/453133)).
+- `cover` | example: `"/path/to/imgfile.png"`
+  Allows you to supply a cover image (path to the image file). Currently, only MP3 files allow this keyword argument. Cover image must be a jpeg, png, bmp, or tiff file.
 
 
 ### AudioSegment.empty()
@@ -130,9 +133,9 @@ This is useful for aggregation loops:
 from pydub import AudioSegment
 
 sounds = [
-  AudioSegment.from_wav("sound1.wav"), 
-  AudioSegment.from_wav("sound2.wav"), 
-  AudioSegment.from_wav("sound3.wav"), 
+  AudioSegment.from_wav("sound1.wav"),
+  AudioSegment.from_wav("sound2.wav"),
+  AudioSegment.from_wav("sound3.wav"),
 ]
 
 playlist = AudioSegment.empty()
@@ -152,7 +155,7 @@ ten_second_silence = AudioSegment.silent(duration=10000)
 
 **Supported keyword arguments**:
 
-- `duration` | example: `3000` | default: `1000` (1 second)  
+- `duration` | example: `3000` | default: `1000` (1 second)
   Length of the silent `AudioSegment`, in milliseconds
 - `frame_rate` | example `44100` | default: `11025` (11.025 kHz)
   Frame rate (i.e., sample rate) of the silent `AudioSegment` in Hz
@@ -284,7 +287,7 @@ number_of_frames_in_200ms_of_sound = sound.frame_count(ms=200)
 
 **Supported keyword arguments**:
 
-- `ms` | example: `3000` | default: `None` (entire duration of `AudioSegment`)  
+- `ms` | example: `3000` | default: `None` (entire duration of `AudioSegment`)
   When specified, method returns number of frames in X milliseconds of the `AudioSegment`
 
 ### AudioSegment(…).append()
@@ -313,7 +316,7 @@ no_crossfade2 = sound1 + sound2
 
 **Supported keyword arguments**:
 
-- `crossfade` | example: `3000` | default: `100` (entire duration of `AudioSegment`)  
+- `crossfade` | example: `3000` | default: `100` (entire duration of `AudioSegment`)
   When specified, method returns number of frames in X milliseconds of the `AudioSegment`
 
 ### AudioSegment(…).overlay()
@@ -342,11 +345,11 @@ len(sound1) == len(sound2_plays_a_lot)
 
 **Supported keyword arguments**:
 
-- `position` | example: `3000` | default: `0` (beginning of this `AudioSegment`)  
+- `position` | example: `3000` | default: `0` (beginning of this `AudioSegment`)
   The overlaid `AudioSegment` will not begin until X milliseconds have passed
-- `loop` | example: `True` | default: `False` (entire duration of `AudioSegment`)  
+- `loop` | example: `True` | default: `False` (entire duration of `AudioSegment`)
   The overlaid `AudioSegment` will repeat (starting at `position`) until the end of this `AudioSegment`
-- `times` | example: `4` | default: `1` (entire duration of `AudioSegment`)  
+- `times` | example: `4` | default: `1` (entire duration of `AudioSegment`)
   The overlaid `AudioSegment` will repeat X times (starting at `position`) but will still be truncated to the length of this `AudioSegment`
 
 ### AudioSegment(…).apply_gain(`gain`)
@@ -385,9 +388,9 @@ fade_out_the_hard_way = sound1.fade(to_gain=-120.0, end=0, duration=5000)
 
 **Supported keyword arguments**:
 
-- `to_gain` | example: `-3.0` | default: `0` (0dB, no change)  
+- `to_gain` | example: `-3.0` | default: `0` (0dB, no change)
   Resulting change at the end of the fade. `-6.0` means fade will be be from 0dB (no change) to -6dB, and everything after the fade will be -6dB.
-- `from_gain` | example: `-3.0` | default: `0` (0dB, no change)  
+- `from_gain` | example: `-3.0` | default: `0` (0dB, no change)
   Change at the beginning of the fade. `-6.0` means fade (and all audio before it) will be be at -6dB will fade up to 0dB – the rest of the audio after the fade will be at 0dB (i.e., unchanged).
 - `start` | example: `7500` | NO DEFAULT
   Position to begin fading (in milliseconds). `5500` means fade will begin after 5.5 seconds.
@@ -402,7 +405,7 @@ Fade out (to silent) the end of this `AudioSegment`. Uses `.fade()` internally.
 
 **Supported keyword arguments**:
 
-- `duration` | example: `5000` | NO DEFAULT  
+- `duration` | example: `5000` | NO DEFAULT
   How long (in milliseconds) the fade should last. Passed directly to `.fade()` internally
 
 ### AudioSegment(…).fade_in()
@@ -411,7 +414,7 @@ Fade in (from silent) the beginning of this `AudioSegment`. Uses `.fade()` inter
 
 **Supported keyword arguments**:
 
-- `duration` | example: `5000` | NO DEFAULT  
+- `duration` | example: `5000` | NO DEFAULT
   How long (in milliseconds) the fade should last. Passed directly to `.fade()` internally
 
 ### AudioSegment(…).reverse()
@@ -432,7 +435,7 @@ Creates an equivalent version of this `AudioSegment` with the specified number o
 
 ### AudioSegment(…).split_to_mono()
 
-Splits a stereo `AudioSegment` into two, one for each channel (Left/Right). Returns a list with the new `AudioSegment` objects with the left channel at index 0 and the right channel at index 1. 
+Splits a stereo `AudioSegment` into two, one for each channel (Left/Right). Returns a list with the new `AudioSegment` objects with the left channel at index 0 and the right channel at index 1.
 
 ### AudioSegment(…).apply_gain_stereo()
 
@@ -461,7 +464,7 @@ panned_left = sound1.pan(-0.50)
 ```
 
 Takes one positional argument, *pan amount*, which should be between -1.0 (100% left) and +1.0 (100% right)
-    
+
 When pan_amount == 0.0 the left/right balance is not changed.
 
 Panning does not alter the *perceived* loundness, but since loudness
@@ -492,19 +495,19 @@ Returns a value between -1.0 and 1.0 representing the DC offset of a channel. Th
 
 **Supported keyword arguments**:
 
-- `channel` | example: `2` | default: `1`  
+- `channel` | example: `2` | default: `1`
   Selects left (1) or right (2) channel to calculate DC offset. If segment is mono, this value is ignored.
-  
+
 ### AudioSegment(…).remove_dc_offset()
 
 Removes DC offset from channel(s). This is done by using `audioop.bias()`, so watch out for overflows.
 
 **Supported keyword arguments**:
 
-- `channel` | example: `2` | default: None  
+- `channel` | example: `2` | default: None
   Selects left (1) or right (2) channel remove DC offset. If value if None, removes from all available channels. If segment is mono, this value is ignored.
-  
-- `offset` | example: `-0.1` | default: None  
+
+- `offset` | example: `-0.1` | default: None
   Offset to be removed from channel(s). Calculates offset if it's None. Offset values must be between -1.0 and 1.0.
 
 ## Effects
