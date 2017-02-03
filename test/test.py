@@ -1,6 +1,7 @@
 from functools import partial
 import mimetypes
 import os
+import sys
 import unittest
 from tempfile import NamedTemporaryFile
 import struct
@@ -409,11 +410,16 @@ class AudioSegmentTests(unittest.TestCase):
         seg = self.seg1 + self.seg2
 
         with NamedTemporaryFile('w+b', suffix='.ogg') as tmp_file:
+            if sys.platform == 'win32':
+                tmp_file.close()
+
             seg.export(tmp_file.name, 'ogg', codec='libvorbis')
             exported = AudioSegment.from_ogg(tmp_file.name)
             self.assertWithinTolerance(len(exported),
                                        len(seg),
                                        percentage=0.01)
+            if sys.platform == 'win32':
+                os.remove(tmp_file.name)
 
     def test_fades(self):
         seg = self.seg1[:10000]
@@ -477,6 +483,9 @@ class AudioSegmentTests(unittest.TestCase):
     def test_for_accidental_shortening(self):
         seg = self.mp3_seg_party
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
+            if sys.platform == 'win32':
+                tmp_mp3_file.close()
+
             seg.export(tmp_mp3_file.name)
 
             for i in range(3):
@@ -484,6 +493,9 @@ class AudioSegmentTests(unittest.TestCase):
 
             tmp_seg = AudioSegment.from_mp3(tmp_mp3_file.name)
             self.assertFalse(len(tmp_seg) < len(seg))
+
+            if sys.platform == 'win32':
+                os.remove(tmp_mp3_file.name)
 
     def test_formats(self):
         seg_m4a = AudioSegment.from_file(
@@ -546,7 +558,7 @@ class AudioSegmentTests(unittest.TestCase):
             AudioSegment.from_file(self.mp4_file_path).export(tmp_wav_file,
                                                               format="mp3")
             tmp_file_type, _ = mimetypes.guess_type(tmp_wav_file.name)
-            self.assertEqual(tmp_file_type, 'audio/x-wav')
+            self.assertIn(tmp_file_type, ['audio/x-wav', 'audio/wav'])
 
     def test_export_mp4_as_mp3_with_tags(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
@@ -584,14 +596,22 @@ class AudioSegmentTests(unittest.TestCase):
     def test_export_mp3_with_tags(self):
         tags = {'artist': 'Mozart', 'title': 'The Magic Flute'}
 
-        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
+        delete = sys.platform != 'win32'
+
+        with NamedTemporaryFile('w+b', suffix='.mp3', delete=delete) as tmp_mp3_file:
             AudioSegment.from_file(self.mp4_file_path).export(tmp_mp3_file, format="mp3", tags=tags)
+
+            if sys.platform == 'win32':
+                tmp_mp3_file.close()
 
             info = mediainfo(filepath=tmp_mp3_file.name)
             info_tags = info["TAG"]
 
             self.assertEqual(info_tags["artist"], "Mozart")
             self.assertEqual(info_tags["title"], "The Magic Flute")
+
+            if sys.platform == 'win32':
+                os.remove(tmp_mp3_file.name)
 
     def test_fade_raises_exception_when_duration_start_end_are_none(self):
         seg = self.seg1
@@ -664,10 +684,18 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertTrue(compressed.rms < self.seg1.rms)
 
     def test_exporting_to_ogg_uses_default_codec_when_codec_param_is_none(self):
-        with NamedTemporaryFile('w+b', suffix='.ogg') as tmp_ogg_file:
+        delete = sys.platform != 'win32'
+
+        with NamedTemporaryFile('w+b', suffix='.ogg', delete=delete) as tmp_ogg_file:
             AudioSegment.from_file(self.mp4_file_path).export(tmp_ogg_file, format="ogg")
 
+            if sys.platform == 'win32':
+                tmp_ogg_file.close()
+
             info = mediainfo(filepath=tmp_ogg_file.name)
+
+            if sys.platform == 'win32':
+                os.remove(tmp_ogg_file.name)
 
         self.assertEqual(info["codec_name"], "vorbis")
         self.assertEqual(info["format_name"], "ogg")
