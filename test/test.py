@@ -92,6 +92,9 @@ class AudioSegmentTests(unittest.TestCase):
         self.mp4_file_path = os.path.join(data_dir, 'creative_common.mp4')
         self.mp3_file_path = os.path.join(data_dir, 'party.mp3')
 
+        self.jpg_cover_path = os.path.join(data_dir, 'cover.jpg')
+        self.png_cover_path = os.path.join(data_dir, 'cover.png')
+
     def assertWithinRange(self, val, lower_bound, upper_bound):
         self.assertTrue(lower_bound < val < upper_bound,
                         "%s is not in the acceptable range: %s - %s" %
@@ -599,6 +602,24 @@ class AudioSegmentTests(unittest.TestCase):
 
             if sys.platform == 'win32':
                 os.remove(tmp_mp3_file.name)
+
+    def test_mp3_with_jpg_cover_img(self):
+        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
+            outf = self.seg1.export(tmp_mp3_file, format="mp3", cover=self.jpg_cover_path)
+            testseg = AudioSegment.from_file(outf)
+
+            # should be within a 1/10th sec and 1.5dB (not perfectly equal due to codecs)
+            self.assertLess(abs(len(self.seg1) - len(testseg)), 100)
+            self.assertLess(abs(self.seg1.dBFS - testseg.dBFS), 1.0)
+
+    def test_mp3_with_png_cover_img(self):
+        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
+            outf = self.seg1.export(tmp_mp3_file, format="mp3", cover=self.png_cover_path)
+            testseg = AudioSegment.from_file(outf)
+
+            # should be within a 1/10th sec and 1.5dB (not perfectly equal due to codecs)
+            self.assertLess(abs(len(self.seg1) - len(testseg)), 100)
+            self.assertLess(abs(self.seg1.dBFS - testseg.dBFS), 1.0)
 
     def test_fade_raises_exception_when_duration_start_end_are_none(self):
         seg = self.seg1
