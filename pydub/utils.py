@@ -210,6 +210,10 @@ def mediainfo(filepath):
 
     rgx = re.compile(r"(?:(?P<inner_dict>.*?):)?(?P<key>.*?)\=(?P<value>.*?)$")
     info = {}
+
+    if sys.platform == 'win32':
+        output = output.replace("\r", "")
+
     for line in output.split("\n"):
         # print(line)
         mobj = rgx.match(line)
