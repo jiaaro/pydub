@@ -750,6 +750,61 @@ class AudioSegment(object):
     def duration_seconds(self):
         return self.frame_rate and self.frame_count() / self.frame_rate or 0.0
 
+    def get_dc_offset(self, channel=1):
+        """
+        Returns a value between -1.0 and 1.0 representing the DC offset of a
+        channel (1 for left, 2 for right).
+        """
+        if not 1 <= channel <= 2:
+            raise ValueError("channel value must be 1 (left) or 2 (right)")
+
+        if self.channels == 1:
+            data = self._data
+        elif channel == 1:
+            data = audioop.tomono(self._data, self.sample_width, 1, 0)
+        else:
+            data = audioop.tomono(self._data, self.sample_width, 0, 1)
+
+        return float(audioop.avg(data, self.sample_width)) / self.max_possible_amplitude
+
+    def remove_dc_offset(self, channel=None, offset=None):
+        """
+        Removes DC offset of given channel. Calculates offset if it's not given.
+        Offset values must be in range -1.0 to 1.0. If channel is None, removes
+        DC offset from all available channels.
+        """
+        if channel and not 1 <= channel <= 2:
+            raise ValueError("channel value must be None, 1 (left) or 2 (right)")
+
+        if offset and not -1.0 <= offset <= 1.0:
+            raise ValueError("offset value must be in range -1.0 to 1.0")
+
+        if offset:
+            offset = int(round(offset * self.max_possible_amplitude))
+
+        def remove_data_dc(data, off):
+            if not off:
+                off = audioop.avg(data, self.sample_width)
+            return audioop.bias(data, self.sample_width, -off)
+
+        if self.channels == 1:
+            return self._spawn(data=remove_data_dc(self._data, offset))
+
+        left_channel = audioop.tomono(self._data, self.sample_width, 1, 0)
+        right_channel = audioop.tomono(self._data, self.sample_width, 0, 1)
+
+        if not channel or channel == 1:
+            left_channel = remove_data_dc(left_channel, offset)
+
+        if not channel or channel == 2:
+            right_channel = remove_data_dc(right_channel, offset)
+
+        left_channel = audioop.tostereo(left_channel, self.sample_width, 1, 0)
+        right_channel = audioop.tostereo(right_channel, self.sample_width, 0, 1)
+
+        return self._spawn(data=audioop.add(left_channel, right_channel,
+                                            self.sample_width))
+
     def apply_gain(self, volume_change):
         return self._spawn(data=audioop.mul(self._data, self.sample_width,
                                             db_to_float(float(volume_change))))
