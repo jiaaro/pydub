@@ -506,7 +506,7 @@ class AudioSegment(object):
         file.seek(0)
         return cls(data=file)
 
-    def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None, id3v2_version='4'):
+    def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None, id3v2_version='4', cover=None):
         """
         Export an AudioSegment to a file with given options
 
@@ -535,6 +535,9 @@ class AudioSegment(object):
 
         id3v2_version (string)
             Set ID3v2 version for tags. (default: '4')
+
+        cover (file)
+            Set cover for audio file from image file. (png or jpg)
         """
         id3v2_allowed_versions = ['3', '4']
 
@@ -577,6 +580,12 @@ class AudioSegment(object):
 
         if codec is None:
             codec = self.DEFAULT_CODECS.get(format, None)
+
+        if cover is not None:
+            if cover.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif')) and format == "mp3":
+                conversion_command.extend(["-i" , cover, "-map", "0", "-map", "1"])
+            else:
+                raise AttributeError("Nowadays put a cover is only supported by MP3 files. The allowed image formats are: .tif, .jpg, .bmp, .jpeg and .png.")
 
         if codec is not None:
             # force audio encoder
