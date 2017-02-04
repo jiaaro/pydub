@@ -5,7 +5,7 @@ before_install:
   - sudo apt-get update --fix-missing
 install:
   - pip install coveralls
-  - sudo apt-get install -y ${CONVERTER} libavcodec-extra-53 ubuntu-restricted-extras #gstreamer0.10-ffmpeg gstreamer0.10-plugins-ugly gstreamer0.10-plugins-bad gstreamer0.10-plugins-bad-multiverse
+  - sudo apt-get install -y ${CONVERTER} libavcodec-extra-53
 language: python
 python:
   - "2.6"
@@ -17,8 +17,3 @@ python:
   - "pypy"
 script:
   - python test/test.py
-#  - coverage run --source=pydub --omit="pydub/pyaudioop.py" test/test.py
-#  - coverage report -m
-#after_script:
-#  coveralls --verbose
-
