@@ -606,7 +606,7 @@ class AudioSegmentTests(unittest.TestCase):
     def test_mp3_with_jpg_cover_img(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
             outf = self.seg1.export(tmp_mp3_file, format="mp3", cover=self.jpg_cover_path)
-            testseg = AudioSegment.from_file(outf)
+            testseg = AudioSegment.from_file(outf, format="mp3")
 
             # should be within a 1/10th sec and 1.5dB (not perfectly equal due to codecs)
             self.assertLess(abs(len(self.seg1) - len(testseg)), 100)
@@ -615,7 +615,7 @@ class AudioSegmentTests(unittest.TestCase):
     def test_mp3_with_png_cover_img(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
             outf = self.seg1.export(tmp_mp3_file, format="mp3", cover=self.png_cover_path)
-            testseg = AudioSegment.from_file(outf)
+            testseg = AudioSegment.from_file(outf, format="mp3")
 
             # should be within a 1/10th sec and 1.5dB (not perfectly equal due to codecs)
             self.assertLess(abs(len(self.seg1) - len(testseg)), 100)
