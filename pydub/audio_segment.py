@@ -583,9 +583,9 @@ class AudioSegment(object):
 
         if cover is not None:
             if cover.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff')) and format == "mp3":
-                conversion_command.extend(["-i" , cover, "-map", "0", "-map", "1"])
+                conversion_command.extend(["-i" , cover, "-map", "0", "-map", "1", "-c:v", "mjpeg"])
             else:
-                raise AttributeError("Nowadays put a cover is only supported by MP3 files. The allowed image formats are: .tif, .jpg, .bmp, .jpeg and .png.")
+                raise AttributeError("Currently cover images are only supported by MP3 files. The allowed image formats are: .tif, .jpg, .bmp, .jpeg and .png.")
 
         if codec is not None:
             # force audio encoder
@@ -631,7 +631,7 @@ class AudioSegment(object):
         p_out, p_err = p.communicate()
 
         if p.returncode != 0:
-            raise CouldntEncodeError("Encoding failed. ffmpeg/avlib returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(p.returncode, p_err))
+            raise CouldntEncodeError("Encoding failed. ffmpeg/avlib returned error code: {0}\n\nCommand:{1}\n\nOutput from ffmpeg/avlib:\n\n{2}".format(p.returncode, conversion_command, p_err))
 
         output.seek(0)
         out_f.write(output.read())

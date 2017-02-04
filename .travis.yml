@@ -5,7 +5,7 @@ before_install:
   - sudo apt-get update --fix-missing
 install:
   - pip install coveralls
-  - sudo apt-get install -y ${CONVERTER} libavcodec-extra-53
+  - sudo apt-get install -y ${CONVERTER} libavcodec-extra-53 ubuntu-restricted-extras #gstreamer0.10-ffmpeg gstreamer0.10-plugins-ugly gstreamer0.10-plugins-bad gstreamer0.10-plugins-bad-multiverse
 language: python
 python:
   - "2.6"

@@ -1,4 +1,4 @@
-# Pydub [![Build Status](https://travis-ci.org/jiaaro/pydub.svg?branch=master)](https://travis-ci.org/jiaaro/pydub)
+# Pydub [![Build Status](https://travis-ci.org/jiaaro/pydub.svg?branch=master)](https://travis-ci.org/jiaaro/pydub) [![Build status](https://ci.appveyor.com/api/projects/status/gy1ucp9o5khq7fqi/branch/master?svg=true)](https://ci.appveyor.com/project/jiaaro/pydub/branch/master)
 
 Pydub lets you do stuff to audio in a way that isn't stupid.
 
@@ -290,8 +290,6 @@ out_f = open("%s_minute_playlist.mp3" % playlist_length, 'wb')
 
 playlist.export(out_f, format='mp3')
 ```
-
-Experimental Windows CI: [![Build status](https://ci.appveyor.com/api/projects/status/gy1ucp9o5khq7fqi/branch/master?svg=true)](https://ci.appveyor.com/project/jiaaro/pydub/branch/master)
 
 ## License ([MIT License](http://opensource.org/licenses/mit-license.php))
 
