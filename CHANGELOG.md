@@ -1,3 +1,8 @@
+# v0.17.0
+- Add the ability to add a cover image to MP3 exports via the `cover` keyword argument to `pydub.AudioSegment().export()`
+- Add `pydub.AudioSegment().get_dc_offset()` and `pydub.AudioSegment().remove_dc_offset()` which allow detection and removal of DC offset in audio files.
+- Minor fixes for windows users
+
 # v0.16.7
 - Make `pydub.AudioSegment()._spawn()` accept array.array instances containing audio samples
 
