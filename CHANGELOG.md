@@ -1,3 +1,7 @@
+# v0.18.0
+- Add a new constructor: `pydub.AudioSegment.from_mono_audiosegments()` which allows users to create a multi-channel audiosegment out of multiple mono ones.
+- Refactor `pydub.AudioSegment._sync()` to support an arbitrary number of audiosegment arguments.
+
 # v0.17.0
 - Add the ability to add a cover image to MP3 exports via the `cover` keyword argument to `pydub.AudioSegment().export()`
 - Add `pydub.AudioSegment().get_dc_offset()` and `pydub.AudioSegment().remove_dc_offset()` which allow detection and removal of DC offset in audio files.
@@ -35,7 +39,7 @@
 - Add `pydub.AudioSegment().raw_data` property which returns the raw audio data for an audio segment as a bytes (python 3) or a bytestring (python 3)
 - Allow users to specify frame rate in `pydub.AudioSegment.silent()` constructor
 
-# v0.15.0 
+# v0.15.0
 - Add support for RAW audio (basically WAV format, but without wave headers)
 - Add a new exception `pydub.exceptions.CouldntDecodeError` to indicate a failure of ffmpeg/avconv to decode a file (as indicated by ffmpeg/avconv exit code)
 
@@ -55,7 +59,7 @@
 - Add a logger, `"pydub.converter"` which logs the ffmpeg commands being run by pydub.
 - Add `pydub.AudioSegment().split_to_mono()` method which returns a list of mono audio segments. One for each channel in the original audio segment.
 - Fix a bug in `pydub.silence.detect_silence()` which caused the function to break when a silent audio segment was equal in length to the minimum silence length. It should report a single span of silence covering the whole silent audio segment. Now it does.
-- Fix a bug where uncommon wav formats (those not supported by the stdlib wave module) would throw an exception rather than converting to a more common format via ffmpeg/avconv 
+- Fix a bug where uncommon wav formats (those not supported by the stdlib wave module) would throw an exception rather than converting to a more common format via ffmpeg/avconv
 
 # v0.11.0
 - Add `pydub.AudioSegment().max_dBFS` which reports the loudness (in dBFS) of the loudest point (i.e., highest amplitude sample) of an audio segment
@@ -87,7 +91,7 @@
 - Add a runtime warning when ffmpeg/avconv cannot be found to aid debugging
 
 # v0.9.0
-- Added support for pypy (by reimplementing audioop in python). Also, we contributed our implementation to the pypy project, so that's 💯 
+- Added support for pypy (by reimplementing audioop in python). Also, we contributed our implementation to the pypy project, so that's 💯
 - Add support for avconv as an alternative to ffmpeg
-- Add a new helper module `pydub.playback` which allows you to quickly listen to an audio segment using ffplay (or avplay) 
+- Add a new helper module `pydub.playback` which allows you to quickly listen to an audio segment using ffplay (or avplay)
 - Add new function `pydub.utils.mediainfo('/path/to/audio/file.ext')` which reports back the results of ffprobe (or avprobe) including codec, bitrate, channels, etc
