@@ -116,6 +116,12 @@ class AudioSegment(object):
 
         audio_params = (self.sample_width, self.frame_rate, self.channels)
 
+        if isinstance(data, array.array):
+            try:
+                data = data.tobytes()
+            except:
+                data = data.tostring()
+
         # prevent partial specification of arguments
         if any(audio_params) and None in audio_params:
             raise MissingAudioParameter("Either all audio parameters or no parameter must be specified")
@@ -351,22 +357,15 @@ class AudioSegment(object):
         return self.__class__(data=data, metadata=metadata)
 
     @classmethod
-    def _sync(cls, seg1, seg2):
-        s1_len, s2_len = len(seg1), len(seg2)
+    def _sync(cls, *segs):
+        channels = max(seg.channels for seg in segs)
+        frame_rate = max(seg.frame_rate for seg in segs)
+        sample_width = max(seg.sample_width for seg in segs)
 
-        channels = max(seg1.channels, seg2.channels)
-        seg1 = seg1.set_channels(channels)
-        seg2 = seg2.set_channels(channels)
-
-        frame_rate = max(seg1.frame_rate, seg2.frame_rate)
-        seg1 = seg1.set_frame_rate(frame_rate)
-        seg2 = seg2.set_frame_rate(frame_rate)
-
-        sample_width = max(seg1.sample_width, seg2.sample_width)
-        seg1 = seg1.set_sample_width(sample_width)
-        seg2 = seg2.set_sample_width(sample_width)
-
-        return seg1, seg2
+        return tuple(
+            seg.set_channels(channels).set_frame_rate(frame_rate).set_sample_width(sample_width)
+            for seg in segs
+        )
 
     def _parse_position(self, val):
         if val < 0:
@@ -396,6 +395,36 @@ class AudioSegment(object):
                                    "sample_width": 2,
                                    "frame_rate": frame_rate,
                                    "frame_width": 2})
+
+    @classmethod
+    def from_mono_audiosegments(cls, *mono_segments):
+        if not len(mono_segments):
+            raise ValueError("At least one AudioSegment instance is required")
+
+        segs = cls._sync(*mono_segments)
+
+        if segs[0].channels != 1:
+            raise ValueError("AudioSegment.from_mono_audiosegments requires all arguments are mono AudioSegment instances")
+
+        channels = len(segs)
+        sample_width = segs[0].sample_width
+        frame_rate = segs[0].frame_rate
+
+        frame_count = max(int(seg.frame_count()) for seg in segs)
+        data = array.array(
+            segs[0].array_type,
+            b'\0' * (frame_count * sample_width * channels)
+        )
+
+        for i, seg in enumerate(segs):
+            data[i::channels] = seg.get_array_of_samples()
+
+        return cls(
+            data,
+            channels=channels,
+            sample_width=sample_width,
+            frame_rate=frame_rate,
+        )
 
     @classmethod
     def from_file(cls, file, format=None, **kwargs):

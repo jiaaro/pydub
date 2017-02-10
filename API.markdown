@@ -160,6 +160,26 @@ ten_second_silence = AudioSegment.silent(duration=10000)
 - `frame_rate` | example `44100` | default: `11025` (11.025 kHz)
   Frame rate (i.e., sample rate) of the silent `AudioSegment` in Hz
 
+### AudioSegment.from_mono_audiosegments()
+
+Creates a multi-channel audiosegment out of multiple mono audiosegments. All arguments should be the same length (exactly the same, down to the frame count).
+
+```python
+from pydub import AudioSegment
+
+left_channel = AudioSegment.from_wav("sound1.wav")
+right_channel = AudioSegment.from_wav("sound1.wav")
+
+stereo_sound = AudioSegment.from_mono_audiosegments(left_channel, right_channel)
+```
+
+**Supported keyword arguments**:
+
+- `duration` | example: `3000` | default: `1000` (1 second)
+  Length of the silent `AudioSegment`, in milliseconds
+- `frame_rate` | example `44100` | default: `11025` (11.025 kHz)
+  Frame rate (i.e., sample rate) of the silent `AudioSegment` in Hz
+
 ### AudioSegment(…).dBFS
 
 Returns the loudness of the `AudioSegment` in dBFS (db relative to the maximum possible loudness). A Square wave at maximum amplitude will be roughly 0 dBFS (maximum loudness), whereas a Sine Wave at maximum amplitude will be roughly -3 dBFS.

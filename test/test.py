@@ -643,6 +643,15 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(seg.frame_width, self.seg1.frame_width)
         self.assertEqual(seg.frame_rate, self.seg1.frame_rate)
 
+    def test_from_mono_audiosegments(self):
+        monoseg1 = self.seg1.set_channels(1)
+        monoseg2 = monoseg1.reverse()
+        stereo_sound = AudioSegment.from_mono_audiosegments(monoseg1, monoseg2)
+
+        self.assertEqual(stereo_sound.channels, 2)
+        self.assertEqual(stereo_sound.dBFS, monoseg1.dBFS)
+        self.assertEqual(len(stereo_sound), len(monoseg1))
+
     def test_fade_raises_exception_when_duration_is_negative(self):
         seg = self.seg1
         func = partial(seg.fade,
