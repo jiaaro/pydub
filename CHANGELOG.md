@@ -30,7 +30,7 @@
 - pydub will use any ffmpeg/avconv binary that's in the current directory (as reported by `os.getcwd()`) before searching for a system install
 
 # v0.16.0
-- Add `pydub.AudioSegment.from_data()` constructor for creating audio segments from raw audio data (without having to write it to a file first)
+- Make it easier to instantiate `pydub.AudioSegment()` directly when creating audio segments from raw audio data (without having to write it to a file first)
 - Add `pydub.AudioSegment().get_array_of_samples()` method which returns the samples which make up an audio segment (you should usually prefer this over `pydub.AudioSegment().raw_data`)
 - Add `pydub.AudioSegment().raw_data` property which returns the raw audio data for an audio segment as a bytes (python 3) or a bytestring (python 3)
 - Allow users to specify frame rate in `pydub.AudioSegment.silent()` constructor

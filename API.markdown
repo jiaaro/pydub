@@ -40,6 +40,21 @@ beginning = sound1[:5000]
 
 # last 5 seconds of sound1
 end = sound1[-5000:]
+
+# Advanced usage, if you have raw audio data:
+sound = AudioSegment(
+    # raw audio data (bytes)
+    data=b'…',
+
+    # 2 byte (16 bit) samples
+    sample_width=2, 
+
+    # 44.1 kHz frame rate
+    frame_rate=44100, 
+
+    # stereo
+    channels=2
+)
 ```
 
 Any operations that combine multiple `AudioSegment` objects in *any* way will first ensure that they have the same number of channels, frame rate, sample rate, bit depth, etc. When these things do not match, the lower quality sound is modified to match the quality of the higher quality sound so that quality is not lost: mono is converted to stereo, bit depth and frame rate/sample rate are increased as needed. If you do not want this behavior, you may explicitly reduce the number of channels, bits, etc using the appropriate `AudioSegment` methods.
