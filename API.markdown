@@ -517,6 +517,24 @@ samples = sound.get_array_of_samples()
 new_sound = sound._spawn(samples)
 ```
 
+note that when using numpy or scipy you will need to convert back to an array before you spawn:
+
+```python
+import array
+import numpy as np
+from pydub import AudioSegment
+
+sound = AudioSegment.from_file(“sound1.wav”)
+samples = sound.get_array_of_samples()
+
+shifted_samples = np.right_shift(samples, 1)
+
+# now you have to convert back to an array.array
+shifted_samples_array = array.array(sound.array_type, shifted_samples)
+
+new_sound = sound._spawn(shifted_samples_array)
+```
+
 ### AudioSegment(…).get_dc_offset()
 
 Returns a value between -1.0 and 1.0 representing the DC offset of a channel. This is calculated using `audioop.avg()` and normalizing the result by samples max value.
