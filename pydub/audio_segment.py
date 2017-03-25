@@ -427,7 +427,7 @@ class AudioSegment(object):
         )
 
     @classmethod
-    def from_file(cls, file, format=None, **kwargs):
+    def from_file(cls, file, format=None, parameters=None, **kwargs):
         orig_file = file
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
@@ -492,6 +492,10 @@ class AudioSegment(object):
             output.name
         ]
 
+        if parameters is not None:
+            # extend arguments with arbitrary set
+            conversion_command.extend(parameters)
+
         log_conversion(conversion_command)
 
         p = subprocess.Popen(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -510,20 +514,20 @@ class AudioSegment(object):
         return obj
 
     @classmethod
-    def from_mp3(cls, file):
-        return cls.from_file(file, 'mp3')
+    def from_mp3(cls, file, parameters=None):
+        return cls.from_file(file, 'mp3', parameters)
 
     @classmethod
-    def from_flv(cls, file):
-        return cls.from_file(file, 'flv')
+    def from_flv(cls, file, parameters=None):
+        return cls.from_file(file, 'flv', parameters)
 
     @classmethod
-    def from_ogg(cls, file):
-        return cls.from_file(file, 'ogg')
+    def from_ogg(cls, file, parameters=None):
+        return cls.from_file(file, 'ogg', parameters)
 
     @classmethod
-    def from_wav(cls, file):
-        return cls.from_file(file, 'wav')
+    def from_wav(cls, file, parameters=None):
+        return cls.from_file(file, 'wav', parameters)
 
     @classmethod
     def from_raw(cls, file, **kwargs):
