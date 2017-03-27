@@ -190,9 +190,35 @@ def compress_dynamic_range(seg, threshold=-20.0, ratio=4.0, attack=5.0, release=
 # Invert the phase of the signal.
 
 @register_pydub_effect
-def invert_phase(seg):
-    inverted = audioop.mul(seg._data, seg.sample_width, -1.0)  
-    return seg._spawn(data=inverted)
+
+def invert_phase(seg, channels=(1, 1)):
+    """
+    channels- specifies which channel (left or right) to reverse the phase of.
+    Note that mono AudioSegments will become stereo.
+    """
+    if channels == (1, 1):
+        inverted = audioop.mul(seg._data, seg.sample_width, -1.0)  
+        return seg._spawn(data=inverted)
+    
+    else:
+        if seg.channels == 1:
+            left = right = seg
+        elif seg.channels == 2:
+            left, right = seg.split_to_mono()
+            
+        if channels == (1, 0):    
+            left = left.invert_phase()
+        else:
+            right = right.invert_phase()
+        
+        left_data = audioop.tostereo(left._data, left.sample_width, 1, 0)
+        right_data = audioop.tostereo(right._data, right.sample_width, 0, 1)
+        
+        output = audioop.add(left_data, right_data, seg.sample_width)
+        
+        return seg._spawn(data=output,
+                    overrides={'channels': 2,
+                               'frame_width': 2 * seg.sample_width})
 
 
 # High and low pass filters based on implementation found on Stack Overflow:
@@ -290,7 +316,7 @@ def pan(seg, pan_amount):
         return seg.apply_gain_stereo(boost_db, reduce_db)
     else:
         return seg.apply_gain_stereo(reduce_db, boost_db)
-    
+        
     
 @register_pydub_effect
 def apply_gain_stereo(seg, left_gain=0.0, right_gain=0.0):
