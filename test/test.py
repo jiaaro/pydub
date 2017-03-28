@@ -727,6 +727,23 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertTrue(s.rms == s_inv.rms)
         self.assertTrue(s == s_inv.invert_phase())
 
+        s_inv_right = s.invert_phase(channels=(0,1))
+        left, right = s_inv_right.split_to_mono()
+        self.assertFalse(s == s_inv_right)
+        self.assertFalse(s_inv == s_inv_right)
+        self.assertTrue(right == s_inv)
+        self.assertFalse(left == s_inv)
+        
+        s_inv_left = s.invert_phase(channels=(1,0))
+        left, right = s_inv_left.split_to_mono()
+        self.assertFalse(s == s_inv_left)
+        self.assertFalse(s_inv == s_inv_left)
+        self.assertTrue(left == s_inv)
+        self.assertFalse(right == s_inv)
+        
+        self.assertFalse(s_inv_left == s_inv_right)
+        
+
     def test_max_dBFS(self):
         sine_0_dbfs = Sine(1000).to_audio_segment()
         sine_minus_3_dbfs = Sine(1000).to_audio_segment(volume=-3.0)
