@@ -211,14 +211,8 @@ def invert_phase(seg, channels=(1, 1)):
         else:
             right = right.invert_phase()
         
-        left_data = audioop.tostereo(left._data, left.sample_width, 1, 0)
-        right_data = audioop.tostereo(right._data, right.sample_width, 0, 1)
+        return seg.from_mono_audiosegments(left, right)
         
-        output = audioop.add(left_data, right_data, seg.sample_width)
-        
-        return seg._spawn(data=output,
-                    overrides={'channels': 2,
-                               'frame_width': 2 * seg.sample_width})
 
 
 # High and low pass filters based on implementation found on Stack Overflow:
