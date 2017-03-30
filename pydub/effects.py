@@ -201,10 +201,10 @@ def invert_phase(seg, channels=(1, 1)):
         return seg._spawn(data=inverted)
     
     else:
-        if seg.channels == 1:
-            left = right = seg
-        elif seg.channels == 2:
+        if seg.channels == 2:
             left, right = seg.split_to_mono()
+        else:
+            raise Exception("Can't implicitly convert an AudioSegment with " + str(seg.channels) + " channels to stereo.")
             
         if channels == (1, 0):    
             left = left.invert_phase()

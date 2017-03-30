@@ -721,28 +721,39 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(0, len(self.seg1[0:0]))
 
     def test_invert(self):
-        s = Sine(100).to_audio_segment()
+        s_mono = Sine(100).to_audio_segment()
+        s = s_mono.set_channels(2)
+        
+        try:
+            s_mono.invert_phase(channels=(1, 0))
+        except Exception:
+            pass
+        else:
+            raise Exception("AudioSegment.invert_phase() didn't catch a bad input (mono)")
+        
+            
         s_inv = s.invert_phase()
         self.assertFalse(s == s_inv)
         self.assertTrue(s.rms == s_inv.rms)
         self.assertTrue(s == s_inv.invert_phase())
+        
 
         s_inv_right = s.invert_phase(channels=(0,1))
         left, right = s_inv_right.split_to_mono()
-        self.assertFalse(s == s_inv_right)
+        
+        self.assertFalse(s_mono == s_inv_right)
         self.assertFalse(s_inv == s_inv_right)
-        self.assertTrue(right == s_inv)
-        self.assertFalse(left == s_inv)
+        self.assertTrue(left == s_mono)
+        self.assertFalse(left == s_mono)
         
         s_inv_left = s.invert_phase(channels=(1,0))
         left, right = s_inv_left.split_to_mono()
-        self.assertFalse(s == s_inv_left)
+        
+        self.assertFalse(s_mono == s_inv_left)
         self.assertFalse(s_inv == s_inv_left)
-        self.assertTrue(left == s_inv)
-        self.assertFalse(right == s_inv)
-        
-        self.assertFalse(s_inv_left == s_inv_right)
-        
+        self.assertFalse(left == s_mono)
+        self.assertTrue(right == s_mono)
+            
 
     def test_max_dBFS(self):
         sine_0_dbfs = Sine(1000).to_audio_segment()
