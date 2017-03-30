@@ -744,7 +744,7 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertFalse(s_mono == s_inv_right)
         self.assertFalse(s_inv == s_inv_right)
         self.assertTrue(left == s_mono)
-        self.assertFalse(left == s_mono)
+        self.assertFalse(right == s_mono)
         
         s_inv_left = s.invert_phase(channels=(1,0))
         left, right = s_inv_left.split_to_mono()
