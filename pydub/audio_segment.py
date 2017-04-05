@@ -427,7 +427,7 @@ class AudioSegment(object):
         )
 
     @classmethod
-    def from_file(cls, file, format=None, parameters=None, **kwargs):
+    def from_file(cls, file, format=None, codec=None, parameters=None, **kwargs):
         orig_file = file
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
@@ -485,6 +485,10 @@ class AudioSegment(object):
         if format:
             conversion_command += ["-f", format]
 
+        if codec:
+            # force audio decoder
+            conversion_command += ["-acodec", codec]
+            
         conversion_command += [
             "-i", input_file.name,  # input_file options (filename last)
             "-vn",  # Drop any video streams if there are any
