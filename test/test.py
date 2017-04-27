@@ -91,6 +91,7 @@ class AudioSegmentTests(unittest.TestCase):
         self.ogg_file_path = os.path.join(data_dir, 'bach.ogg')
         self.mp4_file_path = os.path.join(data_dir, 'creative_common.mp4')
         self.mp3_file_path = os.path.join(data_dir, 'party.mp3')
+        self.webm_file_path = os.path.join(data_dir, 'test5.webm')
 
         self.jpg_cover_path = os.path.join(data_dir, 'cover.jpg')
         self.png_cover_path = os.path.join(data_dir, 'cover.png')
@@ -537,6 +538,16 @@ class AudioSegmentTests(unittest.TestCase):
             AudioSegment.from_file(self.mp3_file_path).export(tmp_ogg_file,
                                                               format="ogg")
 
+    def test_export_webm_as_mp3(self):
+        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
+            AudioSegment.from_file(self.webm_file_path).export(tmp_mp3_file,
+                                                               format="mp3")
+
+    def test_export_mp3_as_webm(self):
+        with NamedTemporaryFile('w+b', suffix='.webm') as tmp_webm_file:
+            AudioSegment.from_file(self.mp3_file_path).export(tmp_webm_file,
+                                                              format="webm")
+
     def test_export_mp4_as_ogg(self):
         with NamedTemporaryFile('w+b', suffix='.ogg') as tmp_ogg_file:
             AudioSegment.from_file(self.mp4_file_path).export(tmp_ogg_file,
@@ -723,37 +734,37 @@ class AudioSegmentTests(unittest.TestCase):
     def test_invert(self):
         s_mono = Sine(100).to_audio_segment()
         s = s_mono.set_channels(2)
-        
+
         try:
             s_mono.invert_phase(channels=(1, 0))
         except Exception:
             pass
         else:
             raise Exception("AudioSegment.invert_phase() didn't catch a bad input (mono)")
-        
-            
+
+
         s_inv = s.invert_phase()
         self.assertFalse(s == s_inv)
         self.assertTrue(s.rms == s_inv.rms)
         self.assertTrue(s == s_inv.invert_phase())
-        
+
 
         s_inv_right = s.invert_phase(channels=(0,1))
         left, right = s_inv_right.split_to_mono()
-        
+
         self.assertFalse(s_mono == s_inv_right)
         self.assertFalse(s_inv == s_inv_right)
         self.assertTrue(left == s_mono)
         self.assertFalse(right == s_mono)
-        
+
         s_inv_left = s.invert_phase(channels=(1,0))
         left, right = s_inv_left.split_to_mono()
-        
+
         self.assertFalse(s_mono == s_inv_left)
         self.assertFalse(s_inv == s_inv_left)
         self.assertFalse(left == s_mono)
         self.assertTrue(right == s_mono)
-            
+
 
     def test_max_dBFS(self):
         sine_0_dbfs = Sine(1000).to_audio_segment()
