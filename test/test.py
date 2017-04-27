@@ -540,8 +540,10 @@ class AudioSegmentTests(unittest.TestCase):
 
     def test_export_webm_as_mp3(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
-            AudioSegment.from_file(self.webm_file_path).export(tmp_mp3_file,
-                                                               format="mp3")
+            AudioSegment.from_file(
+                self.webm_file_path,
+                codec="opus"
+            ).export(tmp_mp3_file, format="mp3")
 
     def test_export_mp3_as_webm(self):
         with NamedTemporaryFile('w+b', suffix='.webm') as tmp_webm_file:
