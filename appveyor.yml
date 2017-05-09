@@ -11,7 +11,7 @@ install:
   - "%PYTHON%/python.exe C:/get-pip.py"
   - "%PYTHON%/Scripts/pip.exe install -e ."
   # Install ffmpeg
-  - ps: Start-FileDownload ('http://ffmpeg.zeranoe.com/builds/win64/shared/ffmpeg-2.7-win64-shared.7z' ) ffmpeg-shared.7z
+  - ps: Start-FileDownload ('http://ffmpeg.zeranoe.com/builds/win64/shared/ffmpeg-latest-win64-shared.7z') ffmpeg-shared.7z
   - 7z x ffmpeg-shared.7z > NULL
   - "SET PATH=%cd%\\ffmpeg-2.7-win64-shared\\bin;%PATH%"
 test_script:
