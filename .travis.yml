@@ -5,7 +5,7 @@ env:
   - CONVERTER=ffmpeg
   - CONVERTER=libav-tools
 before_install:
-  - sudo add-apt-repository ppa:mc3man/trusty-media
+  - sudo add-apt-repository ppa:mc3man/trusty-media -y
   - sudo apt-get update --fix-missing
 install:
   - sudo apt-get install -y ${CONVERTER} libav-tools libopus-dev
