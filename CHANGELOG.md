@@ -1,3 +1,10 @@
+# v0.19.0
+- Allow codec and ffmpeg/avconv parameters to be set in the `pydub.AudioSegment.from_file()` for more control while decoding audio files
+- Allow `AudioSegment` objects with more than two channels to be split using `pydub.AudioSegment().split_to_mono()`
+- Add support for inverting the phase of only one channel in a multi-channel `pydub.AudioSegment` object
+- Fix a bug with the latest avprobe that broke `pydub.utils.mediainfo()`
+- Add tests for webm encoding/decoding
+
 # v0.18.0
 - Add a new constructor: `pydub.AudioSegment.from_mono_audiosegments()` which allows users to create a multi-channel audiosegment out of multiple mono ones.
 - Refactor `pydub.AudioSegment._sync()` to support an arbitrary number of audiosegment arguments.
