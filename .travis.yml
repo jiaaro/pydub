@@ -1,3 +1,6 @@
+sudo: required
+dist: precise
+language: python
 env:
   - CONVERTER=ffmpeg
   - CONVERTER=libav-tools
@@ -5,7 +8,6 @@ before_install:
   - sudo apt-get update --fix-missing
 install:
   - sudo apt-get install -y ${CONVERTER} libavcodec-extra-53 libopus-dev
-language: python
 python:
   - "2.6"
   - "2.7"
