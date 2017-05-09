@@ -4,7 +4,6 @@ env:
 before_install:
   - sudo apt-get update --fix-missing
 install:
-  - pip install coveralls
   - sudo apt-get install -y ${CONVERTER} libavcodec-extra-53 libopus-dev
 language: python
 python:
