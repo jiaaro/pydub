@@ -752,15 +752,22 @@ class AudioSegment(object):
         if self.channels == 1:
             return [self]
 
-        left_channel = audioop.tomono(self._data, self.sample_width, 1, 0)
-        right_channel = audioop.tomono(self._data, self.sample_width, 0, 1)
+        samples = self.get_array_of_samples()
 
-        return [self._spawn(data=left_channel,
-                            overrides={'channels': 1,
-                                       'frame_width': self.sample_width}),
-                self._spawn(data=right_channel,
-                            overrides={'channels': 1,
-                                       'frame_width': self.sample_width})]
+        mono_channels = []
+        for i in range(self.channels):
+            samples_for_current_channel = samples[i::self.channels]
+
+            try:
+                mono_data = samples_for_current_channel.tobytes()
+            except AttributeError:
+                mono_data = samples_for_current_channel.tostring()
+
+            mono_channels.append(
+                self._spawn(mono_data, overrides={"channels": 1, "frame_width": self.sample_width})
+            )
+
+        return mono_channels
 
     @property
     def rms(self):

@@ -31,7 +31,7 @@ There _are_ a few things that will make your Pull Request more likely to be merg
   
 Take a look at our issue tracker for anything tagged [`bug`][bugs] or [`todo`][todos] - these are goals of the project and your improvements are _very_ likely to be merged!
 
-That being said, there are many possible contributions we havne't thought of already. Those are welcome too!
+That being said, there are many possible contributions we haven't thought of already. Those are welcome too!
 
 Here are some general topics of interest for future development:
 
