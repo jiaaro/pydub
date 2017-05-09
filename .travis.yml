@@ -8,7 +8,7 @@ before_install:
   - sudo add-apt-repository ppa:mc3man/trusty-media -y
   - sudo apt-get update --fix-missing
 install:
-  - sudo apt-get install -y ${CONVERTER} libav-tools libopus-dev
+  - sudo apt-get install -y ${CONVERTER} libopus-dev
 python:
   - "2.6"
   - "2.7"
