@@ -1,11 +1,14 @@
+sudo: required
+dist: trusty
+language: python
 env:
   - CONVERTER=ffmpeg
-  - CONVERTER=libav-tools
+  - CONVERTER="libav-tools libavcodec-extra-54"
 before_install:
+  - sudo add-apt-repository ppa:mc3man/trusty-media -y
   - sudo apt-get update --fix-missing
 install:
-  - sudo apt-get install -y ${CONVERTER} libavcodec-extra-53 libopus-dev
-language: python
+  - sudo apt-get install -y ${CONVERTER} libopus-dev
 python:
   - "2.6"
   - "2.7"
