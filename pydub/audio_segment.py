@@ -639,11 +639,26 @@ class AudioSegment(object):
             if not isinstance(tags, dict):
                 raise InvalidTag("Tags must be a dictionary.")
             else:
-                # Extend converter command with tags
-                # print(tags)
+                # Extend converter command with tags.
+                # Make sure we can handle unicode strings in Python
+                # 2.x (In Python 3, these are handled correctly by 
+                # default.)
+                def encode_unicode(s):
+                    """ In Python 3: leaves all input untouched. 
+                    In Python 2.x: Leaves simple non-unicode strings 
+                    untouched. Converts unicode strings to non-unicode
+                    strings by encoding them in the default encoding 
+                    of the file system.
+                    """
+                    if sys.version_info[0] < 3 \
+                            and isinstance(s, unicode):
+                        s = s.encode(sys.getfilesystemencoding())
+                    return s
+
                 for key, value in tags.items():
-                    conversion_command.extend(
-                        ['-metadata', '{0}={1}'.format(key, value)])
+                    pair = '{0}={1}'.format(encode_unicode(key),
+                                            encode_unicode(value))
+                    conversion_command.extend(['-metadata', pair])
 
                 if format == 'mp3':
                     # set id3v2 tag version
