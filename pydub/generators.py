@@ -68,9 +68,9 @@ class Sine(SignalGenerator):
         self.freq = freq
 
     def generate(self):
+        sine_of = (self.freq * 2 * math.pi) / self.sample_rate
         sample_n = 0
         while True:
-            sine_of = (self.freq * 2 * math.pi) / self.sample_rate
             yield math.sin(sine_of * sample_n)
             sample_n += 1
 
