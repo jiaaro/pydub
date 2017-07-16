@@ -246,6 +246,21 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(len(seg_over), 4000)
         self.assertFalse(seg_mult._data == seg_over._data)
 
+    def test_overlay_with_gain_change(self):
+        # Use overlay silence with volume change
+        seg_one = self.seg1[:5000]
+        seg_silent = AudioSegment.silent(duration=2000)
+        seg_over = seg_one.overlay(seg_silent, gain_during_overlay=-7)
+
+        # Manually lower first segment
+        seg_one_lower = seg_one - 7
+        seg_manual = seg_one_lower[:2000] + seg_one[2000:]
+
+        self.assertEqual(len(seg_over), len(seg_manual))
+        self.assertAlmostEqual(seg_over.dBFS, seg_manual.dBFS)
+        self.assertEqual(len(seg_manual), 5000)
+        self.assertEqual(len(seg_over), 5000)
+
     def test_slicing(self):
         empty = self.seg1[:0]
         second_long_slice = self.seg1[:1000]
