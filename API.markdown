@@ -362,6 +362,8 @@ played_togther = sound1.overlay(sound2)
 
 sound2_starts_after_delay = sound1.overlay(sound2, position=5000)
 
+volume_of_sound1_reduced_during_overlay = sound1.overlay(sound2, gain_during_overlay=-8)
+
 sound2_repeats_until_sound1_ends = sound1.overlay(sound2, loop=true)
 
 sound2_plays_twice = sound1.overlay(sound2, times=2)
