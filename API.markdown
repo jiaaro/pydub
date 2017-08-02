@@ -381,6 +381,8 @@ len(sound1) == len(sound2_plays_a_lot)
   The overlaid `AudioSegment` will repeat (starting at `position`) until the end of this `AudioSegment`
 - `times` | example: `4` | default: `1` (entire duration of `AudioSegment`)
   The overlaid `AudioSegment` will repeat X times (starting at `position`) but will still be truncated to the length of this `AudioSegment`
+- `gain_during_overlay` | example: `-6.0` | default: `0` (no change in volume during overlay)
+  Change the original audio by this many dB while overlaying audio. This can be used to make the original audio quieter while the overlaid audio plays.
 
 ### AudioSegment(…).apply_gain(`gain`)
 
