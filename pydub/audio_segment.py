@@ -862,7 +862,7 @@ class AudioSegment(object):
         return self._spawn(data=audioop.mul(self._data, self.sample_width,
                                             db_to_float(float(volume_change))))
 
-    def overlay(self, seg, position=0, loop=False, times=None):
+    def overlay(self, seg, position=0, loop=False, times=None, gain_during_overlay=None):
         """
         Overlay the provided segment on to this segment starting at the
         specificed position and using the specfied looping beahvior.
@@ -882,6 +882,10 @@ class AudioSegment(object):
             Loop seg the specified number of times or until it matches this
             segment's length. 1 means once, 2 means twice, ... 0 would make the
             call a no-op
+        gain_during_overlay (optional int):
+            Changes this segment's volume by the specified amount during the
+            duration of time that seg is overlaid on top of it. When negative,
+            this has the effect of 'ducking' the audio under the overlay.
         """
 
         if loop:
@@ -917,7 +921,13 @@ class AudioSegment(object):
                 # is our last go-around
                 times = 1
 
-            output.write(audioop.add(seg1[pos:pos + seg2_len], seg2,
+            if gain_during_overlay:
+                seg1_overlaid = seg1[pos:pos + seg2_len]
+                seg1_adjusted_gain = audioop.mul(seg1_overlaid, self.sample_width,
+                                               db_to_float(float(gain_during_overlay)))
+                output.write(audioop.add(seg1_adjusted_gain, seg2, sample_width))
+            else:
+                output.write(audioop.add(seg1[pos:pos + seg2_len], seg2,
                                      sample_width))
             pos += seg2_len
 

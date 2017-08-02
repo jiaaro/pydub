@@ -1,3 +1,6 @@
+# v0.20.0
+- Add new parameter `gain_during_overlay` to `pydub.AudioSegment.overlay` which allows users to adjust the volume of the target AudioSegment during the portion of the segment which is overlaid with the additional AudioSegment. 
+
 # v0.19.0
 - Allow codec and ffmpeg/avconv parameters to be set in the `pydub.AudioSegment.from_file()` for more control while decoding audio files
 - Allow `AudioSegment` objects with more than two channels to be split using `pydub.AudioSegment().split_to_mono()`
