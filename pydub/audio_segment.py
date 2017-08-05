@@ -488,7 +488,7 @@ class AudioSegment(object):
         if codec:
             # force audio decoder
             conversion_command += ["-acodec", codec]
-            
+
         conversion_command += [
             "-i", input_file.name,  # input_file options (filename last)
             "-vn",  # Drop any video streams if there are any
@@ -943,6 +943,14 @@ class AudioSegment(object):
 
         if not crossfade:
             return seg1._spawn(seg1._data + seg2._data)
+        elif crossfade > len(self):
+            raise ValueError("Crossfade is longer than the original AudioSegment ({}ms > {}ms)".format(
+                crossfade, len(self)
+            ))
+        elif crossfade > len(seg):
+            raise ValueError("Crossfade is longer than the appended AudioSegment ({}ms > {}ms)".format(
+                crossfade, len(seg)
+            ))
 
         xf = seg1[-crossfade:].fade(to_gain=-120, start=0, end=float('inf'))
         xf *= seg2[:crossfade].fade(from_gain=-120, start=0, end=float('inf'))
