@@ -1,5 +1,7 @@
 # v0.20.0
-- Add new parameter `gain_during_overlay` to `pydub.AudioSegment.overlay` which allows users to adjust the volume of the target AudioSegment during the portion of the segment which is overlaid with the additional AudioSegment. 
+- Add new parameter `gain_during_overlay` to `pydub.AudioSegment.overlay` which allows users to adjust the volume of the target AudioSegment during the portion of the segment which is overlaid with the additional AudioSegment.
+- `pydub.playback.play()` No longer displays the (very verbose) playback "banner" when using ffplay
+- Fix a confusing error message when using invalid crossfade durations (issue #193)
 
 # v0.19.0
 - Allow codec and ffmpeg/avconv parameters to be set in the `pydub.AudioSegment.from_file()` for more control while decoding audio files

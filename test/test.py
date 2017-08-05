@@ -142,6 +142,11 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(len(merged1), len(self.seg1) + len(self.seg3) - 100)
         self.assertEqual(len(merged2), len(self.seg2) + len(self.seg3) - 100)
 
+    def test_too_long_crossfade(self):
+        s1 = self.seg1[:1000]
+        s2 = self.seg2[:500]
+        self.assertRaises(ValueError, lambda: s1.append(s2, crossfade=len(s1) + 10))
+
     def test_sum(self):
         def gen():
             yield self.seg1
