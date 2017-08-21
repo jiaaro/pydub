@@ -1,3 +1,5 @@
+import itertools
+
 from .utils import db_to_float
 
 
@@ -16,13 +18,13 @@ def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek
 
     # check successive (1 sec by default) chunk of sound for silence
     # try a chunk at every "seek step" (or every chunk for a seek step == 1)
-    #
-    # make sure the last portion of the audio is included in the seach
-    # even when seek step is greater than 1
     last_slice_start = seg_len - min_silence_len
     slice_starts = range(0, last_slice_start + 1, seek_step)
-    if slice_starts[-1] != last_slice_start:
-        slice_starts.append(last_slice_start)
+
+    # guarantee last_slice_start is included in the range
+    # to make sure the last portion of the audio is seached
+    if last_slice_start % seek_step:
+        slice_starts = itertools.chain(slice_starts, [last_slice_start])
 
     for i in slice_starts:
         audio_slice = audio_segment[i:i + min_silence_len]
