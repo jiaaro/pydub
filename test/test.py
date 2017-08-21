@@ -868,6 +868,11 @@ class SilenceTests(unittest.TestCase):
         silent_ranges = detect_silence(self.seg1, min_silence_len=500, silence_thresh=-20)
         self.assertEqual(silent_ranges, [[0, 775], [3141, 4033], [5516, 6051]])
 
+    def test_detect_silence_seg1_with_seek_split(self):
+        silent_ranges = detect_silence(self.seg1, min_silence_len=500, silence_thresh=-20,
+                                       seek_step=10)
+        self.assertEqual(silent_ranges, [[0, 770], [3150, 4030], [5520, 6050]])
+
     def test_realistic_audio(self):
         silent_ranges = detect_silence(self.seg4, min_silence_len=1000, silence_thresh=self.seg4.dBFS)
 
