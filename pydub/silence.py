@@ -1,9 +1,9 @@
-from .utils import (
-    db_to_float,
-)
+import itertools
+
+from .utils import db_to_float
 
 
-def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16):
+def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek_step=1):
     seg_len = len(audio_segment)
 
     # you can't have a silent portion of a sound that is longer than the sound
@@ -16,11 +16,18 @@ def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16):
     # find silence and add start and end indicies to the to_cut list
     silence_starts = []
 
-    # check every (1 sec by default) chunk of sound for silence
-    slice_starts = seg_len - min_silence_len
+    # check successive (1 sec by default) chunk of sound for silence
+    # try a chunk at every "seek step" (or every chunk for a seek step == 1)
+    last_slice_start = seg_len - min_silence_len
+    slice_starts = range(0, last_slice_start + 1, seek_step)
 
-    for i in range(slice_starts + 1):
-        audio_slice = audio_segment[i:i+min_silence_len]
+    # guarantee last_slice_start is included in the range
+    # to make sure the last portion of the audio is seached
+    if last_slice_start % seek_step:
+        slice_starts = itertools.chain(slice_starts, [last_slice_start])
+
+    for i in slice_starts:
+        audio_slice = audio_segment[i:i + min_silence_len]
         if audio_slice.rms < silence_thresh:
             silence_starts.append(i)
 
@@ -54,8 +61,8 @@ def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16):
     return silent_ranges
 
 
-def detect_nonsilent(audio_segment, min_silence_len=1000, silence_thresh=-16):
-    silent_ranges = detect_silence(audio_segment, min_silence_len, silence_thresh)
+def detect_nonsilent(audio_segment, min_silence_len=1000, silence_thresh=-16, seek_step=1):
+    silent_ranges = detect_silence(audio_segment, min_silence_len, silence_thresh, seek_step)
     len_seg = len(audio_segment)
 
     # if there is no silence, the whole thing is nonsilent
@@ -81,8 +88,8 @@ def detect_nonsilent(audio_segment, min_silence_len=1000, silence_thresh=-16):
     return nonsilent_ranges
 
 
-
-def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, keep_silence=100):
+def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, keep_silence=100,
+                     seek_step=1):
     """
     audio_segment - original pydub.AudioSegment() object
 
@@ -97,7 +104,7 @@ def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, ke
         abruptly cut off. (default: 100ms)
     """
 
-    not_silence_ranges = detect_nonsilent(audio_segment, min_silence_len, silence_thresh)
+    not_silence_ranges = detect_nonsilent(audio_segment, min_silence_len, silence_thresh, seek_step)
 
     chunks = []
     for start_i, end_i in not_silence_ranges:
