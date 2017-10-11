@@ -415,7 +415,7 @@ fade_quieter_beteen_2_and_3_seconds = sound1.fade(to_gain=-3.5, start=2000, end=
 
 # easy way is to use the .fade_in() convenience method. note: -120dB is basically silent.
 fade_in_the_hard_way = sound1.fade(from_gain=-120.0, start=0, duration=5000)
-fade_out_the_hard_way = sound1.fade(to_gain=-120.0, end=0, duration=5000)
+fade_out_the_hard_way = sound1.fade(to_gain=-120.0, end=float('inf'), duration=5000)
 ```
 
 **Supported keyword arguments**:

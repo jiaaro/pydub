@@ -1010,6 +1010,8 @@ class AudioSegment(object):
             elif end is not None:
                 start = end - duration
         else:
+            start = 0 if start is None else start
+            end = len(self) if end is None else end
             duration = end - start
 
         from_power = db_to_float(from_gain)
