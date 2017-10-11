@@ -289,7 +289,7 @@ class AudioSegmentTests(unittest.TestCase):
         chunks = audio[:0]
 
         for chunk in audio[::1000]:
-            self.assertIsInstance(chunk, audio.__class__)
+            self.assertTrue(isinstance(chunk, audio.__class__))
             self.assertEqual(len(chunk), 1000)
             chunks += chunk
 
