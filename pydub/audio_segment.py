@@ -230,6 +230,12 @@ class AudioSegment(object):
 
     def __getitem__(self, millisecond):
         if isinstance(millisecond, slice):
+            if millisecond.step:
+                return (
+                    self[i:i+millisecond.step]
+                    for i in xrange(*millisecond.indices(len(self)))
+                )
+
             start = millisecond.start if millisecond.start is not None else 0
             end = millisecond.stop if millisecond.stop is not None \
                 else len(self)

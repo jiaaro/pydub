@@ -41,6 +41,9 @@ beginning = sound1[:5000]
 # last 5 seconds of sound1
 end = sound1[-5000:]
 
+# split sound1 in 5-second slices
+slices = sound1[::5000]
+
 # Advanced usage, if you have raw audio data:
 sound = AudioSegment(
     # raw audio data (bytes)
@@ -110,6 +113,11 @@ file_handle = sound.export("/path/to/output.mp3",
                            bitrate="192k",
                            tags={"album": "The Bends", "artist": "Radiohead"},
                            cover="/path/to/albumcovers/radioheadthebends.jpg")
+
+# split sound in 5-second slices and export
+for i, chunk in enumerate(sound[::5000]):
+  with open("sound-%s.mp3" % i, "wb") as f:
+    chunk.export(f, format="mp3")
 ```
 
 The first argument is the location (as a string) to write the output, **or** a file handle to write to. If you do not pass an output file or path, a temporary file is generated.

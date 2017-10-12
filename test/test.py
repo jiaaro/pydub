@@ -284,6 +284,17 @@ class AudioSegmentTests(unittest.TestCase):
         past_end = second_long_slice[:1500]
         self.assertTrue(second_long_slice._data == past_end._data)
 
+    def test_slicing_by_step(self):
+        audio = self.seg1[:10000]
+        chunks = audio[:0]
+
+        for chunk in audio[::1000]:
+            self.assertTrue(isinstance(chunk, AudioSegment))
+            self.assertEqual(len(chunk), 1000)
+            chunks += chunk
+
+        self.assertEqual(len(audio), len(chunks))
+
     def test_indexing(self):
         short = self.seg1[:100]
 
