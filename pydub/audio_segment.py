@@ -515,12 +515,12 @@ class AudioSegment(object):
             raise CouldntDecodeError("Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(p.returncode, p_err))
 
         try:
-          obj = cls._from_safe_wav(output)
+            obj = cls._from_safe_wav(output)
         finally:
-          input_file.close()
-          output.close()
-          os.unlink(input_file.name)
-          os.unlink(output.name)
+            input_file.close()
+            output.close()
+            os.unlink(input_file.name)
+            os.unlink(output.name)
 
         return obj
 
