@@ -7,7 +7,7 @@ from tempfile import TemporaryFile, NamedTemporaryFile
 import wave
 import sys
 import struct
-from .logging_utils import log_conversion
+from .logging_utils import log_conversion, log_subprocess_output
 import base64
 
 try:
@@ -511,6 +511,9 @@ class AudioSegment(object):
         p = subprocess.Popen(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         p_out, p_err = p.communicate()
 
+        log_subprocess_output(p_out)
+        log_subprocess_output(p_err)
+
         if p.returncode != 0:
             raise CouldntDecodeError("Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(p.returncode, p_err))
 
@@ -673,6 +676,9 @@ class AudioSegment(object):
         # read stdin / write stdout
         p = subprocess.Popen(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         p_out, p_err = p.communicate()
+
+        log_subprocess_output(p_out)
+        log_subprocess_output(p_err)
 
         if p.returncode != 0:
             raise CouldntEncodeError("Encoding failed. ffmpeg/avlib returned error code: {0}\n\nCommand:{1}\n\nOutput from ffmpeg/avlib:\n\n{2}".format(p.returncode, conversion_command, p_err))
