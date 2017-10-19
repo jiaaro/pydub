@@ -19,3 +19,5 @@ python:
   - "pypy2.7-5.8.0"
 script:
   - python test/test.py
+after_script:
+  - pip install pylama && python -m pylama -i W,E501 pydub/ || true
