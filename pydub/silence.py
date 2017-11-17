@@ -28,7 +28,7 @@ def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek
 
     for i in slice_starts:
         audio_slice = audio_segment[i:i + min_silence_len]
-        if audio_slice.rms < silence_thresh:
+        if audio_slice.rms <= silence_thresh:
             silence_starts.append(i)
 
     # short circuit when there is no silence
