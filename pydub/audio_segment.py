@@ -752,11 +752,13 @@ class AudioSegment(object):
         if channels == 2 and self.channels == 1:
             fn = audioop.tostereo
             frame_width = self.frame_width * 2
+            fac = 1
         elif channels == 1 and self.channels == 2:
             fn = audioop.tomono
             frame_width = self.frame_width // 2
+            fac = 0.5
 
-        converted = fn(self._data, self.sample_width, 1, 1)
+        converted = fn(self._data, self.sample_width, fac, fac)
 
         return self._spawn(data=converted,
                            overrides={
