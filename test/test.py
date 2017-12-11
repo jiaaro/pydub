@@ -859,7 +859,7 @@ class AudioSegmentTests(unittest.TestCase):
         tempfile.tempdir = new_tmpdir
 
         with NamedTemporaryFile('w+b', suffix='.wav', delete=delete) as tmp_wav_file:
-            tmp_wav_file.write("not really a wav")
+            tmp_wav_file.write("not really a wav".encode('utf-8'))
             tmp_wav_file.flush()
             self.assertRaises(CouldntDecodeError, AudioSegment.from_file, tmp_wav_file.name)
             files = os.listdir(tempfile.tempdir)
