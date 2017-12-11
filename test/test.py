@@ -866,7 +866,7 @@ class AudioSegmentTests(unittest.TestCase):
             self.assertListEqual(files, [os.path.basename(tmp_wav_file.name)])
 
         if sys.platform == 'win32':
-            os.remove(tmp_mp3_file.name)
+            os.remove(tmp_wav_file.name)
 
         tempfile.tempdir = orig_tmpdir
         os.rmdir(new_tmpdir)
