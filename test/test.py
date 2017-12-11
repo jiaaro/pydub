@@ -863,7 +863,7 @@ class AudioSegmentTests(unittest.TestCase):
             tmp_wav_file.flush()
             self.assertRaises(CouldntDecodeError, AudioSegment.from_file, tmp_wav_file.name)
             files = os.listdir(tempfile.tempdir)
-            self.assertListEqual(files, [os.path.basename(tmp_wav_file.name)])
+            self.assertEquals(files, [os.path.basename(tmp_wav_file.name)])
 
         if sys.platform == 'win32':
             os.remove(tmp_wav_file.name)
