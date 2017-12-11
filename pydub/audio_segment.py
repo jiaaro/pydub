@@ -515,10 +515,9 @@ class AudioSegment(object):
         log_subprocess_output(p_out)
         log_subprocess_output(p_err)
 
-        if p.returncode != 0:
-            raise CouldntDecodeError("Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(p.returncode, p_err))
-
         try:
+            if p.returncode != 0:
+                raise CouldntDecodeError("Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(p.returncode, p_err))
             obj = cls._from_safe_wav(output)
         finally:
             input_file.close()
