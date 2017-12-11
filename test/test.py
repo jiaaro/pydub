@@ -2,7 +2,12 @@ from functools import partial
 import os
 import sys
 import unittest
-from tempfile import NamedTemporaryFile
+from tempfile import (
+        NamedTemporaryFile,
+        mkdtemp,
+        gettempdir
+)
+import tempfile
 import struct
 
 from pydub import AudioSegment
@@ -847,6 +852,24 @@ class AudioSegmentTests(unittest.TestCase):
         seg1 = seg.remove_dc_offset(channel=1, offset=(-0.06))
         self.assertWithinTolerance(seg1.get_dc_offset(1), -0.1, tolerance=0.01)
 
+    def test_from_file_clean_fail(self):
+        delete = sys.platform != 'win32'
+        orig_tmpdir = gettempdir()
+        new_tmpdir = mkdtemp()
+        tempfile.tempdir = new_tmpdir
+
+        with NamedTemporaryFile('w+b', suffix='.wav', delete=delete) as tmp_wav_file:
+            tmp_wav_file.write("not really a wav")
+            tmp_wav_file.flush()
+            self.assertRaises(CouldntDecodeError, AudioSegment.from_file, tmp_wav_file.name)
+            files = os.listdir(tempfile.tempdir)
+            self.assertListEqual(files, [os.path.basename(tmp_wav_file.name)])
+
+        if sys.platform == 'win32':
+            os.remove(tmp_mp3_file.name)
+
+        tempfile.tempdir = orig_tmpdir
+        os.rmdir(new_tmpdir)
 
 class SilenceTests(unittest.TestCase):
 
