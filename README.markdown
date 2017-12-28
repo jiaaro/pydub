@@ -197,7 +197,7 @@ brew install libav --with-libvorbis --with-sdl --with-theora
 ####    OR    #####
 
 # ffmpeg
-brew install ffmpeg --with-libvorbis --with-ffplay --with-theora
+brew install ffmpeg --with-libvorbis --with-sdl2 --with-theora
 ```
 
 Linux (using aptitude):
