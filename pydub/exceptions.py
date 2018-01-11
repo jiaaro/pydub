@@ -23,8 +23,10 @@ class InvalidID3TagVersion(PydubException):
 class CouldntDecodeError(PydubException):
     pass
 
+
 class CouldntEncodeError(PydubException):
     pass
+
 
 class MissingAudioParameter(PydubException):
     pass
