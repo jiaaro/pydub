@@ -70,6 +70,31 @@ class FileAccessTests(unittest.TestCase):
         self.assertTrue(seg1._data == seg2._data)
         self.assertTrue(len(seg1) > 0)
 
+    def test_audio_segment_from_path_like_object(self):
+        try:
+            # The import of fspath() is unusd, but is what will actually raise
+            # the ImportError. os.fspath() was introduced in python 3.6, while
+            # pathlib came in 3.4. While we could call str() to get a string
+            # representation of pathlib objects when they're passed to
+            # AudioSegment.from_file(), giving support to 3.4 and 3.5, it is
+            # safe to assume that users of 3.4 or 3.5 that use Path objects are
+            # aware of the limitations, and are used to calling str()
+            # themselves.
+            from os import fspath
+            from pathlib import Path
+
+            mp3_path_obj = Path(self.mp3_path)
+
+            seg1 = AudioSegment.from_file(self.mp3_path)
+            seg2 = AudioSegment.from_file(mp3_path_obj)
+
+            self.assertEqual(len(seg1), len(seg2))
+            self.assertTrue(seg1._data == seg2._data)
+            self.assertTrue(len(seg1) > 0)
+        except ImportError:
+            # We're on python < 3.6, so there's nothing to test.
+            pass
+
 
 test1wav = test4wav = test1 = test2 = test3 = testparty = testdcoffset = None
 

@@ -58,6 +58,12 @@ def _fd_or_path_or_tempfile(fd, mode='w+b', tempfile=True):
     if isinstance(fd, basestring):
         fd = open(fd, mode=mode)
 
+    try:
+        if isinstance(fd, os.PathLike):
+            fd = open(fd, mode=mode)
+    except AttributeError:
+        pass
+
     return fd
 
 
