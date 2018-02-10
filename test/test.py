@@ -54,12 +54,83 @@ class UtilityTests(unittest.TestCase):
         self.assertEqual(3, db_to_float(ratio_to_db(3, using_amplitude=False), using_amplitude=False))
         self.assertEqual(12, ratio_to_db(db_to_float(12, using_amplitude=False), using_amplitude=False))
 
+if sys.version_info >= (3, 6):
+    class PathLikeObjectTests(unittest.TestCase):
+
+        class MyPathLike:
+            def __init__(self, path):
+                self.path = path
+            def __fspath__(self):
+                return self.path
+
+        def setUp(self):
+            self.mp3_path_str = os.path.join(data_dir, 'test1.mp3')
+
+            from pathlib import Path
+            self.mp3_pathlib_path = Path(self.mp3_path_str)
+
+            self.mp3_path_like_str = self.MyPathLike(self.mp3_path_str)
+            self.mp3_path_like_bytes = self.MyPathLike(bytes(self.mp3_path_str, sys.getdefaultencoding()))
+
+        def test_audio_segment_from_pathlib_path(self):
+            seg1 = AudioSegment.from_file(self.mp3_path_str)
+            seg2 = AudioSegment.from_file(self.mp3_pathlib_path)
+
+            self.assertEqual(len(seg1), len(seg2))
+            self.assertTrue(seg1._data == seg2._data)
+            self.assertTrue(len(seg1) > 0)
+
+        def test_audio_segment_from_path_like_str(self):
+            seg1 = AudioSegment.from_file(self.mp3_path_str)
+            seg2 = AudioSegment.from_file(self.mp3_path_like_str)
+
+            self.assertEqual(len(seg1), len(seg2))
+            self.assertTrue(seg1._data == seg2._data)
+            self.assertTrue(len(seg1) > 0)
+
+        def test_audio_segment_from_path_like_bytes(self):
+            seg1 = AudioSegment.from_file(self.mp3_path_str)
+            seg2 = AudioSegment.from_file(self.mp3_path_like_bytes)
+
+            self.assertEqual(len(seg1), len(seg2))
+            self.assertTrue(seg1._data == seg2._data)
+            self.assertTrue(len(seg1) > 0)
+
+        def test_non_existant_pathlib_path(self):
+            from pathlib import Path
+            path = Path('this/path/should/not/exist/do/not/make/this/exist')
+            with self.assertRaises(FileNotFoundError):
+                _ = AudioSegment.from_file(path)
+
+            path = Path('')
+            # Passing an empty string to pathlib.Path results in the path to
+            # the current directory.
+            with self.assertRaises(IsADirectoryError):
+                _ = AudioSegment.from_file(path)
+
+        def test_non_existant_path_like_str(self):
+            path = self.MyPathLike('this/path/should/not/exist/do/not/make/this/exist')
+            with self.assertRaises(FileNotFoundError):
+                _ = AudioSegment.from_file(path)
+
+            path = self.MyPathLike('')
+            with self.assertRaises(FileNotFoundError):
+                _ = AudioSegment.from_file(path)
+
+        def test_non_existant_path_like_bytes(self):
+            path = self.MyPathLike(bytes('this/path/should/not/exist/do/not/make/this/exist', sys.getdefaultencoding()))
+            with self.assertRaises(FileNotFoundError):
+                _ = AudioSegment.from_file(path)
+
+            path = self.MyPathLike(bytes('', sys.getdefaultencoding()))
+            with self.assertRaises(FileNotFoundError):
+                _ = AudioSegment.from_file(path)
+
 
 class FileAccessTests(unittest.TestCase):
 
     def setUp(self):
         self.mp3_path = os.path.join(data_dir, 'test1.mp3')
-
     def test_audio_segment_from_mp3(self):
         seg1 = AudioSegment.from_mp3(os.path.join(data_dir, 'test1.mp3'))
 
@@ -70,30 +141,6 @@ class FileAccessTests(unittest.TestCase):
         self.assertTrue(seg1._data == seg2._data)
         self.assertTrue(len(seg1) > 0)
 
-    def test_audio_segment_from_path_like_object(self):
-        try:
-            # The import of fspath() is unusd, but is what will actually raise
-            # the ImportError. os.fspath() was introduced in python 3.6, while
-            # pathlib came in 3.4. While we could call str() to get a string
-            # representation of pathlib objects when they're passed to
-            # AudioSegment.from_file(), giving support to 3.4 and 3.5, it is
-            # safe to assume that users of 3.4 or 3.5 that use Path objects are
-            # aware of the limitations, and are used to calling str()
-            # themselves.
-            from os import fspath
-            from pathlib import Path
-
-            mp3_path_obj = Path(self.mp3_path)
-
-            seg1 = AudioSegment.from_file(self.mp3_path)
-            seg2 = AudioSegment.from_file(mp3_path_obj)
-
-            self.assertEqual(len(seg1), len(seg2))
-            self.assertTrue(seg1._data == seg2._data)
-            self.assertTrue(len(seg1) > 0)
-        except ImportError:
-            # We're on python < 3.6, so there's nothing to test.
-            pass
 
 
 test1wav = test4wav = test1 = test2 = test3 = testparty = testdcoffset = None
