@@ -577,7 +577,8 @@ class AudioSegment(object):
         Export an AudioSegment to a file with given options
 
         out_f (string):
-            Path to destination audio file
+            Path to destination audio file. Also accepts os.PathLike objects on
+            python >= 3.6
 
         format (string)
             Format for destination audio file.
