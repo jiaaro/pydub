@@ -103,9 +103,11 @@ if sys.version_info >= (3, 6):
                 _ = AudioSegment.from_file(path)
 
             path = Path('')
-            # Passing an empty string to pathlib.Path results in the path to
-            # the current directory.
-            with self.assertRaises(IsADirectoryError):
+            # On Unicies this will raise a IsADirectoryError, on Windows this
+            # will result in a PermissionError. Both of these are subclasses of
+            # OSError. We aren't so much worried about the specific exception
+            # here, just that reading a file from an empty path is an error.
+            with self.assertRaises(OSError):
                 _ = AudioSegment.from_file(path)
 
         def test_non_existant_path_like_str(self):
