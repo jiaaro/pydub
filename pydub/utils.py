@@ -62,6 +62,8 @@ def _fd_or_path_or_tempfile(fd, mode='w+b', tempfile=True):
         if isinstance(fd, os.PathLike):
             fd = open(fd, mode=mode)
     except AttributeError:
+        # module os has no attribute PathLike, so we're on python < 3.6.
+        # The protocol we're trying to support doesn't exist, so just pass.
         pass
 
     return fd
