@@ -539,6 +539,7 @@ from pydub import AudioSegment
 sound = AudioSegment.from_file(“sound1.wav”)
 samples = sound.get_array_of_samples()
 
+# Example operation on audio data
 shifted_samples = np.right_shift(samples, 1)
 
 # now you have to convert back to an array.array
