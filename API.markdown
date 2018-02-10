@@ -80,6 +80,11 @@ mp3_audio = AudioSegment.from_file("/path/to/sound.mp3", format="mp3")
 # use a file you've already opened (advanced …ish)
 with open("/path/to/sound.wav", "rb") as wav_file:
     audio_segment = AudioSegment.from_file(wav_file, format="wav")
+
+# also supports the os.PathLike protocol for python >= 3.6
+from pathlib import Path
+wav_path = Path("path/to/sound.wav")
+wav_audio = AudioSegment.from_file(wav_path)
 ```
 
 The first argument is the path (as a string) of the file to read, **or** a file handle to read from.
