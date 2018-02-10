@@ -149,7 +149,6 @@ if sys.version_info >= (3, 6):
                 seg1.export(path, format='mp3')
                 seg2 = AudioSegment.from_file(path, format='mp3')
 
-                self.assertEqual(len(seg1), len(seg2))
                 self.assertTrue(len(seg1) > 0)
                 self.assertWithinTolerance(len(seg1),
                                            len(seg2),
