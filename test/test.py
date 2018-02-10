@@ -77,7 +77,7 @@ if sys.version_info >= (3, 6):
             seg2 = AudioSegment.from_file(self.mp3_pathlib_path)
 
             self.assertEqual(len(seg1), len(seg2))
-            self.assertTrue(seg1._data == seg2._data)
+            self.assertEqual(seg1._data, seg2._data)
             self.assertTrue(len(seg1) > 0)
 
         def test_audio_segment_from_path_like_str(self):
@@ -85,7 +85,7 @@ if sys.version_info >= (3, 6):
             seg2 = AudioSegment.from_file(self.mp3_path_like_str)
 
             self.assertEqual(len(seg1), len(seg2))
-            self.assertTrue(seg1._data == seg2._data)
+            self.assertEqual(seg1._data, seg2._data)
             self.assertTrue(len(seg1) > 0)
 
         def test_audio_segment_from_path_like_bytes(self):
@@ -93,7 +93,7 @@ if sys.version_info >= (3, 6):
             seg2 = AudioSegment.from_file(self.mp3_path_like_bytes)
 
             self.assertEqual(len(seg1), len(seg2))
-            self.assertTrue(seg1._data == seg2._data)
+            self.assertEqual(seg1._data, seg2._data)
             self.assertTrue(len(seg1) > 0)
 
         def test_non_existant_pathlib_path(self):
