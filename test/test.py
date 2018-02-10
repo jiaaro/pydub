@@ -162,6 +162,7 @@ class FileAccessTests(unittest.TestCase):
 
     def setUp(self):
         self.mp3_path = os.path.join(data_dir, 'test1.mp3')
+
     def test_audio_segment_from_mp3(self):
         seg1 = AudioSegment.from_mp3(os.path.join(data_dir, 'test1.mp3'))
 
@@ -171,7 +172,6 @@ class FileAccessTests(unittest.TestCase):
         self.assertEqual(len(seg1), len(seg2))
         self.assertTrue(seg1._data == seg2._data)
         self.assertTrue(len(seg1) > 0)
-
 
 
 test1wav = test4wav = test1 = test2 = test3 = testparty = testdcoffset = None
