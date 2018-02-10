@@ -126,6 +126,35 @@ if sys.version_info >= (3, 6):
             with self.assertRaises(FileNotFoundError):
                 _ = AudioSegment.from_file(path)
 
+        def assertWithinRange(self, val, lower_bound, upper_bound):
+            self.assertTrue(lower_bound < val < upper_bound,
+                            "%s is not in the acceptable range: %s - %s" %
+                            (val, lower_bound, upper_bound))
+
+        def assertWithinTolerance(self, val, expected, tolerance=None,
+                                percentage=None):
+            if percentage is not None:
+                tolerance = val * percentage
+            lower_bound = val - tolerance
+            upper_bound = val + tolerance
+            self.assertWithinRange(val, lower_bound, upper_bound)
+
+        def test_export_pathlib_path(self):
+            seg1 = AudioSegment.from_file(self.mp3_path_str)
+            from pathlib import Path
+            path = Path(tempfile.gettempdir()) / 'pydub-test-export-8ajds.mp3'
+            try:
+                seg1.export(path, format='mp3')
+                seg2 = AudioSegment.from_file(path, format='mp3')
+
+                self.assertEqual(len(seg1), len(seg2))
+                self.assertTrue(len(seg1) > 0)
+                self.assertWithinTolerance(len(seg1),
+                                           len(seg2),
+                                           percentage=0.01)
+            finally:
+                os.unlink(path)
+        
 
 class FileAccessTests(unittest.TestCase):
 
