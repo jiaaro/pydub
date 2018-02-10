@@ -448,23 +448,9 @@ class AudioSegment(object):
             if isinstance(orig_file, basestring):
                 return orig_file.lower().endswith(".{0}".format(f))
             if sys.version_info >= (3, 6):
-                try:
-                    path = os.fspath(orig_file)
-
-                    if isinstance(path, bytes):
-                        try:
-                            path = path.decode(sys.getdefaultencoding())    
-                        except Exception:
-                            pass
-
+                if isinstance(orig_file, os.PathLike):
+                    path = os.fsdecode(orig_file)
                     return path.lower().endswith(".{0}".format(f))
-                except TypeError:
-                    # Either orig_file was not a str, bytes, or PathLike
-                    # object, or os.fspath() returned a byte string and and we
-                    # failed to decode it, then endswith() tried to compare
-                    # that with a regular str. In either case, we can't discern
-                    # the file extension.
-                    pass
 
             return False
 
