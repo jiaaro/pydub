@@ -1,3 +1,12 @@
+# v0.21.0
+- NOTE: Semi-counterintuitive change: using the a stride when slicing AudioSegment instances (for example, `sound[::5000]`) will return chunks of 5000ms (not 1ms chunks every 5000ms) (#222)
+- Debug output from ffmpeg/avlib is no longer printed to the console unless you set up logging (see README for how to set up logging for your converter) (#223)
+- All pydub exceptions are now subclasses of `pydub.exceptions.PydubException`
+- The utilities in `pydub.silence` now accept a `seek_step`argument which can optionally be passed to improve the performance of silence detection (#211)
+- Fix to `pydub.silence` utilities which allow you to detect perfect silence (#233)
+- Fix a bug where threaded code screws up your terminal session due to ffmpeg inheriting the stdin from the parent process. (#231)
+- Fix a bug where a crashing programs using pydub would leave behind their temporary files (#206)
+
 # v0.20.0
 - Add new parameter `gain_during_overlay` to `pydub.AudioSegment.overlay` which allows users to adjust the volume of the target AudioSegment during the portion of the segment which is overlaid with the additional AudioSegment.
 - `pydub.playback.play()` No longer displays the (very verbose) playback "banner" when using ffplay
