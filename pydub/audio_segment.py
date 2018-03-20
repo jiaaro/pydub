@@ -445,7 +445,7 @@ class AudioSegment(object):
         )
 
     @classmethod
-    def from_file(cls, file, format=None, codec=None, parameters=None, **kwargs):
+    def from_file_using_temporary_files(cls, file, format=None, codec=None, parameters=None, **kwargs):
         orig_file = file
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
@@ -541,6 +541,79 @@ class AudioSegment(object):
             output.close()
             os.unlink(input_file.name)
             os.unlink(output.name)
+
+        return obj
+
+    @classmethod
+    def from_file(cls, file, format=None, codec=None, parameters=None, **kwargs):
+        orig_file = file
+        file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
+
+        if format:
+            format = format.lower()
+            format = AUDIO_FILE_EXT_ALIASES.get(format, format)
+
+        def is_format(f):
+            f = f.lower()
+            if format == f:
+                return True
+            if isinstance(orig_file, basestring):
+                return orig_file.lower().endswith(".{0}".format(f))
+            return False
+
+        if is_format("wav"):
+            try:
+                return cls._from_safe_wav(file)
+            except:
+                file.seek(0)
+        elif is_format("raw") or is_format("pcm"):
+            sample_width = kwargs['sample_width']
+            frame_rate = kwargs['frame_rate']
+            channels = kwargs['channels']
+            metadata = {
+                'sample_width': sample_width,
+                'frame_rate': frame_rate,
+                'channels': channels,
+                'frame_width': channels * sample_width
+            }
+            return cls(data=file.read(), metadata=metadata)
+
+        conversion_command = [cls.converter,
+                              '-y',  # always overwrite existing files
+                              ]
+
+        # If format is not defined
+        # ffmpeg/avconv will detect it automatically
+        if format:
+            conversion_command += ["-f", format]
+
+        if codec:
+            # force audio decoder
+            conversion_command += ["-acodec", codec]
+
+        conversion_command += [
+            "-i", "-",  # input_file options (filename last)
+            "-vn",  # Drop any video streams if there are any
+            "-f", "wav",  # output options (filename last)
+            "-"
+        ]
+
+        if parameters is not None:
+            # extend arguments with arbitrary set
+            conversion_command.extend(parameters)
+
+        log_conversion(conversion_command)
+
+        p = subprocess.Popen(conversion_command, stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p_out, p_err = p.communicate(input=file.read())
+
+        if p.returncode != 0:
+            raise CouldntDecodeError("Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(p.returncode, p_err))
+
+        p_out = bytearray(p_out)
+        p_out[4:8] = struct.pack('<i', len(p_out) - 8)
+        obj = cls._from_safe_wav(BytesIO(p_out))
 
         return obj
 
