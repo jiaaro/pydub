@@ -591,8 +591,16 @@ class AudioSegment(object):
             # force audio decoder
             conversion_command += ["-acodec", codec]
 
+        if isinstance(orig_file, basestring):
+            conversion_command += ["-i", orig_file]
+            stdin_parameter = None
+            stdin_data = None
+        else:
+            conversion_command += ["-i", "-"]
+            stdin_parameter = subprocess.PIPE
+            stdin_data = file.read()
+
         conversion_command += [
-            "-i", "-",  # input_file options (filename last)
             "-vn",  # Drop any video streams if there are any
             "-f", "wav",  # output options (filename last)
             "-"
@@ -604,9 +612,9 @@ class AudioSegment(object):
 
         log_conversion(conversion_command)
 
-        p = subprocess.Popen(conversion_command, stdin=subprocess.PIPE,
+        p = subprocess.Popen(conversion_command, stdin=stdin_parameter,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        p_out, p_err = p.communicate(input=file.read())
+        p_out, p_err = p.communicate(input=stdin_data)
 
         if p.returncode != 0:
             raise CouldntDecodeError("Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(p.returncode, p_err))
