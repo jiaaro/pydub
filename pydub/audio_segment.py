@@ -152,19 +152,31 @@ class AudioSegment(object):
                     reader = data.read(2**31-1)
                 data = d
 
-            raw = wave.open(StringIO(data), 'rb')
+            try:
+                import scipy.io.wavfile
+            except ImportError:
+                # scipy is not available so we use the standard wave module
+                raw = wave.open(StringIO(data), 'rb')
+                raw.rewind()
+                self.channels = raw.getnchannels()
+                self.sample_width = raw.getsampwidth()
+                self.frame_rate = raw.getframerate()
+                self.frame_width = self.channels * self.sample_width
 
-            raw.rewind()
-            self.channels = raw.getnchannels()
-            self.sample_width = raw.getsampwidth()
-            self.frame_rate = raw.getframerate()
-            self.frame_width = self.channels * self.sample_width
+                raw.rewind()
 
-            raw.rewind()
-
-            # the "or b''" base case is a work-around for a python 3.4
-            # see https://github.com/jiaaro/pydub/pull/107
-            self._data = raw.readframes(float('inf')) or b''
+                # the "or b''" base case is a work-around for a python 3.4
+                # see https://github.com/jiaaro/pydub/pull/107
+                self._data = raw.readframes(float('inf')) or b''
+            else:
+                # We can use scipy, which supports more file formats than
+                # the wave module
+                raw = scipy.io.wavfile.read(StringIO(data))
+                self.channels = raw[1][0].size
+                self.sample_width = raw[1].dtype.itemsize
+                self.frame_rate = raw[0]
+                self.frame_width = self.channels * self.sample_width
+                self._data = raw[1].tobytes()
 
         # Convert 24-bit audio to 32-bit audio.
         # (stdlib audioop and array modules do not support 24-bit data)
