@@ -154,7 +154,29 @@ class AudioSegment(object):
 
             try:
                 import scipy.io.wavfile
+                raw = scipy.io.wavfile.read(StringIO(data))
             except ImportError:
+                use_fallback = True
+            except ValueError as exc:
+                if ('Unsupported bit depth' in str(exc) or
+                        'File format' in str(exc)):
+                    use_fallback = True
+                else:
+                    raise
+            else:
+                # We can use scipy, which supports more file formats than
+                # the wave module
+                try:
+                    self.channels = raw[1][0].size
+                    self.sample_width = raw[1].dtype.itemsize
+                    self.frame_rate = raw[0]
+                    self.frame_width = self.channels * self.sample_width
+                    self._data = raw[1].tobytes()
+                    use_fallback = False
+                except IndexError:
+                    use_fallback = True
+
+            if use_fallback:
                 # scipy is not available so we use the standard wave module
                 raw = wave.open(StringIO(data), 'rb')
                 raw.rewind()
@@ -168,15 +190,7 @@ class AudioSegment(object):
                 # the "or b''" base case is a work-around for a python 3.4
                 # see https://github.com/jiaaro/pydub/pull/107
                 self._data = raw.readframes(float('inf')) or b''
-            else:
-                # We can use scipy, which supports more file formats than
-                # the wave module
-                raw = scipy.io.wavfile.read(StringIO(data))
-                self.channels = raw[1][0].size
-                self.sample_width = raw[1].dtype.itemsize
-                self.frame_rate = raw[0]
-                self.frame_width = self.channels * self.sample_width
-                self._data = raw[1].tobytes()
+                raw.close()
 
         # Convert 24-bit audio to 32-bit audio.
         # (stdlib audioop and array modules do not support 24-bit data)
