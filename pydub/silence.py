@@ -42,7 +42,7 @@ def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek
     current_range_start = prev_i
 
     for silence_start_i in silence_starts:
-        continuous = (silence_start_i == prev_i + 1)
+        continuous = (silence_start_i == prev_i + seek_step)
 
         # sometimes two small blips are enough for one particular slice to be
         # non-silent, despite the silence all running together. Just combine
