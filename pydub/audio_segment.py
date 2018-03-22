@@ -92,7 +92,7 @@ def extract_wav_headers(data):
     subchunks = []
     while pos < len(data) and len(subchunks) < 10:
         subchunk_id = data[pos:pos + 4]
-        subchunk_size = struct.unpack('<i', data[pos + 4:pos + 8])[0]
+        subchunk_size = struct.unpack_from('<i', data[pos + 4:pos + 8])[0]
         subchunks.append(WavSubChunk(subchunk_id, pos, subchunk_size))
         if subchunk_id == b'data':
             # 'data' is the last subchunk
