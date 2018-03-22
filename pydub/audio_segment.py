@@ -9,6 +9,7 @@ import sys
 import struct
 from .logging_utils import log_conversion, log_subprocess_output
 import base64
+from collections import namedtuple
 
 try:
     from StringIO import StringIO
@@ -80,6 +81,38 @@ AUDIO_FILE_EXT_ALIASES = {
     "m4a": "mp4",
     "wave": "wav",
 }
+
+
+WavSubChunk = namedtuple('WavSubChunk', ['id', 'position', 'size'])
+
+
+def extract_wav_headers(data):
+    # def search_subchunk(data, subchunk_id):
+    pos = 12  # The size of the RIFF chunk descriptor
+    subchunks = []
+    while pos < len(data) and len(subchunks) < 10:
+        subchunk_id = data[pos:pos + 4]
+        subchunk_size = struct.unpack('<i', data[pos + 4:pos + 8])[0]
+        subchunks.append(WavSubChunk(subchunk_id, pos, subchunk_size))
+        if subchunk_id == b'data':
+            # 'data' is the last subchunk
+            break
+        pos += subchunk_size + 8
+
+    return subchunks
+
+
+def fix_wav_headers(data):
+    headers = extract_wav_headers(data)
+    if not headers or headers[-1].id != b'data':
+        return
+
+    # Set the file size in the RIFF chunk descriptor
+    data[4:8] = struct.pack('<i', len(data) - 8)
+
+    # Set the data size in the data subchunk
+    pos = headers[-1].position
+    data[pos + 4:pos + 8] = struct.pack('<i', len(data) - pos - 8)
 
 
 class AudioSegment(object):
@@ -634,7 +667,7 @@ class AudioSegment(object):
             raise CouldntDecodeError("Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(p.returncode, p_err))
 
         p_out = bytearray(p_out)
-        p_out[4:8] = struct.pack('<i', len(p_out) - 8)
+        fix_wav_headers(p_out)
         obj = cls._from_safe_wav(BytesIO(p_out))
 
         return obj
