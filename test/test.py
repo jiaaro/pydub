@@ -54,6 +54,108 @@ class UtilityTests(unittest.TestCase):
         self.assertEqual(3, db_to_float(ratio_to_db(3, using_amplitude=False), using_amplitude=False))
         self.assertEqual(12, ratio_to_db(db_to_float(12, using_amplitude=False), using_amplitude=False))
 
+if sys.version_info >= (3, 6):
+    class PathLikeObjectTests(unittest.TestCase):
+
+        class MyPathLike:
+            def __init__(self, path):
+                self.path = path
+            def __fspath__(self):
+                return self.path
+
+        def setUp(self):
+            self.mp3_path_str = os.path.join(data_dir, 'test1.mp3')
+
+            from pathlib import Path
+            self.mp3_pathlib_path = Path(self.mp3_path_str)
+
+            self.mp3_path_like_str = self.MyPathLike(self.mp3_path_str)
+            self.mp3_path_like_bytes = self.MyPathLike(bytes(self.mp3_path_str, sys.getdefaultencoding()))
+
+        def test_audio_segment_from_pathlib_path(self):
+            seg1 = AudioSegment.from_file(self.mp3_path_str)
+            seg2 = AudioSegment.from_file(self.mp3_pathlib_path)
+
+            self.assertEqual(len(seg1), len(seg2))
+            self.assertEqual(seg1._data, seg2._data)
+            self.assertTrue(len(seg1) > 0)
+
+        def test_audio_segment_from_path_like_str(self):
+            seg1 = AudioSegment.from_file(self.mp3_path_str)
+            seg2 = AudioSegment.from_file(self.mp3_path_like_str)
+
+            self.assertEqual(len(seg1), len(seg2))
+            self.assertEqual(seg1._data, seg2._data)
+            self.assertTrue(len(seg1) > 0)
+
+        def test_audio_segment_from_path_like_bytes(self):
+            seg1 = AudioSegment.from_file(self.mp3_path_str)
+            seg2 = AudioSegment.from_file(self.mp3_path_like_bytes)
+
+            self.assertEqual(len(seg1), len(seg2))
+            self.assertEqual(seg1._data, seg2._data)
+            self.assertTrue(len(seg1) > 0)
+
+        def test_non_existant_pathlib_path(self):
+            from pathlib import Path
+            path = Path('this/path/should/not/exist/do/not/make/this/exist')
+            with self.assertRaises(FileNotFoundError):
+                _ = AudioSegment.from_file(path)
+
+            path = Path('')
+            # On Unicies this will raise a IsADirectoryError, on Windows this
+            # will result in a PermissionError. Both of these are subclasses of
+            # OSError. We aren't so much worried about the specific exception
+            # here, just that reading a file from an empty path is an error.
+            with self.assertRaises(OSError):
+                _ = AudioSegment.from_file(path)
+
+        def test_non_existant_path_like_str(self):
+            path = self.MyPathLike('this/path/should/not/exist/do/not/make/this/exist')
+            with self.assertRaises(FileNotFoundError):
+                _ = AudioSegment.from_file(path)
+
+            path = self.MyPathLike('')
+            with self.assertRaises(FileNotFoundError):
+                _ = AudioSegment.from_file(path)
+
+        def test_non_existant_path_like_bytes(self):
+            path = self.MyPathLike(bytes('this/path/should/not/exist/do/not/make/this/exist', sys.getdefaultencoding()))
+            with self.assertRaises(FileNotFoundError):
+                _ = AudioSegment.from_file(path)
+
+            path = self.MyPathLike(bytes('', sys.getdefaultencoding()))
+            with self.assertRaises(FileNotFoundError):
+                _ = AudioSegment.from_file(path)
+
+        def assertWithinRange(self, val, lower_bound, upper_bound):
+            self.assertTrue(lower_bound < val < upper_bound,
+                            "%s is not in the acceptable range: %s - %s" %
+                            (val, lower_bound, upper_bound))
+
+        def assertWithinTolerance(self, val, expected, tolerance=None,
+                                percentage=None):
+            if percentage is not None:
+                tolerance = val * percentage
+            lower_bound = val - tolerance
+            upper_bound = val + tolerance
+            self.assertWithinRange(val, lower_bound, upper_bound)
+
+        def test_export_pathlib_path(self):
+            seg1 = AudioSegment.from_file(self.mp3_path_str)
+            from pathlib import Path
+            path = Path(tempfile.gettempdir()) / 'pydub-test-export-8ajds.mp3'
+            try:
+                seg1.export(path, format='mp3')
+                seg2 = AudioSegment.from_file(path, format='mp3')
+
+                self.assertTrue(len(seg1) > 0)
+                self.assertWithinTolerance(len(seg1),
+                                           len(seg2),
+                                           percentage=0.01)
+            finally:
+                os.unlink(path)
+        
 
 class FileAccessTests(unittest.TestCase):
 
