@@ -670,6 +670,8 @@ class AudioSegment(object):
         fix_wav_headers(p_out)
         obj = cls._from_safe_wav(BytesIO(p_out))
 
+        file.close()
+
         return obj
 
     @classmethod
