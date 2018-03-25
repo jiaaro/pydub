@@ -8,6 +8,7 @@ import wave
 import sys
 import struct
 from .logging_utils import log_conversion, log_subprocess_output
+from .utils import mediainfo_json
 import base64
 from collections import namedtuple
 
@@ -642,6 +643,15 @@ class AudioSegment(object):
             conversion_command += ["-i", orig_file]
             stdin_parameter = None
             stdin_data = None
+            info = mediainfo_json(orig_file)
+            audio_streams = [x for x in info['streams']
+                             if x['codec_type'] == 'audio']
+            if audio_streams and 'sample_fmt' in audio_streams[0]:
+                acodec = 'pcm_%sle' % audio_streams[0]['sample_fmt']
+            elif audio_streams and 'bits_per_sample' in audio_streams[0]:
+                acodec = 'pcm_s%dle' % audio_streams[0]['bits_per_sample']
+
+            conversion_command += ["-acodec", acodec]
         else:
             conversion_command += ["-i", "-"]
             stdin_parameter = subprocess.PIPE
