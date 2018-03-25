@@ -7,6 +7,7 @@ from subprocess import Popen, PIPE
 import sys
 from tempfile import TemporaryFile
 from warnings import warn
+import json
 
 try:
     import audioop
@@ -201,11 +202,58 @@ def get_prober_name():
         return "ffprobe"
 
 
+def mediainfo_json(filepath):
+    """Return json dictionary with media info(codec, duration, size, bitrate...) from filepath
+    """
+
+    prober = get_prober_name()
+    command_args = [
+        "-v", "info",
+        "-show_format",
+        "-show_streams",
+        filepath
+    ]
+
+    command = [prober, '-of', 'json'] + command_args
+    res = Popen(command, stdout=PIPE, stderr=PIPE)
+    output, stderr = res.communicate()
+    output = output.decode("utf-8")
+    stderr = stderr.decode("utf-8")
+
+    info = json.loads(output)
+
+    # avprobe sometimes gives more information on stderr than
+    # on the json output. The information has to be extracted
+    # from lines of the format of:
+    # '    Stream #0:0: Audio: flac, 88200 Hz, stereo, s32 (24 bit)'
+    extra_info = {}
+    for line in stderr.split("\n"):
+        if '    Stream #0' in line:
+            tokens = [x.strip() for x in re.split('[:,]', line)]
+            extra_info[int(tokens[1])] = tokens[2:]
+
+    audio_streams = [x for x in info['streams'] if x['codec_type'] == 'audio']
+    if len(audio_streams) == 0:
+        return info
+
+    # We just operate on the first audio stream in case there are more
+    stream = audio_streams[0]
+    if 'sample_fmt' not in stream or stream['sample_fmt'] == 0:
+        for token in extra_info[stream['index']]:
+            m = re.match('([su][0-9]{1,2}) \(([0-9]{1,2}) bit\)', token)
+            if m:
+                stream['sample_fmt'] = m.group(1)
+                stream['bits_per_raw_sample'] = int(m.group(2))
+            elif re.match('([su][0-9]{1,2})', token):
+                stream['sample_fmt'] = token
+                stream['bits_per_raw_sample'] = int(token[1:])
+
+    return info
+
+
 def mediainfo(filepath):
     """Return dictionary with media info(codec, duration, size, bitrate...) from filepath
     """
-
-    from .audio_segment import AudioSegment
 
     prober = get_prober_name()
     command_args = [
