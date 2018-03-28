@@ -238,15 +238,30 @@ def mediainfo_json(filepath):
 
     # We just operate on the first audio stream in case there are more
     stream = audio_streams[0]
-    if 'sample_fmt' not in stream or stream['sample_fmt'] == 0:
-        for token in extra_info[stream['index']]:
-            m = re.match('([su][0-9]{1,2}) \(([0-9]{1,2}) bit\)', token)
-            if m:
-                stream['sample_fmt'] = m.group(1)
-                stream['bits_per_raw_sample'] = int(m.group(2))
-            elif re.match('([su][0-9]{1,2})', token):
-                stream['sample_fmt'] = token
-                stream['bits_per_raw_sample'] = int(token[1:])
+
+    def set_property(stream, prop, value):
+        if prop not in stream or stream[prop] == 0:
+            stream[prop] = value
+
+    for token in extra_info[stream['index']]:
+        m = re.fullmatch('([su]([0-9]{1,2})p?) \(([0-9]{1,2}) bit\)', token)
+        m2 = re.fullmatch('([su]([0-9]{1,2})p?)', token)
+        if m:
+            set_property(stream, 'sample_fmt', m.group(1))
+            set_property(stream, 'bits_per_sample', int(m.group(2)))
+            set_property(stream, 'bits_per_raw_sample', int(m.group(3)))
+        elif m2:
+            set_property(stream, 'sample_fmt', m2.group(1))
+            set_property(stream, 'bits_per_sample', int(m2.group(2)))
+            set_property(stream, 'bits_per_raw_sample', int(m2.group(2)))
+        elif re.fullmatch('fltp?', token):
+            set_property(stream, 'sample_fmt', token)
+            set_property(stream, 'bits_per_sample', 32)
+            set_property(stream, 'bits_per_raw_sample', 32)
+        elif re.fullmatch('dlbp?', token):
+            set_property(stream, 'sample_fmt', token)
+            set_property(stream, 'bits_per_sample', 64)
+            set_property(stream, 'bits_per_raw_sample', 64)
 
     return info
 
