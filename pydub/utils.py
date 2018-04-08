@@ -217,8 +217,8 @@ def mediainfo_json(filepath):
     command = [prober, '-of', 'json'] + command_args
     res = Popen(command, stdout=PIPE, stderr=PIPE)
     output, stderr = res.communicate()
-    output = output.decode("utf-8")
-    stderr = stderr.decode("utf-8")
+    output = output.decode("utf-8", 'ignore')
+    stderr = stderr.decode("utf-8", 'ignore')
 
     info = json.loads(output)
 
