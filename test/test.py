@@ -11,6 +11,7 @@ import tempfile
 import struct
 
 from pydub import AudioSegment
+from pydub.audio_segment import extract_wav_headers
 from pydub.utils import (
     db_to_float,
     ratio_to_db,
@@ -235,6 +236,30 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(seg24.sample_width, 4)
         # the data length should have grown by exactly 4:3 (24 bits turn into 32 bits)
         self.assertEqual(len(seg24.raw_data) * 3, len24 * 4)
+
+    def test_192khz_audio(self):
+        test_files = [('test-192khz-16bit.wav', 16),
+                      ('test-192khz-24bit.wav', 32),
+                      ('test-192khz-32bit.flac', 32),
+                      ('test-192khz-32bit.wav', 32),
+                      ('test-192khz-64bit.wav', 64)]
+        base_file, bit_depth = test_files[0]
+        path = os.path.join(data_dir, base_file)
+        base = AudioSegment.from_file(path)
+
+        headers = extract_wav_headers(open(path, 'rb').read())
+        data16_size = headers[-1].size
+        self.assertEqual(len(base.raw_data), data16_size)
+        self.assertEqual(base.frame_rate, 192000)
+        self.assertEqual(base.sample_width, bit_depth / 8)
+
+        for test_file, bit_depth in test_files[1:]:
+            path = os.path.join(data_dir, test_file)
+            seg = AudioSegment.from_file(path)
+            self.assertEqual(seg.sample_width, bit_depth / 8)
+            self.assertEqual(len(seg.raw_data), len(base.raw_data) *
+                             seg.sample_width / base.sample_width)
+            self.assertEqual(seg.frame_rate, 192000)
 
     def test_concat(self):
         catted_audio = self.seg1 + self.seg2
