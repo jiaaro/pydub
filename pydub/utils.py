@@ -222,6 +222,11 @@ def mediainfo_json(filepath):
 
     info = json.loads(output)
 
+    if not info:
+        # If ffprobe didn't give any information, just return it
+        # (for example, because the file doesn't exist)
+        return info
+
     # avprobe sometimes gives more information on stderr than
     # on the json output. The information has to be extracted
     # from lines of the format of:
