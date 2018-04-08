@@ -644,14 +644,16 @@ class AudioSegment(object):
             stdin_parameter = None
             stdin_data = None
             info = mediainfo_json(orig_file)
-            audio_streams = [x for x in info['streams']
-                             if x['codec_type'] == 'audio']
-            if audio_streams and 'sample_fmt' in audio_streams[0]:
-                acodec = 'pcm_%sle' % audio_streams[0]['sample_fmt']
-            elif audio_streams and 'bits_per_sample' in audio_streams[0]:
-                acodec = 'pcm_s%dle' % audio_streams[0]['bits_per_sample']
-
-            conversion_command += ["-acodec", acodec]
+            if info:
+                audio_streams = [x for x in info['streams']
+                                 if x['codec_type'] == 'audio']
+                bits_per_sample = audio_streams[0]['bits_per_sample']
+                if bits_per_sample == 24:
+                    # scipy doesn't support 24 bit wav files, so we
+                    # convert the file to 32 bits to open it
+                    bits_per_sample = 32
+                acodec = 'pcm_s%dle' % bits_per_sample
+                conversion_command += ["-acodec", acodec]
         else:
             conversion_command += ["-i", "-"]
             stdin_parameter = subprocess.PIPE
