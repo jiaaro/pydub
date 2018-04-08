@@ -326,9 +326,10 @@ def check_module_availability(modulename):
             return False
         return True
 
-    import importlib
     if sys.version_info <= (3, 3):
+        import importlib
         loader = importlib.find_loader(modulename)
     else:
+        import importlib.util
         loader = importlib.util.find_spec(modulename)
     return loader is not None
