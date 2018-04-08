@@ -249,8 +249,8 @@ def mediainfo_json(filepath):
             stream[prop] = value
 
     for token in extra_info[stream['index']]:
-        m = re.fullmatch('([su]([0-9]{1,2})p?) \(([0-9]{1,2}) bit\)', token)
-        m2 = re.fullmatch('([su]([0-9]{1,2})p?)', token)
+        m = re.match('([su]([0-9]{1,2})p?) \(([0-9]{1,2}) bit\)$', token)
+        m2 = re.match('([su]([0-9]{1,2})p?)$', token)
         if m:
             set_property(stream, 'sample_fmt', m.group(1))
             set_property(stream, 'bits_per_sample', int(m.group(2)))
@@ -259,11 +259,11 @@ def mediainfo_json(filepath):
             set_property(stream, 'sample_fmt', m2.group(1))
             set_property(stream, 'bits_per_sample', int(m2.group(2)))
             set_property(stream, 'bits_per_raw_sample', int(m2.group(2)))
-        elif re.fullmatch('fltp?', token):
+        elif re.match('fltp?$', token):
             set_property(stream, 'sample_fmt', token)
             set_property(stream, 'bits_per_sample', 32)
             set_property(stream, 'bits_per_raw_sample', 32)
-        elif re.fullmatch('dlbp?', token):
+        elif re.match('dlbp?$', token):
             set_property(stream, 'sample_fmt', token)
             set_property(stream, 'bits_per_sample', 64)
             set_property(stream, 'bits_per_raw_sample', 64)
