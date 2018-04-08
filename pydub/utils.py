@@ -235,7 +235,10 @@ def mediainfo_json(filepath):
     for line in stderr.split("\n"):
         if '    Stream #0' in line:
             tokens = [x.strip() for x in re.split('[:(),]', line)]
-            extra_info[int(tokens[1])] = tokens[2:]
+            try:
+                extra_info[int(tokens[1])] = tokens[2:]
+            except ValueError:
+                extra_info[0] = tokens[2:]
 
     audio_streams = [x for x in info['streams'] if x['codec_type'] == 'audio']
     if len(audio_streams) == 0:
