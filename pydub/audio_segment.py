@@ -205,7 +205,10 @@ class AudioSegment(object):
                     self.sample_width = raw[1].dtype.itemsize
                     self.frame_rate = raw[0]
                     self.frame_width = self.channels * self.sample_width
-                    self._data = raw[1].tobytes()
+                    if hasattr(raw[1], 'tobytes'):
+                        self._data = raw[1].tobytes()
+                    else:
+                        self._data = bytes(raw[1])
                     use_fallback = False
                 except IndexError:
                     use_fallback = True
