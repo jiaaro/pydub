@@ -233,12 +233,12 @@ def mediainfo_json(filepath):
     # '    Stream #0:0: Audio: flac, 88200 Hz, stereo, s32 (24 bit)'
     extra_info = {}
     for line in stderr.split("\n"):
-        if '    Stream #0' in line:
-            tokens = [x.strip() for x in re.split('[:(),]', line)]
-            try:
-                extra_info[int(tokens[1])] = tokens[2:]
-            except ValueError:
-                extra_info[0] = tokens[2:]
+        match = re.match(' *Stream #0[:\.]([0-9]+)(\(\w+\))?', line)
+        if match:
+            stream_id = int(match.group(1))
+            tokens = [x.strip()
+                      for x in re.split('[:,]', line[match.end():]) if x]
+            extra_info[stream_id] = tokens
 
     audio_streams = [x for x in info['streams'] if x['codec_type'] == 'audio']
     if len(audio_streams) == 0:
@@ -253,7 +253,7 @@ def mediainfo_json(filepath):
 
     for token in extra_info[stream['index']]:
         m = re.match('([su]([0-9]{1,2})p?) \(([0-9]{1,2}) bit\)$', token)
-        m2 = re.match('([su]([0-9]{1,2})p?)$', token)
+        m2 = re.match('([su]([0-9]{1,2})p?)( \(default\))?$', token)
         if m:
             set_property(stream, 'sample_fmt', m.group(1))
             set_property(stream, 'bits_per_sample', int(m.group(2)))
@@ -262,11 +262,11 @@ def mediainfo_json(filepath):
             set_property(stream, 'sample_fmt', m2.group(1))
             set_property(stream, 'bits_per_sample', int(m2.group(2)))
             set_property(stream, 'bits_per_raw_sample', int(m2.group(2)))
-        elif re.match('fltp?$', token):
+        elif re.match('(flt)p?( \(default\))?$', token):
             set_property(stream, 'sample_fmt', token)
             set_property(stream, 'bits_per_sample', 32)
             set_property(stream, 'bits_per_raw_sample', 32)
-        elif re.match('dlbp?$', token):
+        elif re.match('(dbl)p?( \(default\))?$', token):
             set_property(stream, 'sample_fmt', token)
             set_property(stream, 'bits_per_sample', 64)
             set_property(stream, 'bits_per_raw_sample', 64)
