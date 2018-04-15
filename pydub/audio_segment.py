@@ -93,7 +93,7 @@ def extract_wav_headers(data):
     subchunks = []
     while pos < len(data) and len(subchunks) < 10:
         subchunk_id = data[pos:pos + 4]
-        subchunk_size = struct.unpack_from('<i', data[pos + 4:pos + 8])[0]
+        subchunk_size = struct.unpack_from('<I', data[pos + 4:pos + 8])[0]
         subchunks.append(WavSubChunk(subchunk_id, pos, subchunk_size))
         if subchunk_id == b'data':
             # 'data' is the last subchunk
@@ -109,11 +109,11 @@ def fix_wav_headers(data):
         return
 
     # Set the file size in the RIFF chunk descriptor
-    data[4:8] = struct.pack('<i', len(data) - 8)
+    data[4:8] = struct.pack('<I', len(data) - 8)
 
     # Set the data size in the data subchunk
     pos = headers[-1].position
-    data[pos + 4:pos + 8] = struct.pack('<i', len(data) - pos - 8)
+    data[pos + 4:pos + 8] = struct.pack('<I', len(data) - pos - 8)
 
 
 class AudioSegment(object):
