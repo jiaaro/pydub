@@ -18,7 +18,6 @@ from pydub.utils import (
     make_chunks,
     mediainfo,
     get_encoder_name,
-    check_module_availability,
 )
 from pydub.exceptions import (
     InvalidTag,
@@ -238,8 +237,6 @@ class AudioSegmentTests(unittest.TestCase):
         # the data length should have grown by exactly 4:3 (24 bits turn into 32 bits)
         self.assertEqual(len(seg24.raw_data) * 3, len24 * 4)
 
-    @unittest.skipIf(not check_module_availability('scipy'),
-                     "scipy is not available, so >48 kHz is not supported")
     def test_192khz_audio(self):
         test_files = [('test-192khz-16bit.wav', 16),
                       ('test-192khz-24bit.wav', 32),
@@ -260,6 +257,7 @@ class AudioSegmentTests(unittest.TestCase):
             path = os.path.join(data_dir, test_file)
             seg = AudioSegment.from_file(path)
             self.assertEqual(seg.sample_width, bit_depth / 8)
+            self.assertEqual(seg.frame_rate, 192000)
             self.assertEqual(len(seg.raw_data), len(base.raw_data) *
                              seg.sample_width / base.sample_width)
             self.assertEqual(seg.frame_rate, 192000)
@@ -575,8 +573,6 @@ class AudioSegmentTests(unittest.TestCase):
                                    len(seg),
                                    percentage=0.01)
 
-    @unittest.skipIf(not check_module_availability('scipy'),
-                     "scipy is not available, so skip test using ogg-vorbis file using fltp sample_fmt")
     def test_export_forced_codec(self):
         seg = self.seg1 + self.seg2
 
@@ -668,8 +664,6 @@ class AudioSegmentTests(unittest.TestCase):
             if sys.platform == 'win32':
                 os.remove(tmp_mp3_file.name)
 
-    @unittest.skipIf(not check_module_availability('scipy'),
-                     "scipy is not available, so skip test using m4a file using fltp sample_fmt")
     def test_formats(self):
         seg_m4a = AudioSegment.from_file(
             os.path.join(data_dir, 'format_test.m4a'), "m4a")
@@ -688,8 +682,6 @@ class AudioSegmentTests(unittest.TestCase):
         wav = AudioSegment.from_wav(wav_file)
         self.assertEqual(wav.duration_seconds, self.seg1.duration_seconds)
 
-    @unittest.skipIf(not check_module_availability('scipy'),
-                     "scipy is not available, so skip test using file having fltp sample_fmt")
     def test_autodetect_format(self):
         aac_path = os.path.join(data_dir, 'wrong_extension.aac')
         fn = partial(AudioSegment.from_file, aac_path, "aac")
@@ -710,8 +702,6 @@ class AudioSegmentTests(unittest.TestCase):
             AudioSegment.from_file(self.mp3_file_path).export(tmp_ogg_file,
                                                               format="ogg")
 
-    @unittest.skipIf(not check_module_availability('scipy'),
-                     "scipy is not available, so skip test using webm file having fltp sample_fmt")
     def test_export_webm_as_mp3(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
             AudioSegment.from_file(
@@ -725,29 +715,21 @@ class AudioSegmentTests(unittest.TestCase):
                                                               format="webm")
 
 
-    @unittest.skipIf(not check_module_availability('scipy'),
-                     "scipy is not available, so skip test using mp4 file having fltp sample_fmt")
     def test_export_mp4_as_ogg(self):
         with NamedTemporaryFile('w+b', suffix='.ogg') as tmp_ogg_file:
             AudioSegment.from_file(self.mp4_file_path).export(tmp_ogg_file,
                                                               format="ogg")
 
-    @unittest.skipIf(not check_module_availability('scipy'),
-                     "scipy is not available, so skip test using mp4 file having fltp sample_fmt")
     def test_export_mp4_as_mp3(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
             AudioSegment.from_file(self.mp4_file_path).export(tmp_mp3_file,
                                                               format="mp3")
 
-    @unittest.skipIf(not check_module_availability('scipy'),
-                     "scipy is not available, so skip test using mp4 file having fltp sample_fmt")
     def test_export_mp4_as_wav(self):
         with NamedTemporaryFile('w+b', suffix='.wav') as tmp_wav_file:
             AudioSegment.from_file(self.mp4_file_path).export(tmp_wav_file,
                                                               format="mp3")
 
-    @unittest.skipIf(not check_module_availability('scipy'),
-                     "scipy is not available, so skip test using mp4 file having fltp sample_fmt")
     def test_export_mp4_as_mp3_with_tags(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
             tags_dict = {
@@ -759,8 +741,6 @@ class AudioSegmentTests(unittest.TestCase):
                                                               format="mp3",
                                                               tags=tags_dict)
 
-    @unittest.skipIf(not check_module_availability('scipy'),
-                     "scipy is not available, so skip test using mp4 file having fltp sample_fmt")
     def test_export_mp4_as_mp3_with_tags_raises_exception_when_tags_are_not_a_dictionary(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
             json = '{"title": "The Title You Want", "album": "Name of the Album", "artist": "Artist\'s name"}'
@@ -769,8 +749,6 @@ class AudioSegmentTests(unittest.TestCase):
                 format="mp3", tags=json)
             self.assertRaises(InvalidTag, func)
 
-    @unittest.skipIf(not check_module_availability('scipy'),
-                     "scipy is not available, so skip test using mp4 file having fltp sample_fmt")
     def test_export_mp4_as_mp3_with_tags_raises_exception_when_id3version_is_wrong(self):
         tags = {'artist': 'Artist', 'title': 'Title'}
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
@@ -783,8 +761,6 @@ class AudioSegmentTests(unittest.TestCase):
             )
             self.assertRaises(InvalidID3TagVersion, func)
 
-    @unittest.skipIf(not check_module_availability('scipy'),
-                     "scipy is not available, so skip test using mp4 file having fltp sample_fmt")
     def test_export_mp3_with_tags(self):
         tags = {'artist': 'Mozart', 'title': 'The Magic Flute'}
 
@@ -902,8 +878,6 @@ class AudioSegmentTests(unittest.TestCase):
         # average volume should be reduced
         self.assertTrue(compressed.rms < self.seg1.rms)
 
-    @unittest.skipIf(not check_module_availability('scipy'),
-                     "scipy is not available, so skip test using mp4 file having fltp sample_fmt")
     def test_exporting_to_ogg_uses_default_codec_when_codec_param_is_none(self):
         delete = sys.platform != 'win32'
 

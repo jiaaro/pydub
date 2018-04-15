@@ -85,6 +85,8 @@ AUDIO_FILE_EXT_ALIASES = {
 
 
 WavSubChunk = namedtuple('WavSubChunk', ['id', 'position', 'size'])
+WavData = namedtuple('WavData', ['audio_format', 'channels', 'sample_rate',
+                                 'bits_per_sample', 'raw_data'])
 
 
 def extract_wav_headers(data):
@@ -101,6 +103,33 @@ def extract_wav_headers(data):
         pos += subchunk_size + 8
 
     return subchunks
+
+
+def read_wav_audio(data, headers=None):
+    if not headers:
+        headers = extract_wav_headers(data)
+
+    fmt = [x for x in headers if x.id == b'fmt ']
+    if not fmt or fmt[0].size < 16:
+        raise CouldntDecodeError("Couldn't find fmt header in wav data")
+    fmt = fmt[0]
+    pos = fmt.position + 8
+    audio_format = struct.unpack_from('<H', data[pos:pos + 2])[0]
+    if audio_format != 1 and audio_format != 0xFFFE:
+        raise CouldntDecodeError("Unknown audio format 0x%X in wav data" %
+                                 audio_format)
+
+    channels = struct.unpack_from('<H', data[pos + 2:pos + 4])[0]
+    sample_rate = struct.unpack_from('<I', data[pos + 4:pos + 8])[0]
+    bits_per_sample = struct.unpack_from('<H', data[pos + 14:pos + 16])[0]
+
+    data_hdr = headers[-1]
+    if data_hdr.id != b'data':
+        raise CouldntDecodeError("Couldn't find data header in wav data")
+
+    pos = data_hdr.position + 8
+    return WavData(audio_format, channels, sample_rate, bits_per_sample,
+                   data[pos:pos + data_hdr.size])
 
 
 def fix_wav_headers(data):
@@ -186,48 +215,15 @@ class AudioSegment(object):
                     reader = data.read(2**31-1)
                 data = d
 
-            try:
-                import scipy.io.wavfile
-                raw = scipy.io.wavfile.read(StringIO(data))
-            except ImportError:
-                use_fallback = True
-            except ValueError as exc:
-                if ('Unsupported bit depth' in str(exc) or
-                        'File format' in str(exc)):
-                    use_fallback = True
-                else:
-                    raise
-            else:
-                # We can use scipy, which supports more file formats than
-                # the wave module
-                try:
-                    self.channels = raw[1][0].size
-                    self.sample_width = raw[1].dtype.itemsize
-                    self.frame_rate = raw[0]
-                    self.frame_width = self.channels * self.sample_width
-                    if hasattr(raw[1], 'tobytes'):
-                        self._data = raw[1].tobytes()
-                    else:
-                        self._data = bytes(raw[1])
-                    use_fallback = False
-                except IndexError:
-                    use_fallback = True
+            wav_data = read_wav_audio(data)
+            if not wav_data:
+                raise CouldntDecodeError("Couldn't read wav audio from data")
 
-            if use_fallback:
-                # scipy is not available so we use the standard wave module
-                raw = wave.open(StringIO(data), 'rb')
-                raw.rewind()
-                self.channels = raw.getnchannels()
-                self.sample_width = raw.getsampwidth()
-                self.frame_rate = raw.getframerate()
-                self.frame_width = self.channels * self.sample_width
-
-                raw.rewind()
-
-                # the "or b''" base case is a work-around for a python 3.4
-                # see https://github.com/jiaaro/pydub/pull/107
-                self._data = raw.readframes(float('inf')) or b''
-                raw.close()
+            self.channels = wav_data.channels
+            self.sample_width = wav_data.bits_per_sample // 8
+            self.frame_rate = wav_data.sample_rate
+            self.frame_width = self.channels * self.sample_width
+            self._data = wav_data.raw_data
 
         # Convert 24-bit audio to 32-bit audio.
         # (stdlib audioop and array modules do not support 24-bit data)
@@ -651,10 +647,6 @@ class AudioSegment(object):
                 audio_streams = [x for x in info['streams']
                                  if x['codec_type'] == 'audio']
                 bits_per_sample = audio_streams[0]['bits_per_sample']
-                if bits_per_sample == 24:
-                    # scipy doesn't support 24 bit wav files, so we
-                    # convert the file to 32 bits to open it
-                    bits_per_sample = 32
                 acodec = 'pcm_s%dle' % bits_per_sample
                 conversion_command += ["-acodec", acodec]
         else:

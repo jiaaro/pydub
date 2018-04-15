@@ -318,21 +318,3 @@ def mediainfo(filepath):
                 info[key] = value
 
     return info
-
-
-def check_module_availability(modulename):
-    if sys.version_info[0] < 3:
-        import imp
-        try:
-            imp.find_module(modulename)
-        except ImportError:
-            return False
-        return True
-
-    if sys.version_info < (3, 4):
-        import importlib
-        loader = importlib.find_loader(modulename)
-    else:
-        import importlib.util
-        loader = importlib.util.find_spec(modulename)
-    return loader is not None
