@@ -211,12 +211,21 @@ def mediainfo_json(filepath):
         "-v", "info",
         "-show_format",
         "-show_streams",
-        filepath
     ]
+    if isinstance(filepath, basestring):
+        command_args += [filepath]
+        stdin_parameter = None
+        stdin_data = None
+    else:
+        command_args += ["-"]
+        stdin_parameter = PIPE
+        file = _fd_or_path_or_tempfile(filepath, 'rb', tempfile=False)
+        file.seek(0)
+        stdin_data = file.read()
 
     command = [prober, '-of', 'json'] + command_args
-    res = Popen(command, stdout=PIPE, stderr=PIPE)
-    output, stderr = res.communicate()
+    res = Popen(command, stdin=stdin_parameter, stdout=PIPE, stderr=PIPE)
+    output, stderr = res.communicate(input=stdin_data)
     output = output.decode("utf-8", 'ignore')
     stderr = stderr.decode("utf-8", 'ignore')
 

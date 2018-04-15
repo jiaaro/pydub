@@ -244,7 +244,6 @@ class AudioSegment(object):
                 old_bytes = struct.pack(pack_fmt, b0, b1, b2)
                 byte_buffer.write(old_bytes)
 
-
             self._data = byte_buffer.getvalue()
             self.sample_width = 4
             self.frame_width = self.channels * self.sample_width
@@ -642,17 +641,18 @@ class AudioSegment(object):
             conversion_command += ["-i", orig_file]
             stdin_parameter = None
             stdin_data = None
-            info = mediainfo_json(orig_file)
-            if info:
-                audio_streams = [x for x in info['streams']
-                                 if x['codec_type'] == 'audio']
-                bits_per_sample = audio_streams[0]['bits_per_sample']
-                acodec = 'pcm_s%dle' % bits_per_sample
-                conversion_command += ["-acodec", acodec]
         else:
             conversion_command += ["-i", "-"]
             stdin_parameter = subprocess.PIPE
             stdin_data = file.read()
+
+        info = mediainfo_json(orig_file)
+        if info:
+            audio_streams = [x for x in info['streams']
+                             if x['codec_type'] == 'audio']
+            bits_per_sample = audio_streams[0]['bits_per_sample']
+            acodec = 'pcm_s%dle' % bits_per_sample
+            conversion_command += ["-acodec", acodec]
 
         conversion_command += [
             "-vn",  # Drop any video streams if there are any
