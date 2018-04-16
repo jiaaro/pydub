@@ -492,7 +492,13 @@ class AudioSegment(object):
 
     @classmethod
     def from_file_using_temporary_files(cls, file, format=None, codec=None, parameters=None, **kwargs):
-        orig_file = file
+        try:
+            if isinstance(file, os.PathLike):
+                orig_file = os.fspath(file)
+            else:
+                orig_file = file
+        except AttributeError:
+            orig_file = file
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
         if format:
@@ -505,11 +511,8 @@ class AudioSegment(object):
                 return True
             if isinstance(orig_file, basestring):
                 return orig_file.lower().endswith(".{0}".format(f))
-            if sys.version_info >= (3, 6):
-                if isinstance(orig_file, os.PathLike):
-                    path = os.fsdecode(orig_file)
-                    return path.lower().endswith(".{0}".format(f))
-
+            if isinstance(orig_file, bytes):
+                return orig_file.lower().endswith((".{0}".format(f)).encode('utf8'))
             return False
 
         if is_format("wav"):
@@ -592,7 +595,13 @@ class AudioSegment(object):
 
     @classmethod
     def from_file(cls, file, format=None, codec=None, parameters=None, **kwargs):
-        orig_file = file
+        try:
+            if isinstance(file, os.PathLike):
+                orig_file = os.fspath(file)
+            else:
+                orig_file = file
+        except AttributeError:
+            orig_file = file
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
         if format:
@@ -605,6 +614,8 @@ class AudioSegment(object):
                 return True
             if isinstance(orig_file, basestring):
                 return orig_file.lower().endswith(".{0}".format(f))
+            if isinstance(orig_file, bytes):
+                return orig_file.lower().endswith((".{0}".format(f)).encode('utf8'))
             return False
 
         if is_format("wav"):
@@ -637,7 +648,7 @@ class AudioSegment(object):
             # force audio decoder
             conversion_command += ["-acodec", codec]
 
-        if isinstance(orig_file, basestring):
+        if isinstance(orig_file, (basestring, bytes)):
             conversion_command += ["-i", orig_file]
             stdin_parameter = None
             stdin_data = None

@@ -212,7 +212,7 @@ def mediainfo_json(filepath):
         "-show_format",
         "-show_streams",
     ]
-    if isinstance(filepath, basestring):
+    if isinstance(filepath, (basestring, bytes)):
         command_args += [filepath]
         stdin_parameter = None
         stdin_data = None
