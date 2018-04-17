@@ -8,7 +8,7 @@ import wave
 import sys
 import struct
 from .logging_utils import log_conversion, log_subprocess_output
-from .utils import mediainfo_json
+from .utils import mediainfo_json, fsdecode
 import base64
 from collections import namedtuple
 
@@ -492,13 +492,7 @@ class AudioSegment(object):
 
     @classmethod
     def from_file_using_temporary_files(cls, file, format=None, codec=None, parameters=None, **kwargs):
-        try:
-            if isinstance(file, os.PathLike):
-                orig_file = os.fspath(file)
-            else:
-                orig_file = file
-        except AttributeError:
-            orig_file = file
+        orig_file = file
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
         if format:
@@ -595,13 +589,11 @@ class AudioSegment(object):
 
     @classmethod
     def from_file(cls, file, format=None, codec=None, parameters=None, **kwargs):
+        orig_file = file
         try:
-            if isinstance(file, os.PathLike):
-                orig_file = os.fspath(file)
-            else:
-                orig_file = file
-        except AttributeError:
-            orig_file = file
+            filename = fsdecode(file)
+        except TypeError:
+            filename = None
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
         if format:
@@ -612,10 +604,10 @@ class AudioSegment(object):
             f = f.lower()
             if format == f:
                 return True
-            if isinstance(orig_file, basestring):
-                return orig_file.lower().endswith(".{0}".format(f))
-            if isinstance(orig_file, bytes):
-                return orig_file.lower().endswith((".{0}".format(f)).encode('utf8'))
+
+            if filename:
+                return filename.lower().endswith(".{0}".format(f))
+
             return False
 
         if is_format("wav"):
@@ -648,8 +640,8 @@ class AudioSegment(object):
             # force audio decoder
             conversion_command += ["-acodec", codec]
 
-        if isinstance(orig_file, (basestring, bytes)):
-            conversion_command += ["-i", orig_file]
+        if filename:
+            conversion_command += ["-i", filename]
             stdin_parameter = None
             stdin_data = None
         else:

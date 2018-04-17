@@ -202,21 +202,38 @@ def get_prober_name():
         return "ffprobe"
 
 
+def fsdecode(filename):
+    """Wrapper for os.fsdecode which was introduced in python 3.2 ."""
+
+    if sys.version_info >= (3, 2):
+        PathLikeTypes = (basestring, bytes)
+        if sys.version_info >= (3, 6):
+            PathLikeTypes += (os.PathLike,)
+        if isinstance(filename, PathLikeTypes):
+            return os.fsdecode(filename)
+    else:
+        if isinstance(filename, bytes):
+            return filename.decode(sys.getfilesystemencoding())
+        if isinstance(filename, basestring):
+            return filename
+
+    raise TypeError("type {0} not accepted by fsdecode".format(type(filename)))
+
+
 def mediainfo_json(filepath):
     """Return json dictionary with media info(codec, duration, size, bitrate...) from filepath
     """
-
     prober = get_prober_name()
     command_args = [
         "-v", "info",
         "-show_format",
         "-show_streams",
     ]
-    if isinstance(filepath, (basestring, bytes)):
-        command_args += [filepath]
+    try:
+        command_args += [fsdecode(filepath)]
         stdin_parameter = None
         stdin_data = None
-    else:
+    except TypeError:
         command_args += ["-"]
         stdin_parameter = PIPE
         file = _fd_or_path_or_tempfile(filepath, 'rb', tempfile=False)
