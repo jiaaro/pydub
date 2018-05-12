@@ -690,7 +690,13 @@ class AudioSegment(object):
         if p.returncode != 0:
             raise CouldntEncodeError("Encoding failed. ffmpeg/avlib returned error code: {0}\n\nCommand:{1}\n\nOutput from ffmpeg/avlib:\n\n{2}".format(p.returncode, conversion_command, p_err))
 
-        output.seek(0)
+        # for some reason, a HLS m3u8 file will be empty unless reopened in read-only mode
+        if format == 'hls':
+            output.close()
+            output = open(output.name, 'rb')
+        else:
+            output.seek(0)
+
         out_f.write(output.read())
 
         data.close()

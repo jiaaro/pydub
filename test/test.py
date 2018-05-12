@@ -547,6 +547,37 @@ class AudioSegmentTests(unittest.TestCase):
                                    len(seg),
                                    percentage=0.01)
 
+    def test_export_as_hls(self):
+        seg = self.seg1
+        import random
+        segment_filename = str(int(random.random() * 1000))
+        ffmpeg_opts = [
+            "-hls_list_size", "0",
+            "-hls_segment_filename", os.path.join(data_dir, segment_filename + "%d.ts"),
+            "-hls_time", "10",
+            "-start_number", "0"
+        ]
+        out_m3u8 = seg.export(
+            format = "hls",
+            codec = "libfaac",
+            parameters = ffmpeg_opts
+        )
+
+        # check that m3u8 file is actually being generated
+        self.assertTrue(len(out_m3u8.read()) != 0)
+
+        # check that all segments match up in length to original
+        import glob
+        segment_files = glob.glob(os.path.join(data_dir, segment_filename + '*.ts'))
+        exported_audio_length = sum(len(AudioSegment.from_file(segment, format = "mpegts")) for segment in segment_files)
+        self.assertWithinTolerance(exported_audio_length,
+                                   len(seg),
+                                   percentage = 0.01)
+
+        # cleanup segment files
+        for segment in glob.glob(os.path.join(data_dir, '*.ts')):
+		    os.remove(segment)
+
     def test_export_forced_codec(self):
         seg = self.seg1 + self.seg2
 
