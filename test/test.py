@@ -559,7 +559,6 @@ class AudioSegmentTests(unittest.TestCase):
         ]
         out_m3u8 = seg.export(
             format = "hls",
-            codec = "libfaac",
             parameters = ffmpeg_opts
         )
 
