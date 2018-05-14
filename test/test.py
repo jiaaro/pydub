@@ -627,10 +627,12 @@ class AudioSegmentTests(unittest.TestCase):
             if sys.platform == 'win32':
                 tmp_mp3_file.close()
 
-            seg.export(tmp_mp3_file.name)
+            fd = seg.export(tmp_mp3_file.name)
+            fd.close()
 
             for i in range(3):
-                AudioSegment.from_mp3(tmp_mp3_file.name).export(tmp_mp3_file.name, "mp3")
+                fd = AudioSegment.from_mp3(tmp_mp3_file.name).export(tmp_mp3_file.name, "mp3")
+                fd.close()
 
             tmp_seg = AudioSegment.from_mp3(tmp_mp3_file.name)
             self.assertFalse(len(tmp_seg) < len(seg))

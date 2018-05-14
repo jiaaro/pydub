@@ -456,7 +456,9 @@ class AudioSegment(object):
 
         if is_format("wav"):
             try:
-                return cls._from_safe_wav(file)
+                obj = cls._from_safe_wav(file)
+                file.close()
+                return obj
             except:
                 file.seek(0)
         elif is_format("raw") or is_format("pcm"):
@@ -469,7 +471,9 @@ class AudioSegment(object):
                 'channels': channels,
                 'frame_width': channels * sample_width
             }
-            return cls(data=file.read(), metadata=metadata)
+            obj = cls(data=file.read(), metadata=metadata)
+            file.close()
+            return obj
 
         input_file = NamedTemporaryFile(mode='wb', delete=False)
         try:
@@ -478,12 +482,14 @@ class AudioSegment(object):
             input_file.flush()
             input_file.close()
             input_file = NamedTemporaryFile(mode='wb', delete=False, buffering=2**31-1)
+            file.close()
             file = open(orig_file, buffering=2**13-1, mode='rb')
             reader = file.read(2**31-1)
             while reader:
                 input_file.write(reader)
                 reader = file.read(2**31-1)
         input_file.flush()
+        file.close()
 
         output = NamedTemporaryFile(mode="rb", delete=False)
 
@@ -556,7 +562,9 @@ class AudioSegment(object):
     def _from_safe_wav(cls, file):
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
         file.seek(0)
-        return cls(data=file)
+        obj = cls(data=file);
+        file.close()
+        return obj
 
     def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None, id3v2_version='4', cover=None):
         """
@@ -984,7 +992,9 @@ class AudioSegment(object):
         output.write(seg2[crossfade:]._data)
 
         output.seek(0)
-        return seg1._spawn(data=output)
+        obj = seg1._spawn(data=output)
+        output.close()
+        return obj
 
     def fade(self, to_gain=0, from_gain=0, start=None, end=None,
              duration=None):
