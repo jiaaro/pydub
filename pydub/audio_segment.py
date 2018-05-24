@@ -8,7 +8,9 @@ import wave
 import sys
 import struct
 from .logging_utils import log_conversion, log_subprocess_output
+from .utils import mediainfo_json, fsdecode
 import base64
+from collections import namedtuple
 
 try:
     from StringIO import StringIO
@@ -82,6 +84,67 @@ AUDIO_FILE_EXT_ALIASES = {
 }
 
 
+WavSubChunk = namedtuple('WavSubChunk', ['id', 'position', 'size'])
+WavData = namedtuple('WavData', ['audio_format', 'channels', 'sample_rate',
+                                 'bits_per_sample', 'raw_data'])
+
+
+def extract_wav_headers(data):
+    # def search_subchunk(data, subchunk_id):
+    pos = 12  # The size of the RIFF chunk descriptor
+    subchunks = []
+    while pos + 8 < len(data) and len(subchunks) < 10:
+        subchunk_id = data[pos:pos + 4]
+        subchunk_size = struct.unpack_from('<I', data[pos + 4:pos + 8])[0]
+        subchunks.append(WavSubChunk(subchunk_id, pos, subchunk_size))
+        if subchunk_id == b'data':
+            # 'data' is the last subchunk
+            break
+        pos += subchunk_size + 8
+
+    return subchunks
+
+
+def read_wav_audio(data, headers=None):
+    if not headers:
+        headers = extract_wav_headers(data)
+
+    fmt = [x for x in headers if x.id == b'fmt ']
+    if not fmt or fmt[0].size < 16:
+        raise CouldntDecodeError("Couldn't find fmt header in wav data")
+    fmt = fmt[0]
+    pos = fmt.position + 8
+    audio_format = struct.unpack_from('<H', data[pos:pos + 2])[0]
+    if audio_format != 1 and audio_format != 0xFFFE:
+        raise CouldntDecodeError("Unknown audio format 0x%X in wav data" %
+                                 audio_format)
+
+    channels = struct.unpack_from('<H', data[pos + 2:pos + 4])[0]
+    sample_rate = struct.unpack_from('<I', data[pos + 4:pos + 8])[0]
+    bits_per_sample = struct.unpack_from('<H', data[pos + 14:pos + 16])[0]
+
+    data_hdr = headers[-1]
+    if data_hdr.id != b'data':
+        raise CouldntDecodeError("Couldn't find data header in wav data")
+
+    pos = data_hdr.position + 8
+    return WavData(audio_format, channels, sample_rate, bits_per_sample,
+                   data[pos:pos + data_hdr.size])
+
+
+def fix_wav_headers(data):
+    headers = extract_wav_headers(data)
+    if not headers or headers[-1].id != b'data':
+        return
+
+    # Set the file size in the RIFF chunk descriptor
+    data[4:8] = struct.pack('<I', len(data) - 8)
+
+    # Set the data size in the data subchunk
+    pos = headers[-1].position
+    data[pos + 4:pos + 8] = struct.pack('<I', len(data) - pos - 8)
+
+
 class AudioSegment(object):
     """
     AudioSegments are *immutable* objects representing segments of audio
@@ -152,19 +215,15 @@ class AudioSegment(object):
                     reader = data.read(2**31-1)
                 data = d
 
-            raw = wave.open(StringIO(data), 'rb')
+            wav_data = read_wav_audio(data)
+            if not wav_data:
+                raise CouldntDecodeError("Couldn't read wav audio from data")
 
-            raw.rewind()
-            self.channels = raw.getnchannels()
-            self.sample_width = raw.getsampwidth()
-            self.frame_rate = raw.getframerate()
+            self.channels = wav_data.channels
+            self.sample_width = wav_data.bits_per_sample // 8
+            self.frame_rate = wav_data.sample_rate
             self.frame_width = self.channels * self.sample_width
-
-            raw.rewind()
-
-            # the "or b''" base case is a work-around for a python 3.4
-            # see https://github.com/jiaaro/pydub/pull/107
-            self._data = raw.readframes(float('inf')) or b''
+            self._data = wav_data.raw_data
 
         # Convert 24-bit audio to 32-bit audio.
         # (stdlib audioop and array modules do not support 24-bit data)
@@ -184,7 +243,6 @@ class AudioSegment(object):
                 byte_buffer.write(padding[b2 > b'\x7f'[0]])
                 old_bytes = struct.pack(pack_fmt, b0, b1, b2)
                 byte_buffer.write(old_bytes)
-
 
             self._data = byte_buffer.getvalue()
             self.sample_width = 4
@@ -433,7 +491,7 @@ class AudioSegment(object):
         )
 
     @classmethod
-    def from_file(cls, file, format=None, codec=None, parameters=None, **kwargs):
+    def from_file_using_temporary_files(cls, file, format=None, codec=None, parameters=None, **kwargs):
         orig_file = file
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
@@ -447,11 +505,8 @@ class AudioSegment(object):
                 return True
             if isinstance(orig_file, basestring):
                 return orig_file.lower().endswith(".{0}".format(f))
-            if sys.version_info >= (3, 6):
-                if isinstance(orig_file, os.PathLike):
-                    path = os.fsdecode(orig_file)
-                    return path.lower().endswith(".{0}".format(f))
-
+            if isinstance(orig_file, bytes):
+                return orig_file.lower().endswith((".{0}".format(f)).encode('utf8'))
             return False
 
         if is_format("wav"):
@@ -535,6 +590,110 @@ class AudioSegment(object):
             output.close()
             os.unlink(input_file.name)
             os.unlink(output.name)
+
+        return obj
+
+    @classmethod
+    def from_file(cls, file, format=None, codec=None, parameters=None, **kwargs):
+        orig_file = file
+        try:
+            filename = fsdecode(file)
+        except TypeError:
+            filename = None
+        file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
+
+        if format:
+            format = format.lower()
+            format = AUDIO_FILE_EXT_ALIASES.get(format, format)
+
+        def is_format(f):
+            f = f.lower()
+            if format == f:
+                return True
+
+            if filename:
+                return filename.lower().endswith(".{0}".format(f))
+
+            return False
+
+        if is_format("wav"):
+            try:
+                return cls._from_safe_wav(file)
+            except:
+                file.seek(0)
+        elif is_format("raw") or is_format("pcm"):
+            sample_width = kwargs['sample_width']
+            frame_rate = kwargs['frame_rate']
+            channels = kwargs['channels']
+            metadata = {
+                'sample_width': sample_width,
+                'frame_rate': frame_rate,
+                'channels': channels,
+                'frame_width': channels * sample_width
+            }
+            return cls(data=file.read(), metadata=metadata)
+
+        conversion_command = [cls.converter,
+                              '-y',  # always overwrite existing files
+                              ]
+
+        # If format is not defined
+        # ffmpeg/avconv will detect it automatically
+        if format:
+            conversion_command += ["-f", format]
+
+        if codec:
+            # force audio decoder
+            conversion_command += ["-acodec", codec]
+
+        if filename:
+            conversion_command += ["-i", filename]
+            stdin_parameter = None
+            stdin_data = None
+        else:
+            conversion_command += ["-i", "-"]
+            stdin_parameter = subprocess.PIPE
+            stdin_data = file.read()
+
+        info = mediainfo_json(orig_file)
+        if info:
+            audio_streams = [x for x in info['streams']
+                             if x['codec_type'] == 'audio']
+            # This is a workaround for some ffprobe versions that always say
+            # that mp3/mp4/aac/webm/ogg files contain fltp samples
+            if (audio_streams[0]['sample_fmt'] == 'fltp' and
+                (is_format("mp3") or is_format("mp4") or is_format("aac") or
+                 is_format("webm") or is_format("ogg"))):
+                bits_per_sample = 16
+            else:
+                bits_per_sample = audio_streams[0]['bits_per_sample']
+            acodec = 'pcm_s%dle' % bits_per_sample
+            conversion_command += ["-acodec", acodec]
+
+        conversion_command += [
+            "-vn",  # Drop any video streams if there are any
+            "-f", "wav",  # output options (filename last)
+            "-"
+        ]
+
+        if parameters is not None:
+            # extend arguments with arbitrary set
+            conversion_command.extend(parameters)
+
+        log_conversion(conversion_command)
+
+        p = subprocess.Popen(conversion_command, stdin=stdin_parameter,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p_out, p_err = p.communicate(input=stdin_data)
+
+        if p.returncode != 0 or len(p_out) == 0:
+            raise CouldntDecodeError("Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(p.returncode, p_err))
+
+        p_out = bytearray(p_out)
+        fix_wav_headers(p_out)
+        obj = cls._from_safe_wav(BytesIO(p_out))
+
+        file.close()
 
         return obj
 
