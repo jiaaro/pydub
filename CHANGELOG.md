@@ -1,7 +1,14 @@
+# v0.22.0
+- Adds support for audio with frame rates (sample rates) of 48k and higher (requires scipy) (PR #262, fixes #134, #237, #209)
+- Adds support for PEP 519 File Path protocol (PR #252)
+- Fixes a few places where handles to temporary files are kept open (PR #280)
+- Add the license file to the python package to aid other packaging projects (PR #279, fixes #274)
+- Big fix for `pydub.silence.detect_silence()` (PR #263)
+
 # v0.21.0
 - NOTE: Semi-counterintuitive change: using the a stride when slicing AudioSegment instances (for example, `sound[::5000]`) will return chunks of 5000ms (not 1ms chunks every 5000ms) (#222)
 - Debug output from ffmpeg/avlib is no longer printed to the console unless you set up logging (see README for how to set up logging for your converter) (#223)
-- All pydub exceptions are now subclasses of `pydub.exceptions.PydubException`
+- All pydub exceptions are now subclasses of `pydub.exceptions.PydubException` (PR #244)
 - The utilities in `pydub.silence` now accept a `seek_step`argument which can optionally be passed to improve the performance of silence detection (#211)
 - Fix to `pydub.silence` utilities which allow you to detect perfect silence (#233)
 - Fix a bug where threaded code screws up your terminal session due to ffmpeg inheriting the stdin from the parent process. (#231)
