@@ -279,7 +279,7 @@ def mediainfo_json(filepath):
     stream = merge_two_dicts({'sample_fmt': None, 'bits_per_sample': None, 'bits_per_raw_sample': None}, audio_streams[0])
 
     def set_property(stream, prop, value):
-        if prop not in stream or stream[prop] == 0:
+        if prop not in stream or stream[prop] == 0 or stream[prop] is None:
             stream[prop] = value
 
     for token in extra_info[stream['index']]:
