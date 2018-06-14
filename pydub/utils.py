@@ -267,7 +267,7 @@ def mediainfo_json(filepath):
     re_stream = r'(?P<space_start> +)Stream #0[:\.](?P<stream_id>([0-9]+))(?P<content_0>.+)\n?((?P<space_end> +)(?P<content_1>.+))?'
 
     for i in re.finditer(re_stream, stderr):
-        if len(i.group('space_start')) <= len(i.group('space_end')):
+        if i.group('space_end') is not None and len(i.group('space_start')) <= len(i.group('space_end')):
             content_line = '{},{}'.format(i.group('content_0'), i.group('content_1'))
         else:
             content_line = i.group('content_0')
