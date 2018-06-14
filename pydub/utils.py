@@ -1,6 +1,6 @@
 from __future__ import division
 
-from math import log, ceil, floor
+from math import log, ceil
 import os
 import re
 from subprocess import Popen, PIPE
@@ -263,27 +263,23 @@ def mediainfo_json(filepath):
     # from lines of the format of:
     # '    Stream #0:0: Audio: flac, 88200 Hz, stereo, s32 (24 bit)'
     extra_info = {}
-    
-    # TODO Debug in Linux (get stderr)
-    print('TODO Debug in Linux (get stderr)')
-    print('='* 100)
-    print(stderr)
-    print('='* 100)
-    
-    for line in stderr.split("\n"):
-        match = re.match(' *Stream #0[:\.]([0-9]+)(\(\w+\))?', line)
-        if match:
-            stream_id = int(match.group(1))
-            tokens = [x.strip()
-                      for x in re.split('[:,]', line[match.end():]) if x]
-            extra_info[stream_id] = tokens
+
+    re_stream = r'(?P<space_start> +)Stream #0[:\.](?P<stream_id>([0-9]+))(?P<content_0>.+)\n?((?P<space_end> +)(?P<content_1>.+))?'
+
+    for i in re.finditer(re_stream, stderr):
+        if len(i.group('space_start')) <= len(i.group('space_end')):
+            content_line = '{},{}'.format(i.group('content_0'), i.group('content_1'))
+        else:
+            content_line = i.group('content_0')
+        tokens = [x.strip() for x in re.split('[:,]', content_line) if x]
+        extra_info[int(i.group('stream_id'))] = tokens
 
     audio_streams = [x for x in info['streams'] if x['codec_type'] == 'audio']
     if len(audio_streams) == 0:
         return info
 
     # We just operate on the first audio stream in case there are more
-    stream = merge_two_dicts({'sample_fmt': 0, 'bits_per_sample': 0, 'bits_per_raw_sample': 0}, audio_streams[0])
+    stream = audio_streams[0]
 
     def set_property(stream, prop, value):
         if prop not in stream or stream[prop] == 0:
@@ -308,7 +304,6 @@ def mediainfo_json(filepath):
             set_property(stream, 'sample_fmt', token)
             set_property(stream, 'bits_per_sample', 64)
             set_property(stream, 'bits_per_raw_sample', 64)
-
     return info
 
 
