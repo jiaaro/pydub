@@ -14,11 +14,8 @@ try:
 except ImportError:
     import pyaudioop as audioop
 
-
 if sys.version_info >= (3, 0):
     basestring = str
-
-
 
 FRAME_WIDTHS = {
     8: 1,
@@ -26,7 +23,7 @@ FRAME_WIDTHS = {
     32: 4,
 }
 ARRAY_TYPES = {
-    8:  "b",
+    8: "b",
     16: "h",
     32: "i",
 }
@@ -78,7 +75,7 @@ def db_to_float(db, using_amplitude=True):
     db = float(db)
     if using_amplitude:
         return 10 ** (db / 20)
-    else: # using power
+    else:  # using power
         return 10 ** (db / 10)
 
 
@@ -92,33 +89,28 @@ def ratio_to_db(ratio, val2=None, using_amplitude=True):
     # accept 2 values and use the ratio of val1 to val2
     if val2 is not None:
         ratio = ratio / val2
-    
+
     # special case for multiply-by-zero (convert to silence)
     if ratio == 0:
         return -float('inf')
 
     if using_amplitude:
         return 20 * log(ratio, 10)
-    else: # using power
+    else:  # using power
         return 10 * log(ratio, 10)
-    
+
 
 def register_pydub_effect(fn, name=None):
     """
     decorator for adding pydub effects to the AudioSegment objects.
-
     example use:
-
         @register_pydub_effect
         def normalize(audio_segment):
             ...
-
     or you can specify a name:
-
         @register_pydub_effect("normalize")
         def normalize_audio_segment(audio_segment):
             ...
-
     """
     if isinstance(fn, basestring):
         name = fn
@@ -136,7 +128,6 @@ def make_chunks(audio_segment, chunk_length):
     """
     Breaks an AudioSegment into chunks that are <chunk_length> milliseconds
     long.
-
     if chunk_length is 50 then you'll get a list of 50 millisecond long audio
     segments back (except the last one, which can be shorter)
     """
@@ -149,7 +140,7 @@ def which(program):
     """
     Mimics behavior of UNIX which command.
     """
-    #Add .exe program extension for windows support
+    # Add .exe program extension for windows support
     if os.name == "nt" and not program.endswith(".exe"):
         program += ".exe"
 
@@ -173,6 +164,7 @@ def get_encoder_name():
         # should raise exception
         warn("Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work", RuntimeWarning)
         return "ffmpeg"
+
 
 def get_player_name():
     """
@@ -218,6 +210,19 @@ def fsdecode(filename):
             return filename
 
     raise TypeError("type {0} not accepted by fsdecode".format(type(filename)))
+
+
+def merge_two_dicts(x, y):
+    """
+    Merge two dicts
+
+    :type x: dict
+    :type y: dict
+    :rtype: dict
+    """
+    z = x.copy()
+    z.update(y)
+    return z
 
 
 def mediainfo_json(filepath):
@@ -271,8 +276,8 @@ def mediainfo_json(filepath):
         return info
 
     # We just operate on the first audio stream in case there are more
-    stream = {'sample_fmt': None, 'bits_per_sample': None, 'bits_per_raw_sample': None, **audio_streams[0]}
-    
+    stream = merge_two_dicts({'sample_fmt': None, 'bits_per_sample': None, 'bits_per_raw_sample': None}, audio_streams[0])
+
     def set_property(stream, prop, value):
         if prop not in stream or stream[prop] == 0:
             stream[prop] = value
