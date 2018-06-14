@@ -1,13 +1,13 @@
 from __future__ import division
 
-from math import log, ceil
+import json
 import os
 import re
-from subprocess import Popen, PIPE
 import sys
+from subprocess import Popen, PIPE
+from math import log, ceil
 from tempfile import TemporaryFile
 from warnings import warn
-import json
 
 try:
     import audioop
@@ -212,17 +212,31 @@ def fsdecode(filename):
     raise TypeError("type {0} not accepted by fsdecode".format(type(filename)))
 
 
-def merge_two_dicts(x, y):
+def get_extra_info(stderr):
     """
-    Merge two dicts
+    avprobe sometimes gives more information on stderr than
+    on the json output. The information has to be extracted
+    from stderr of the format of:
+    '    Stream #0:0: Audio: flac, 88200 Hz, stereo, s32 (24 bit)'
+    or (macOS version):
+    '    Stream #0:0: Audio: vorbis'
+    '      44100 Hz, stereo, fltp, 320 kb/s'
 
-    :type x: dict
-    :type y: dict
-    :rtype: dict
+    :type stderr: str
+    :rtype: list of dict
     """
-    z = x.copy()
-    z.update(y)
-    return z
+    extra_info = {}
+
+    re_stream = r'(?P<space_start> +)Stream #0[:\.](?P<stream_id>([0-9]+))(?P<content_0>.+)\n?((?P<space_end> +)(?P<content_1>.+))?'
+    for i in re.finditer(re_stream, stderr):
+        if i.group('space_end') is not None and len(i.group('space_start')) <= len(
+                i.group('space_end')):
+            content_line = ','.join([i.group('content_0'), i.group('content_1')])
+        else:
+            content_line = i.group('content_0')
+        tokens = [x.strip() for x in re.split('[:,]', content_line) if x]
+        extra_info[int(i.group('stream_id'))] = tokens
+    return extra_info
 
 
 def mediainfo_json(filepath):
@@ -258,21 +272,7 @@ def mediainfo_json(filepath):
         # (for example, because the file doesn't exist)
         return info
 
-    # avprobe sometimes gives more information on stderr than
-    # on the json output. The information has to be extracted
-    # from lines of the format of:
-    # '    Stream #0:0: Audio: flac, 88200 Hz, stereo, s32 (24 bit)'
-    extra_info = {}
-
-    re_stream = r'(?P<space_start> +)Stream #0[:\.](?P<stream_id>([0-9]+))(?P<content_0>.+)\n?((?P<space_end> +)(?P<content_1>.+))?'
-
-    for i in re.finditer(re_stream, stderr):
-        if i.group('space_end') is not None and len(i.group('space_start')) <= len(i.group('space_end')):
-            content_line = '{},{}'.format(i.group('content_0'), i.group('content_1'))
-        else:
-            content_line = i.group('content_0')
-        tokens = [x.strip() for x in re.split('[:,]', content_line) if x]
-        extra_info[int(i.group('stream_id'))] = tokens
+    extra_info = get_extra_info(stderr)
 
     audio_streams = [x for x in info['streams'] if x['codec_type'] == 'audio']
     if len(audio_streams) == 0:
