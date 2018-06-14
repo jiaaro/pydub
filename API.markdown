@@ -138,7 +138,7 @@ The first argument is the location (as a string) to write the output, **or** a f
 - `tags` | example: `{"album": "1989", "artist": "Taylor Swift"}`
   Allows you to supply media info tags for the encoder (requires ffmpeg). Not all formats can receive tags (mp3 can).
 - `parameters` | example: `["-ac", "2"]`
-  Pass additional [commpand line parameters](https://www.ffmpeg.org/ffmpeg.html) to the ffmpeg call. These are added to the end of the call (in the output file section).
+  Pass additional [command line parameters](https://www.ffmpeg.org/ffmpeg.html) to the ffmpeg call. These are added to the end of the call (in the output file section).
 - `id3v2_version` | example: `"3"` | default: `"4"`
   Set the ID3v2 version used by ffmpeg to add tags to the output file. If you want Windows Exlorer to display tags, use `"3"` here ([source](http://superuser.com/a/453133)).
 - `cover` | example: `"/path/to/imgfile.png"`
