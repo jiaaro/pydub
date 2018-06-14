@@ -263,6 +263,13 @@ def mediainfo_json(filepath):
     # from lines of the format of:
     # '    Stream #0:0: Audio: flac, 88200 Hz, stereo, s32 (24 bit)'
     extra_info = {}
+    
+    # TODO Debug in Linux (get stderr)
+    print('TODO Debug in Linux (get stderr)')
+    print('='* 100)
+    print(stderr)
+    print('='* 100)
+    
     for line in stderr.split("\n"):
         match = re.match(' *Stream #0[:\.]([0-9]+)(\(\w+\))?', line)
         if match:
@@ -276,10 +283,10 @@ def mediainfo_json(filepath):
         return info
 
     # We just operate on the first audio stream in case there are more
-    stream = merge_two_dicts({'sample_fmt': None, 'bits_per_sample': None, 'bits_per_raw_sample': None}, audio_streams[0])
+    stream = merge_two_dicts({'sample_fmt': 0, 'bits_per_sample': 0, 'bits_per_raw_sample': 0}, audio_streams[0])
 
     def set_property(stream, prop, value):
-        if prop not in stream or stream[prop] == 0 or stream[prop] is None:
+        if prop not in stream or stream[prop] == 0:
             stream[prop] = value
 
     for token in extra_info[stream['index']]:

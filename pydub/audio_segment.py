@@ -71,6 +71,7 @@ class ClassPropertyDescriptor(object):
         self.fset = func
         return self
 
+
 def classproperty(func):
     if not isinstance(func, (classmethod, staticmethod)):
         func = classmethod(func)
@@ -82,7 +83,6 @@ AUDIO_FILE_EXT_ALIASES = {
     "m4a": "mp4",
     "wave": "wav",
 }
-
 
 WavSubChunk = namedtuple('WavSubChunk', ['id', 'position', 'size'])
 WavData = namedtuple('WavData', ['audio_format', 'channels', 'sample_rate',
@@ -209,10 +209,10 @@ class AudioSegment(object):
                 data = data if isinstance(data, (basestring, bytes)) else data.read()
             except(OSError):
                 d = b''
-                reader = data.read(2**31-1)
+                reader = data.read(2 ** 31 - 1)
                 while reader:
                     d += reader
-                    reader = data.read(2**31-1)
+                    reader = data.read(2 ** 31 - 1)
                 data = d
 
             wav_data = read_wav_audio(data)
@@ -257,7 +257,6 @@ class AudioSegment(object):
         """
         return self._data
 
-
     def get_array_of_samples(self):
         """
         returns the raw_data as an array of samples
@@ -290,7 +289,7 @@ class AudioSegment(object):
         if isinstance(millisecond, slice):
             if millisecond.step:
                 return (
-                    self[i:i+millisecond.step]
+                    self[i:i + millisecond.step]
                     for i in xrange(*millisecond.indices(len(self)))
                 )
 
@@ -468,7 +467,8 @@ class AudioSegment(object):
         segs = cls._sync(*mono_segments)
 
         if segs[0].channels != 1:
-            raise ValueError("AudioSegment.from_mono_audiosegments requires all arguments are mono AudioSegment instances")
+            raise ValueError(
+                "AudioSegment.from_mono_audiosegments requires all arguments are mono AudioSegment instances")
 
         channels = len(segs)
         sample_width = segs[0].sample_width
@@ -536,13 +536,13 @@ class AudioSegment(object):
         except(OSError):
             input_file.flush()
             input_file.close()
-            input_file = NamedTemporaryFile(mode='wb', delete=False, buffering=2**31-1)
+            input_file = NamedTemporaryFile(mode='wb', delete=False, buffering=2 ** 31 - 1)
             file.close()
-            file = open(orig_file, buffering=2**13-1, mode='rb')
-            reader = file.read(2**31-1)
+            file = open(orig_file, buffering=2 ** 13 - 1, mode='rb')
+            reader = file.read(2 ** 31 - 1)
             while reader:
                 input_file.write(reader)
-                reader = file.read(2**31-1)
+                reader = file.read(2 ** 31 - 1)
         input_file.flush()
         file.close()
 
@@ -583,7 +583,9 @@ class AudioSegment(object):
 
         try:
             if p.returncode != 0:
-                raise CouldntDecodeError("Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(p.returncode, p_err))
+                raise CouldntDecodeError(
+                    "Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(
+                        p.returncode, p_err))
             obj = cls._from_safe_wav(output)
         finally:
             input_file.close()
@@ -662,8 +664,8 @@ class AudioSegment(object):
             # This is a workaround for some ffprobe versions that always say
             # that mp3/mp4/aac/webm/ogg files contain fltp samples
             if (audio_streams[0].get('sample_fmt') == 'fltp' and
-                (is_format("mp3") or is_format("mp4") or is_format("aac") or
-                 is_format("webm") or is_format("ogg"))):
+                    (is_format("mp3") or is_format("mp4") or is_format("aac") or
+                     is_format("webm") or is_format("ogg"))):
                 bits_per_sample = 16
             else:
                 bits_per_sample = audio_streams[0]['bits_per_sample']
@@ -688,7 +690,9 @@ class AudioSegment(object):
 
         if p.returncode != 0 or len(p_out) == 0:
             file.close()
-            raise CouldntDecodeError("Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(p.returncode, p_err))
+            raise CouldntDecodeError(
+                "Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(
+                    p.returncode, p_err))
 
         p_out = bytearray(p_out)
         fix_wav_headers(p_out)
@@ -716,17 +720,19 @@ class AudioSegment(object):
 
     @classmethod
     def from_raw(cls, file, **kwargs):
-        return cls.from_file(file, 'raw', sample_width=kwargs['sample_width'], frame_rate=kwargs['frame_rate'], channels=kwargs['channels'])
+        return cls.from_file(file, 'raw', sample_width=kwargs['sample_width'], frame_rate=kwargs['frame_rate'],
+                             channels=kwargs['channels'])
 
     @classmethod
     def _from_safe_wav(cls, file):
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
         file.seek(0)
-        obj = cls(data=file);
+        obj = cls(data=file)
         file.close()
         return obj
 
-    def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None, id3v2_version='4', cover=None):
+    def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None, id3v2_version='4',
+               cover=None):
         """
         Export an AudioSegment to a file with given options
 
@@ -804,9 +810,10 @@ class AudioSegment(object):
 
         if cover is not None:
             if cover.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff')) and format == "mp3":
-                conversion_command.extend(["-i" , cover, "-map", "0", "-map", "1", "-c:v", "mjpeg"])
+                conversion_command.extend(["-i", cover, "-map", "0", "-map", "1", "-c:v", "mjpeg"])
             else:
-                raise AttributeError("Currently cover images are only supported by MP3 files. The allowed image formats are: .tif, .jpg, .bmp, .jpeg and .png.")
+                raise AttributeError(
+                    "Currently cover images are only supported by MP3 files. The allowed image formats are: .tif, .jpg, .bmp, .jpeg and .png.")
 
         if codec is not None:
             # force audio encoder
@@ -835,7 +842,7 @@ class AudioSegment(object):
                         raise InvalidID3TagVersion(
                             "id3v2_version not allowed, allowed versions: %s" % id3v2_allowed_versions)
                     conversion_command.extend([
-                        "-id3v2_version",  id3v2_version
+                        "-id3v2_version", id3v2_version
                     ])
 
         if sys.platform == 'darwin':
@@ -856,7 +863,9 @@ class AudioSegment(object):
         log_subprocess_output(p_err)
 
         if p.returncode != 0:
-            raise CouldntEncodeError("Encoding failed. ffmpeg/avlib returned error code: {0}\n\nCommand:{1}\n\nOutput from ffmpeg/avlib:\n\n{2}".format(p.returncode, conversion_command, p_err))
+            raise CouldntEncodeError(
+                "Encoding failed. ffmpeg/avlib returned error code: {0}\n\nCommand:{1}\n\nOutput from ffmpeg/avlib:\n\n{2}".format(
+                    p.returncode, conversion_command, p_err))
 
         output.seek(0)
         out_f.write(output.read())
@@ -1114,11 +1123,11 @@ class AudioSegment(object):
             if gain_during_overlay:
                 seg1_overlaid = seg1[pos:pos + seg2_len]
                 seg1_adjusted_gain = audioop.mul(seg1_overlaid, self.sample_width,
-                                               db_to_float(float(gain_during_overlay)))
+                                                 db_to_float(float(gain_during_overlay)))
                 output.write(audioop.add(seg1_adjusted_gain, seg2, sample_width))
             else:
                 output.write(audioop.add(seg1[pos:pos + seg2_len], seg2,
-                                     sample_width))
+                                         sample_width))
             pos += seg2_len
 
             # dec times to break our while loop (eventually)
@@ -1219,7 +1228,7 @@ class AudioSegment(object):
 
         # fades longer than 100ms can use coarse fading (one gain step per ms),
         # shorter fades will have audible clicks so they use precise fading
-        #(one gain step per sample)
+        # (one gain step per sample)
         if duration > 100:
             scale_step = gain_delta / duration
 
@@ -1266,14 +1275,15 @@ class AudioSegment(object):
         )
 
     def _repr_html_(self):
-            src = """
+        src = """
                     <audio controls>
                         <source src="data:audio/mpeg;base64,{base64}" type="audio/mpeg"/>
                         Your browser does not support the audio element.
                     </audio>
                   """
-            fh = self.export()
-            data = base64.b64encode(fh.read()).decode('ascii')
-            return src.format(base64=data)
+        fh = self.export()
+        data = base64.b64encode(fh.read()).decode('ascii')
+        return src.format(base64=data)
+
 
 from . import effects
