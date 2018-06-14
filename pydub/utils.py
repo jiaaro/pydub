@@ -271,8 +271,8 @@ def mediainfo_json(filepath):
         return info
 
     # We just operate on the first audio stream in case there are more
-    stream = audio_streams[0]
-
+    stream = {'sample_fmt': None, 'bits_per_sample': None, 'bits_per_raw_sample': None, **audio_streams[0]}
+    
     def set_property(stream, prop, value):
         if prop not in stream or stream[prop] == 0:
             stream[prop] = value
