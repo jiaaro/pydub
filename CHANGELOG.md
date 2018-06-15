@@ -1,3 +1,6 @@
+# v0.22.1
+- Fix `pydub.utils.mediainfo_json()` to work with newer, backwards-incompatible versions of ffprobe/avprobe
+
 # v0.22.0
 - Adds support for audio with frame rates (sample rates) of 48k and higher (requires scipy) (PR #262, fixes #134, #237, #209)
 - Adds support for PEP 519 File Path protocol (PR #252)
