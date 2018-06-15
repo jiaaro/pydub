@@ -1,24 +1,21 @@
 from __future__ import division
 
-from math import log, ceil, floor
+import json
 import os
 import re
-from subprocess import Popen, PIPE
 import sys
+from subprocess import Popen, PIPE
+from math import log, ceil
 from tempfile import TemporaryFile
 from warnings import warn
-import json
 
 try:
     import audioop
 except ImportError:
     import pyaudioop as audioop
 
-
 if sys.version_info >= (3, 0):
     basestring = str
-
-
 
 FRAME_WIDTHS = {
     8: 1,
@@ -26,7 +23,7 @@ FRAME_WIDTHS = {
     32: 4,
 }
 ARRAY_TYPES = {
-    8:  "b",
+    8: "b",
     16: "h",
     32: "i",
 }
@@ -78,7 +75,7 @@ def db_to_float(db, using_amplitude=True):
     db = float(db)
     if using_amplitude:
         return 10 ** (db / 20)
-    else: # using power
+    else:  # using power
         return 10 ** (db / 10)
 
 
@@ -92,33 +89,28 @@ def ratio_to_db(ratio, val2=None, using_amplitude=True):
     # accept 2 values and use the ratio of val1 to val2
     if val2 is not None:
         ratio = ratio / val2
-    
+
     # special case for multiply-by-zero (convert to silence)
     if ratio == 0:
         return -float('inf')
 
     if using_amplitude:
         return 20 * log(ratio, 10)
-    else: # using power
+    else:  # using power
         return 10 * log(ratio, 10)
-    
+
 
 def register_pydub_effect(fn, name=None):
     """
     decorator for adding pydub effects to the AudioSegment objects.
-
     example use:
-
         @register_pydub_effect
         def normalize(audio_segment):
             ...
-
     or you can specify a name:
-
         @register_pydub_effect("normalize")
         def normalize_audio_segment(audio_segment):
             ...
-
     """
     if isinstance(fn, basestring):
         name = fn
@@ -136,7 +128,6 @@ def make_chunks(audio_segment, chunk_length):
     """
     Breaks an AudioSegment into chunks that are <chunk_length> milliseconds
     long.
-
     if chunk_length is 50 then you'll get a list of 50 millisecond long audio
     segments back (except the last one, which can be shorter)
     """
@@ -149,7 +140,7 @@ def which(program):
     """
     Mimics behavior of UNIX which command.
     """
-    #Add .exe program extension for windows support
+    # Add .exe program extension for windows support
     if os.name == "nt" and not program.endswith(".exe"):
         program += ".exe"
 
@@ -173,6 +164,7 @@ def get_encoder_name():
         # should raise exception
         warn("Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work", RuntimeWarning)
         return "ffmpeg"
+
 
 def get_player_name():
     """
@@ -220,6 +212,33 @@ def fsdecode(filename):
     raise TypeError("type {0} not accepted by fsdecode".format(type(filename)))
 
 
+def get_extra_info(stderr):
+    """
+    avprobe sometimes gives more information on stderr than
+    on the json output. The information has to be extracted
+    from stderr of the format of:
+    '    Stream #0:0: Audio: flac, 88200 Hz, stereo, s32 (24 bit)'
+    or (macOS version):
+    '    Stream #0:0: Audio: vorbis'
+    '      44100 Hz, stereo, fltp, 320 kb/s'
+
+    :type stderr: str
+    :rtype: list of dict
+    """
+    extra_info = {}
+
+    re_stream = r'(?P<space_start> +)Stream #0[:\.](?P<stream_id>([0-9]+))(?P<content_0>.+)\n?((?P<space_end> +)(?P<content_1>.+))?'
+    for i in re.finditer(re_stream, stderr):
+        if i.group('space_end') is not None and len(i.group('space_start')) <= len(
+                i.group('space_end')):
+            content_line = ','.join([i.group('content_0'), i.group('content_1')])
+        else:
+            content_line = i.group('content_0')
+        tokens = [x.strip() for x in re.split('[:,]', content_line) if x]
+        extra_info[int(i.group('stream_id'))] = tokens
+    return extra_info
+
+
 def mediainfo_json(filepath):
     """Return json dictionary with media info(codec, duration, size, bitrate...) from filepath
     """
@@ -253,18 +272,7 @@ def mediainfo_json(filepath):
         # (for example, because the file doesn't exist)
         return info
 
-    # avprobe sometimes gives more information on stderr than
-    # on the json output. The information has to be extracted
-    # from lines of the format of:
-    # '    Stream #0:0: Audio: flac, 88200 Hz, stereo, s32 (24 bit)'
-    extra_info = {}
-    for line in stderr.split("\n"):
-        match = re.match(' *Stream #0[:\.]([0-9]+)(\(\w+\))?', line)
-        if match:
-            stream_id = int(match.group(1))
-            tokens = [x.strip()
-                      for x in re.split('[:,]', line[match.end():]) if x]
-            extra_info[stream_id] = tokens
+    extra_info = get_extra_info(stderr)
 
     audio_streams = [x for x in info['streams'] if x['codec_type'] == 'audio']
     if len(audio_streams) == 0:
@@ -296,7 +304,6 @@ def mediainfo_json(filepath):
             set_property(stream, 'sample_fmt', token)
             set_property(stream, 'bits_per_sample', 64)
             set_property(stream, 'bits_per_raw_sample', 64)
-
     return info
 
 
