@@ -3,9 +3,9 @@ import os
 import sys
 import unittest
 from tempfile import (
-        NamedTemporaryFile,
-        mkdtemp,
-        gettempdir
+    NamedTemporaryFile,
+    mkdtemp,
+    gettempdir
 )
 import tempfile
 import struct
@@ -55,12 +55,14 @@ class UtilityTests(unittest.TestCase):
         self.assertEqual(3, db_to_float(ratio_to_db(3, using_amplitude=False), using_amplitude=False))
         self.assertEqual(12, ratio_to_db(db_to_float(12, using_amplitude=False), using_amplitude=False))
 
+
 if sys.version_info >= (3, 6):
     class PathLikeObjectTests(unittest.TestCase):
 
         class MyPathLike:
             def __init__(self, path):
                 self.path = path
+
             def __fspath__(self):
                 return self.path
 
@@ -135,7 +137,7 @@ if sys.version_info >= (3, 6):
                             (val, lower_bound, upper_bound))
 
         def assertWithinTolerance(self, val, expected, tolerance=None,
-                                percentage=None):
+                                  percentage=None):
             if percentage is not None:
                 tolerance = val * percentage
             lower_bound = val - tolerance
@@ -156,7 +158,7 @@ if sys.version_info >= (3, 6):
                                            percentage=0.01)
             finally:
                 os.unlink(path)
-        
+
 
 class FileAccessTests(unittest.TestCase):
 
@@ -182,6 +184,7 @@ class AudioSegmentTests(unittest.TestCase):
     def setUp(self):
         global test1, test2, test3, testparty, testdcoffset
         if not test1:
+            a = os.path.join(data_dir, 'test1.mp3')
             test1 = AudioSegment.from_mp3(os.path.join(data_dir, 'test1.mp3'))
             test2 = AudioSegment.from_mp3(os.path.join(data_dir, 'test2.mp3'))
             test3 = AudioSegment.from_mp3(os.path.join(data_dir, 'test3.mp3'))
@@ -218,7 +221,8 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertWithinRange(val, lower_bound, upper_bound)
 
     def test_direct_instantiation_with_bytes(self):
-        seg = AudioSegment(b'RIFF\x28\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x02\x00\x00}\x00\x00\x00\xf4\x01\x00\x04\x00\x10\x00data\x04\x00\x00\x00\x00\x00\x00\x00')
+        seg = AudioSegment(
+            b'RIFF\x28\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x02\x00\x00}\x00\x00\x00\xf4\x01\x00\x04\x00\x10\x00data\x04\x00\x00\x00\x00\x00\x00\x00')
         self.assertEqual(seg.frame_count(), 1)
         self.assertEqual(seg.channels, 2)
         self.assertEqual(seg.sample_width, 2)
@@ -476,7 +480,6 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(seg_lchannel.frame_count(), seg.frame_count())
         self.assertEqual(seg_rchannel.frame_count(), seg.frame_count())
 
-
     def test_apply_gain_stereo(self):
         seg = self.seg1
 
@@ -558,7 +561,8 @@ class AudioSegmentTests(unittest.TestCase):
     def test_export_as_raw(self):
         seg = self.seg1
         exported_raw = seg.export(format='raw')
-        seg_exported_raw = AudioSegment.from_raw(exported_raw, sample_width=seg.sample_width, frame_rate=seg.frame_rate, channels = seg.channels)
+        seg_exported_raw = AudioSegment.from_raw(exported_raw, sample_width=seg.sample_width, frame_rate=seg.frame_rate,
+                                                 channels=seg.channels)
 
         self.assertWithinTolerance(len(seg_exported_raw),
                                    len(seg),
@@ -715,7 +719,6 @@ class AudioSegmentTests(unittest.TestCase):
         with NamedTemporaryFile('w+b', suffix='.webm') as tmp_webm_file:
             AudioSegment.from_file(self.mp3_file_path).export(tmp_webm_file,
                                                               format="webm")
-
 
     def test_export_mp4_as_ogg(self):
         with NamedTemporaryFile('w+b', suffix='.ogg') as tmp_ogg_file:
@@ -911,14 +914,12 @@ class AudioSegmentTests(unittest.TestCase):
         else:
             raise Exception("AudioSegment.invert_phase() didn't catch a bad input (mono)")
 
-
         s_inv = s.invert_phase()
         self.assertFalse(s == s_inv)
         self.assertTrue(s.rms == s_inv.rms)
         self.assertTrue(s == s_inv.invert_phase())
 
-
-        s_inv_right = s.invert_phase(channels=(0,1))
+        s_inv_right = s.invert_phase(channels=(0, 1))
         left, right = s_inv_right.split_to_mono()
 
         self.assertFalse(s_mono == s_inv_right)
@@ -926,14 +927,13 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertTrue(left == s_mono)
         self.assertFalse(right == s_mono)
 
-        s_inv_left = s.invert_phase(channels=(1,0))
+        s_inv_left = s.invert_phase(channels=(1, 0))
         left, right = s_inv_left.split_to_mono()
 
         self.assertFalse(s_mono == s_inv_left)
         self.assertFalse(s_inv == s_inv_left)
         self.assertFalse(left == s_mono)
         self.assertTrue(right == s_mono)
-
 
     def test_max_dBFS(self):
         sine_0_dbfs = Sine(1000).to_audio_segment()
@@ -1001,6 +1001,7 @@ class AudioSegmentTests(unittest.TestCase):
 
         tempfile.tempdir = orig_tmpdir
         os.rmdir(new_tmpdir)
+
 
 class SilenceTests(unittest.TestCase):
 
@@ -1144,7 +1145,7 @@ class NoConverterTests(unittest.TestCase):
         self.assertRaises(OSError, func)
 
     def test_init_AudioSegment_data_buffer(self):
-        seg = AudioSegment(data = "\0" * 34, sample_width=2, frame_rate=4, channels=1)
+        seg = AudioSegment(data="\0" * 34, sample_width=2, frame_rate=4, channels=1)
 
         self.assertEqual(seg.duration_seconds, 4.25)
 
@@ -1152,24 +1153,19 @@ class NoConverterTests(unittest.TestCase):
 
         self.assertEqual(seg.frame_rate, 4)
 
-
     def test_init_AudioSegment_data_buffer_with_missing_args_fails(self):
-
-        func = partial(AudioSegment, data = "\0" * 16, sample_width=2, frame_rate=2)
+        func = partial(AudioSegment, data="\0" * 16, sample_width=2, frame_rate=2)
         self.assertRaises(MissingAudioParameter, func)
 
-        func = partial(AudioSegment, data = "\0" * 16, sample_width=2, channels=1)
+        func = partial(AudioSegment, data="\0" * 16, sample_width=2, channels=1)
         self.assertRaises(MissingAudioParameter, func)
 
-        func = partial(AudioSegment, data = "\0" * 16, frame_rate=2, channels=1)
+        func = partial(AudioSegment, data="\0" * 16, frame_rate=2, channels=1)
         self.assertRaises(MissingAudioParameter, func)
-
 
     def test_init_AudioSegment_data_buffer_with_bad_values_fails(self):
-
-        func = partial(AudioSegment, data = "\0" * 14, sample_width=4, frame_rate=2, channels=1)
+        func = partial(AudioSegment, data="\0" * 14, sample_width=4, frame_rate=2, channels=1)
         self.assertRaises(ValueError, func)
-
 
     def test_exporting(self):
         seg = AudioSegment.from_wav(self.wave_file)
@@ -1213,8 +1209,6 @@ class FilterTests(unittest.TestCase):
         s = Sine(100).to_audio_segment()
         less_treble = s.low_pass_filter(800)
         self.assertAlmostEqual(less_treble.dBFS, s.dBFS, places=0)
-
-
 
 
 if __name__ == "__main__":
