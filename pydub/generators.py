@@ -1,7 +1,7 @@
 """
 Each generator will return float samples from -1.0 to 1.0, which can be 
 converted to actual audio with 8, 16, 24, or 32 bit depth using the
-AudioSegment.from_generator class method.
+SiganlGenerator.to_audio_segment() method (on any of it's subclasses).
 
 See Wikipedia's "waveform" page for info on some of the generators included 
 here: http://en.wikipedia.org/wiki/Waveform
