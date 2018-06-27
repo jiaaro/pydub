@@ -279,6 +279,9 @@ class AudioSegment(object):
         except:
             return False
 
+    # Disables hashing of AudioSegment objects in a python2-compatible manner.
+    __hash__ = None
+
     def __ne__(self, other):
         return not (self == other)
 
