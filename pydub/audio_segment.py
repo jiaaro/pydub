@@ -279,6 +279,9 @@ class AudioSegment(object):
         except:
             return False
 
+    def __hash__(self):
+       return hash(AudioSegment) ^ hash((self.channels, self.frame_rate, self.sample_width, self._data))
+
     def __ne__(self, other):
         return not (self == other)
 
