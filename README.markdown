@@ -204,12 +204,12 @@ Linux (using aptitude):
 
 ```bash
 # libav
-apt-get install libav-tools libavcodec-extra-53
+apt-get install libav-tools libavcodec-extra
 
 ####    OR    #####
 
 # ffmpeg
-apt-get install ffmpeg libavcodec-extra-53
+apt-get install ffmpeg libavcodec-extra
 ```
 
 Windows:
