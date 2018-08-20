@@ -848,7 +848,7 @@ class AudioSegment(object):
                         "-id3v2_version", id3v2_version
                     ])
 
-        if sys.platform == 'darwin':
+        if sys.platform == 'darwin' and codec == 'mp3':
             conversion_command.extend(["-write_xing", "0"])
 
         conversion_command.extend([
