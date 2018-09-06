@@ -257,11 +257,13 @@ class AudioSegment(object):
         """
         return self._data
 
-    def get_array_of_samples(self):
+    def get_array_of_samples(self, array_type_override=None):
         """
         returns the raw_data as an array of samples
         """
-        return array.array(self.array_type, self._data)
+        if array_type_override is None:
+            array_type_override = self.array_type
+        return array.array(array_type_override, self._data)
 
     @property
     def array_type(self):
