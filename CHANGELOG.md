@@ -1,3 +1,8 @@
+# v0.23.0
+- Add support for playback via simpleaudio
+- Allow users to override the type in `pydub.AudioSegment().get_array_of_samples()` (PR #313)
+- Fix a bug where the wrong codec was used for 8-bit audio (PR #309 - issue #308)
+
 # v0.22.1
 - Fix `pydub.utils.mediainfo_json()` to work with newer, backwards-incompatible versions of ffprobe/avprobe
 
