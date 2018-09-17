@@ -564,16 +564,16 @@ class AudioSegment(object):
             # force audio decoder
             conversion_command += ["-acodec", codec]
 
+        if parameters is not None:
+            # extend arguments with arbitrary set
+            conversion_command.extend(parameters)
+
         conversion_command += [
             "-i", input_file.name,  # input_file options (filename last)
             "-vn",  # Drop any video streams if there are any
             "-f", "wav",  # output options (filename last)
             output.name
         ]
-
-        if parameters is not None:
-            # extend arguments with arbitrary set
-            conversion_command.extend(parameters)
 
         log_conversion(conversion_command)
 
@@ -675,15 +675,15 @@ class AudioSegment(object):
             acodec = 'pcm_s%dle' % bits_per_sample
             conversion_command += ["-acodec", acodec]
 
+        if parameters is not None:
+            # extend arguments with arbitrary set
+            conversion_command.extend(parameters)
+
         conversion_command += [
             "-vn",  # Drop any video streams if there are any
             "-f", "wav",  # output options (filename last)
             "-"
         ]
-
-        if parameters is not None:
-            # extend arguments with arbitrary set
-            conversion_command.extend(parameters)
 
         log_conversion(conversion_command)
 
