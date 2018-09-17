@@ -184,6 +184,20 @@ You can open and save WAV files with pure python. For opening and saving non-wav
 files – like mp3 – you'll need [ffmpeg](http://www.ffmpeg.org/) or 
 [libav](http://libav.org/).
 
+You can play audio if you have one of these installed (simpleaudio strongly recommended):
+ - [simpleaudio](https://simpleaudio.readthedocs.io/en/latest/)
+ - [pyaudio](https://people.csail.mit.edu/hubert/pyaudio/docs/#)
+ - ffplay (usually bundled with ffmpeg, see the next section)
+ - avplay (usually bundled with libav, see the next section)
+ 
+```python
+from pydub import AudioSegment
+from pydub.playback import play
+
+sound = AudioSegment.from_file("mysound.wav", format="wav")
+play(sound)
+```
+
 ## Getting ffmpeg set up
 
 You may use **libav or ffmpeg**.
