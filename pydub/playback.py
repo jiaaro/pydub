@@ -38,9 +38,34 @@ def _play_with_pyaudio(seg):
     p.terminate()
 
 
+def _play_with_simpleaudio(seg):
+    import simpleaudio
+    return simpleaudio.play_buffer(
+        seg.raw_data, 
+        num_channels=seg.channels, 
+        bytes_per_sample=seg.sample_width, 
+        sample_rate=seg.frame_rate
+    )
+
+
 def play(audio_segment):
     try:
-        import pyaudio
-        _play_with_pyaudio(audio_segment)
+        playback = _play_with_simpleaudio(audio_segment)
+        try:
+            playback.wait_done()
+        except KeyboardInterrupt:
+            playback.stop()
     except ImportError:
-        _play_with_ffplay(audio_segment)
+        pass
+    else:
+        return
+    
+    try:
+        _play_with_pyaudio(audio_segment)
+        return
+    except ImportError:
+        pass
+    else:
+        return
+    
+    _play_with_ffplay(audio_segment)
