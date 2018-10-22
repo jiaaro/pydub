@@ -713,19 +713,19 @@ class AudioSegment(object):
 
     @classmethod
     def from_mp3(cls, file, parameters=None):
-        return cls.from_file(file, 'mp3', parameters)
+        return cls.from_file(file, 'mp3', parameters=parameters)
 
     @classmethod
     def from_flv(cls, file, parameters=None):
-        return cls.from_file(file, 'flv', parameters)
+        return cls.from_file(file, 'flv', parameters=parameters)
 
     @classmethod
     def from_ogg(cls, file, parameters=None):
-        return cls.from_file(file, 'ogg', parameters)
+        return cls.from_file(file, 'ogg', parameters=parameters)
 
     @classmethod
     def from_wav(cls, file, parameters=None):
-        return cls.from_file(file, 'wav', parameters)
+        return cls.from_file(file, 'wav', parameters=parameters)
 
     @classmethod
     def from_raw(cls, file, **kwargs):
