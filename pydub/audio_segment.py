@@ -496,7 +496,7 @@ class AudioSegment(object):
         )
 
     @classmethod
-    def from_file_using_temporary_files(cls, file, format=None, codec=None, parameters=None, **kwargs):
+    def from_file_using_temporary_files(cls, file, format=None, codec=None, parameters=None, start_second=None, end_second=None, **kwargs):
         orig_file = file
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
@@ -566,12 +566,19 @@ class AudioSegment(object):
             # force audio decoder
             conversion_command += ["-acodec", codec]
 
+        if end_second is not None:
+            conversion_command += ["-t", str(end_second)]
+
         conversion_command += [
             "-i", input_file.name,  # input_file options (filename last)
             "-vn",  # Drop any video streams if there are any
-            "-f", "wav",  # output options (filename last)
-            output.name
+            "-f", "wav"  # output options (filename last)
         ]
+
+        if start_second is not None:
+            conversion_command += ["-ss", str(start_second)]
+
+        conversion_command += [output.name]
 
         if parameters is not None:
             # extend arguments with arbitrary set
@@ -601,7 +608,7 @@ class AudioSegment(object):
         return obj
 
     @classmethod
-    def from_file(cls, file, format=None, codec=None, parameters=None, **kwargs):
+    def from_file(cls, file, format=None, codec=None, parameters=None, start_second=None, end_second=None, **kwargs):
         orig_file = file
         try:
             filename = fsdecode(file)
@@ -653,6 +660,9 @@ class AudioSegment(object):
             # force audio decoder
             conversion_command += ["-acodec", codec]
 
+        if end_second is not None:
+            conversion_command += ["-t", str(end_second)]
+
         if filename:
             conversion_command += ["-i", filename]
             stdin_parameter = None
@@ -683,9 +693,13 @@ class AudioSegment(object):
 
         conversion_command += [
             "-vn",  # Drop any video streams if there are any
-            "-f", "wav",  # output options (filename last)
-            "-"
+            "-f", "wav"  # output options (filename last)
         ]
+
+        if start_second is not None:
+            conversion_command += ["-ss", str(start_second)]
+
+        conversion_command += ["-"]
 
         if parameters is not None:
             # extend arguments with arbitrary set
