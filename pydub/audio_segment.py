@@ -496,7 +496,7 @@ class AudioSegment(object):
         )
 
     @classmethod
-    def from_file_using_temporary_files(cls, file, format=None, codec=None, parameters=None, start_second=None, end_second=None, **kwargs):
+    def from_file_using_temporary_files(cls, file, format=None, codec=None, parameters=None, start_second=None, duration=None, **kwargs):
         orig_file = file
         file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
@@ -566,9 +566,6 @@ class AudioSegment(object):
             # force audio decoder
             conversion_command += ["-acodec", codec]
 
-        if end_second is not None:
-            conversion_command += ["-t", str(end_second)]
-
         conversion_command += [
             "-i", input_file.name,  # input_file options (filename last)
             "-vn",  # Drop any video streams if there are any
@@ -577,6 +574,9 @@ class AudioSegment(object):
 
         if start_second is not None:
             conversion_command += ["-ss", str(start_second)]
+
+        if duration is not None:
+            conversion_command += ["-t", str(duration)]
 
         conversion_command += [output.name]
 
@@ -608,7 +608,7 @@ class AudioSegment(object):
         return obj
 
     @classmethod
-    def from_file(cls, file, format=None, codec=None, parameters=None, start_second=None, end_second=None, **kwargs):
+    def from_file(cls, file, format=None, codec=None, parameters=None, start_second=None, duration=None, **kwargs):
         orig_file = file
         try:
             filename = fsdecode(file)
@@ -660,9 +660,6 @@ class AudioSegment(object):
             # force audio decoder
             conversion_command += ["-acodec", codec]
 
-        if end_second is not None:
-            conversion_command += ["-t", str(end_second)]
-
         if filename:
             conversion_command += ["-i", filename]
             stdin_parameter = None
@@ -698,6 +695,9 @@ class AudioSegment(object):
 
         if start_second is not None:
             conversion_command += ["-ss", str(start_second)]
+
+        if duration is not None:
+            conversion_command += ["-t", str(duration)]
 
         conversion_command += ["-"]
 
