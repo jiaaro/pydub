@@ -1,3 +1,7 @@
+# v0.23.1
+- Fix bug in passing ffmpeg/avconv parameters for `pydub.AudioSegment.from_mp3()`, `pydub.AudioSegment.from_flv()`, `pydub.AudioSegment.from_ogg()`, and `pydub.AudioSegment.from_wav()`
+- Fix logic bug in `pydub.effects.strip_silence()`
+
 # v0.23.0
 - Add support for playback via simpleaudio
 - Allow users to override the type in `pydub.AudioSegment().get_array_of_samples()` (PR #313)
