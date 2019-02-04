@@ -4,6 +4,10 @@ try:
 except ImportError:
     from builtins import max as builtin_max
     from builtins import min as builtin_min
+try:
+    buffer
+except NameError:
+    buffer = bytes
 import math
 import struct
 from fractions import gcd
