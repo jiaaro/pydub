@@ -1,9 +1,10 @@
+dist: xenial  # required for Python >= 3.7 (travis-ci/travis-ci#9069)
 language: python
 env:
   - CONVERTER=ffmpeg
   - CONVERTER="libav-tools libavcodec-extra-54"
 before_install:
-  - sudo add-apt-repository ppa:mc3man/trusty-media -y
+  - sudo add-apt-repository ppa:mc3man/xenial-media -y
   - sudo apt-get update --fix-missing
 install:
   - sudo apt-get install -y ${CONVERTER} libopus-dev python-scipy python3-scipy
@@ -11,11 +12,8 @@ python:
   - "2.7"
   - "3.5"
   - "3.6"
+  - "3.7"
   - "pypy2.7-5.8.0"
-matrix:
-  include:
-    - python: "3.7"
-      dist: xenial  # required for Python >= 3.7 (travis-ci/travis-ci#9069)
 script:
   - python test/test.py
 after_script:
