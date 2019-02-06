@@ -961,6 +961,14 @@ class AudioSegment(object):
             fn = audioop.tomono
             frame_width = self.frame_width // 2
             fac = 0.5
+        elif channels == 1 and self.channels == 4:
+            fn = audioop.tomono
+            frame_width = self.frame_width // 4
+            fac = 0.25
+        elif channels == 4 and self.channels == 1:
+            fn = audioop.tostereo
+            frame_width = self.frame_width * 4
+            fac = 1
 
         converted = fn(self._data, self.sample_width, fac, fac)
 
