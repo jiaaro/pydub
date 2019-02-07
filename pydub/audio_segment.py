@@ -957,20 +957,29 @@ class AudioSegment(object):
             fn = audioop.tostereo
             frame_width = self.frame_width * 2
             fac = 1
+            converted = fn(self._data, self.sample_width, fac, fac)
         elif channels == 1 and self.channels == 2:
             fn = audioop.tomono
             frame_width = self.frame_width // 2
             fac = 0.5
-        elif channels == 1 and self.channels == 4:
-            fn = audioop.tomono
-            frame_width = self.frame_width // 4
-            fac = 0.25
-        elif channels == 4 and self.channels == 1:
-            fn = audioop.tostereo
-            frame_width = self.frame_width * 4
-            fac = 1
-
-        converted = fn(self._data, self.sample_width, fac, fac)
+            converted = fn(self._data, self.sample_width, fac, fac)
+        elif channels == 1:
+            channels_data = [seg.get_array_of_samples() for seg in self.split_to_mono()]
+            frame_count = int(self.frame_count())
+            converted = array.array(
+                channels_data[0].typecode,
+                b'\0' * (frame_count * self.sample_width)
+            )
+            for raw_channel_data in channels_data:
+                for i in range(frame_count):
+                    converted[i] += raw_channel_data[i] // self.channels
+            frame_width = self.frame_width // self.channels
+        elif self.channels == 1:
+            dup_channels = [self for iChannel in range(channels)]
+            return AudioSegment.from_mono_audiosegments(*dup_channels)
+        else:
+            raise ValueError(
+                "AudioSegment.set_channels only supports mono-to-multi channel and multi-to-mono channel conversion")
 
         return self._spawn(data=converted,
                            overrides={
