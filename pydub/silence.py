@@ -99,10 +99,18 @@ def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, ke
     silence_thresh - (in dBFS) anything quieter than this will be
         considered silence. default: -16dBFS
 
-    keep_silence - (in ms) amount of silence to leave at the beginning
-        and end of the chunks. Keeps the sound from sounding like it is
-        abruptly cut off. (default: 100ms)
+    keep_silence - (in ms or True/False) leave some silence at the beginning
+        and end of the chunks. Keeps the sound from sounding like it
+        is abruptly cut off.
+        When the length of the silence is less than the keep_silence duration
+        it is split evenly between the preceding and following non-silent
+        segments.
+        If True is specified, all the silence is kept, if False none is kept.
+        default: 100ms
     """
+
+    if isinstance(keep_silence, bool):
+        keep_silence = len(audio_segment) if keep_silence else 0
 
     not_silence_ranges = detect_nonsilent(audio_segment, min_silence_len, silence_thresh, seek_step)
 
