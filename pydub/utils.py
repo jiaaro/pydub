@@ -8,6 +8,7 @@ from subprocess import Popen, PIPE
 from math import log, ceil
 from tempfile import TemporaryFile
 from warnings import warn
+from functools import wraps
 
 try:
     import audioop
@@ -351,3 +352,56 @@ def mediainfo(filepath):
                 info[key] = value
 
     return info
+
+
+def cache_codecs(function):
+    cache = {}
+
+    @wraps(function)
+    def wrapper():
+        try:
+            return cache[0]
+        except:
+            cache[0] = function()
+            return cache[0]
+
+    return wrapper
+
+
+@cache_codecs
+def get_supported_codecs():
+    encoder = get_encoder_name()
+    command = [encoder, "-codecs"]
+    res = Popen(command, stdout=PIPE, stderr=PIPE)
+    output = res.communicate()[0].decode("utf-8")
+    if res.returncode != 0:
+        return []
+
+    if sys.platform == 'win32':
+        output = output.replace("\r", "")
+
+
+    rgx = re.compile(r"^([D.][E.][AVS.][I.][L.][S.]) (\w*) +(.*)")
+    decoders = set()
+    encoders = set()
+    for line in output.split('\n'):
+        match = rgx.match(line.strip())
+        if not match:
+            continue
+        flags, codec, name = match.groups()
+
+        if flags[0] == 'D':
+            decoders.add(codec)
+
+        if flags[1] == 'E':
+            encoders.add(codec)
+
+    return (decoders, encoders)
+
+
+def get_supported_decoders():
+    return get_supported_codecs()[0]
+
+
+def get_supported_encoders():
+    return get_supported_codecs()[1]
