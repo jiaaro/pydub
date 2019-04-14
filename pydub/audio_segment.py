@@ -670,9 +670,9 @@ class AudioSegment(object):
                              if x['codec_type'] == 'audio']
             # This is a workaround for some ffprobe versions that always say
             # that mp3/mp4/aac/webm/ogg files contain fltp samples
+            audio_codec = audio_streams[0].get('codec_name')
             if (audio_streams[0].get('sample_fmt') == 'fltp' and
-                    (is_format("mp3") or is_format("mp4") or is_format("aac") or
-                     is_format("webm") or is_format("ogg"))):
+                    audio_codec in ['mp3', 'mp4', 'aac', 'webm', 'ogg']):
                 bits_per_sample = 16
             else:
                 bits_per_sample = audio_streams[0]['bits_per_sample']
