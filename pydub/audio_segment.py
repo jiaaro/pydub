@@ -653,16 +653,18 @@ class AudioSegment(object):
             # force audio decoder
             conversion_command += ["-acodec", codec]
 
+        read_ahead_limit = kwargs.get('read_ahead_limit', -1)
         if filename:
             conversion_command += ["-i", filename]
             stdin_parameter = None
             stdin_data = None
         else:
-            conversion_command += ["-i", "-"]
+            conversion_command += ["-read_ahead_limit", str(read_ahead_limit),
+                                   "-i", "cache:pipe:0"]
             stdin_parameter = subprocess.PIPE
             stdin_data = file.read()
 
-        info = mediainfo_json(orig_file)
+        info = mediainfo_json(orig_file, read_ahead_limit=read_ahead_limit)
         if info:
             audio_streams = [x for x in info['streams']
                              if x['codec_type'] == 'audio']

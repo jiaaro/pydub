@@ -240,7 +240,7 @@ def get_extra_info(stderr):
     return extra_info
 
 
-def mediainfo_json(filepath):
+def mediainfo_json(filepath, read_ahead_limit=-1):
     """Return json dictionary with media info(codec, duration, size, bitrate...) from filepath
     """
     prober = get_prober_name()
@@ -254,7 +254,7 @@ def mediainfo_json(filepath):
         stdin_parameter = None
         stdin_data = None
     except TypeError:
-        command_args += ["-"]
+        command_args += ["-read_ahead_limit", str(read_ahead_limit), "cache:pipe:0"]
         stdin_parameter = PIPE
         file = _fd_or_path_or_tempfile(filepath, 'rb', tempfile=False)
         file.seek(0)
