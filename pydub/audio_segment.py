@@ -498,7 +498,7 @@ class AudioSegment(object):
     @classmethod
     def from_file_using_temporary_files(cls, file, format=None, codec=None, parameters=None, **kwargs):
         orig_file = file
-        file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
+        file, close_file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
         if format:
             format = format.lower()
@@ -517,7 +517,8 @@ class AudioSegment(object):
         if is_format("wav"):
             try:
                 obj = cls._from_safe_wav(file)
-                file.close()
+                if close_file:
+                    file.close()
                 return obj
             except:
                 file.seek(0)
@@ -532,7 +533,8 @@ class AudioSegment(object):
                 'frame_width': channels * sample_width
             }
             obj = cls(data=file.read(), metadata=metadata)
-            file.close()
+            if close_file:
+                file.close()
             return obj
 
         input_file = NamedTemporaryFile(mode='wb', delete=False)
@@ -542,14 +544,17 @@ class AudioSegment(object):
             input_file.flush()
             input_file.close()
             input_file = NamedTemporaryFile(mode='wb', delete=False, buffering=2 ** 31 - 1)
-            file.close()
+            if close_file:
+                file.close()
+            close_file = True
             file = open(orig_file, buffering=2 ** 13 - 1, mode='rb')
             reader = file.read(2 ** 31 - 1)
             while reader:
                 input_file.write(reader)
                 reader = file.read(2 ** 31 - 1)
         input_file.flush()
-        file.close()
+        if close_file:
+            file.close()
 
         output = NamedTemporaryFile(mode="rb", delete=False)
 
@@ -607,7 +612,7 @@ class AudioSegment(object):
             filename = fsdecode(file)
         except TypeError:
             filename = None
-        file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
+        file, close_file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
         if format:
             format = format.lower()
@@ -700,7 +705,8 @@ class AudioSegment(object):
         p_out, p_err = p.communicate(input=stdin_data)
 
         if p.returncode != 0 or len(p_out) == 0:
-            file.close()
+            if close_file:
+                file.close()
             raise CouldntDecodeError(
                 "Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(
                     p.returncode, p_err))
@@ -709,7 +715,8 @@ class AudioSegment(object):
         fix_wav_headers(p_out)
         obj = cls._from_safe_wav(BytesIO(p_out))
 
-        file.close()
+        if close_file:
+            file.close()
 
         return obj
 
@@ -736,10 +743,11 @@ class AudioSegment(object):
 
     @classmethod
     def _from_safe_wav(cls, file):
-        file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
+        file, close_file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
         file.seek(0)
         obj = cls(data=file)
-        file.close()
+        if close_file:
+            file.close()
         return obj
 
     def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None, id3v2_version='4',
@@ -779,7 +787,7 @@ class AudioSegment(object):
         """
         id3v2_allowed_versions = ['3', '4']
 
-        out_f = _fd_or_path_or_tempfile(out_f, 'wb+')
+        out_f, _ = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
 
         if format == "raw":
