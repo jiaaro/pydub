@@ -664,8 +664,11 @@ class AudioSegment(object):
             stdin_parameter = None
             stdin_data = None
         else:
-            conversion_command += ["-read_ahead_limit", str(read_ahead_limit),
-                                   "-i", "cache:pipe:0"]
+            if cls.converter == 'ffmpeg':
+                conversion_command += ["-read_ahead_limit", str(read_ahead_limit),
+                                       "-i", "cache:pipe:0"]
+            else:
+                conversion_command += ["-i", "-"]
             stdin_parameter = subprocess.PIPE
             stdin_data = file.read()
 

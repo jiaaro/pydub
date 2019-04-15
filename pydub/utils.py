@@ -258,7 +258,11 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
         stdin_parameter = None
         stdin_data = None
     except TypeError:
-        command_args += ["-read_ahead_limit", str(read_ahead_limit), "cache:pipe:0"]
+        if prober == 'ffprobe':
+            command_args += ["-read_ahead_limit", str(read_ahead_limit),
+                             "cache:pipe:0"]
+        else:
+            command_args += ["-"]
         stdin_parameter = PIPE
         file, close_file = _fd_or_path_or_tempfile(filepath, 'rb', tempfile=False)
         file.seek(0)
