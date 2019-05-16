@@ -724,6 +724,17 @@ class AudioSegment(object):
         return obj
 
     @classmethod
+    def from_url(cls, url, parameters=None):
+        import urllib3
+
+        file = TemporaryFile()
+        http = urllib3.PoolManager()
+        r = http.request('GET', url)
+        file.write(r.data)
+
+        return cls.from_file(file, parameters=parameters)
+    
+    @classmethod
     def from_mp3(cls, file, parameters=None):
         return cls.from_file(file, 'mp3', parameters=parameters)
 
