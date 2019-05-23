@@ -91,7 +91,7 @@ WavData = namedtuple('WavData', ['audio_format', 'channels', 'sample_rate',
 
 def extract_wav_headers(data):
     # def search_subchunk(data, subchunk_id):
-    pos = 12  # The size of the RIFF chunk descriptor
+    pos = 12 # The size of the RIFF chunk descriptor
     subchunks = []
     while pos + 8 < len(data) and len(subchunks) < 10:
         subchunk_id = data[pos:pos + 4]
@@ -156,7 +156,7 @@ class AudioSegment(object):
         first_second = a[:1000] # get the first second of an mp3
         slice = a[5000:10000] # get a slice from 5 to 10 seconds of an mp3
     """
-    converter = get_encoder_name()  # either ffmpeg or avconv
+    converter = get_encoder_name() # either ffmpeg or avconv
 
     # TODO: remove in 1.0 release
     # maintain backwards compatibility for ffmpeg attr (now called converter)
@@ -187,12 +187,14 @@ class AudioSegment(object):
 
         # prevent partial specification of arguments
         if any(audio_params) and None in audio_params:
-            raise MissingAudioParameter("Either all audio parameters or no parameter must be specified")
+            raise MissingAudioParameter(
+                "Either all audio parameters or no parameter must be specified")
 
         # all arguments are given
         elif self.sample_width is not None:
             if len(data) % (self.sample_width * self.channels) != 0:
-                raise ValueError("data length must be a multiple of '(sample_width * channels)'")
+                raise ValueError(
+                    "data length must be a multiple of '(sample_width * channels)'")
 
             self.frame_width = self.channels * self.sample_width
             self._data = data
@@ -206,7 +208,8 @@ class AudioSegment(object):
         else:
             # normal construction
             try:
-                data = data if isinstance(data, (basestring, bytes)) else data.read()
+                data = data if isinstance(
+                    data, (basestring, bytes)) else data.read()
             except(OSError):
                 d = b''
                 reader = data.read(2 ** 31 - 1)
@@ -431,7 +434,8 @@ class AudioSegment(object):
         sample_width = max(seg.sample_width for seg in segs)
 
         return tuple(
-            seg.set_channels(channels).set_frame_rate(frame_rate).set_sample_width(sample_width)
+            seg.set_channels(channels).set_frame_rate(
+                frame_rate).set_sample_width(sample_width)
             for seg in segs
         )
 
@@ -543,7 +547,8 @@ class AudioSegment(object):
         except(OSError):
             input_file.flush()
             input_file.close()
-            input_file = NamedTemporaryFile(mode='wb', delete=False, buffering=2 ** 31 - 1)
+            input_file = NamedTemporaryFile(
+                mode='wb', delete=False, buffering=2 ** 31 - 1)
             if close_file:
                 file.close()
             close_file = True
@@ -559,7 +564,7 @@ class AudioSegment(object):
         output = NamedTemporaryFile(mode="rb", delete=False)
 
         conversion_command = [cls.converter,
-                              '-y',  # always overwrite existing files
+                              '-y', # always overwrite existing files
                               ]
 
         # If format is not defined
@@ -572,9 +577,9 @@ class AudioSegment(object):
             conversion_command += ["-acodec", codec]
 
         conversion_command += [
-            "-i", input_file.name,  # input_file options (filename last)
-            "-vn",  # Drop any video streams if there are any
-            "-f", "wav",  # output options (filename last)
+            "-i", input_file.name, # input_file options (filename last)
+            "-vn", # Drop any video streams if there are any
+            "-f", "wav", # output options (filename last)
             output.name
         ]
 
@@ -585,7 +590,8 @@ class AudioSegment(object):
         log_conversion(conversion_command)
 
         with open(os.devnull, 'rb') as devnull:
-            p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p = subprocess.Popen(conversion_command, stdin=devnull,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         p_out, p_err = p.communicate()
 
         log_subprocess_output(p_out)
@@ -646,7 +652,7 @@ class AudioSegment(object):
             return cls(data=file.read(), metadata=metadata)
 
         conversion_command = [cls.converter,
-                              '-y',  # always overwrite existing files
+                              '-y', # always overwrite existing files
                               ]
 
         # If format is not defined
@@ -692,8 +698,8 @@ class AudioSegment(object):
             conversion_command += ["-acodec", acodec]
 
         conversion_command += [
-            "-vn",  # Drop any video streams if there are any
-            "-f", "wav",  # output options (filename last)
+            "-vn", # Drop any video streams if there are any
+            "-f", "wav", # output options (filename last)
             "-"
         ]
 
@@ -823,8 +829,8 @@ class AudioSegment(object):
         # build converter command to export
         conversion_command = [
             self.converter,
-            '-y',  # always overwrite existing files
-            "-f", "wav", "-i", data.name,  # input options (filename last)
+            '-y', # always overwrite existing files
+            "-f", "wav", "-i", data.name, # input options (filename last)
         ]
 
         if codec is None:
@@ -832,7 +838,8 @@ class AudioSegment(object):
 
         if cover is not None:
             if cover.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff')) and format == "mp3":
-                conversion_command.extend(["-i", cover, "-map", "0", "-map", "1", "-c:v", "mjpeg"])
+                conversion_command.extend(
+                    ["-i", cover, "-map", "0", "-map", "1", "-c:v", "mjpeg"])
             else:
                 raise AttributeError(
                     "Currently cover images are only supported by MP3 files. The allowed image formats are: .tif, .jpg, .bmp, .jpeg and .png.")
@@ -871,14 +878,15 @@ class AudioSegment(object):
             conversion_command.extend(["-write_xing", "0"])
 
         conversion_command.extend([
-            "-f", format, output.name,  # output options (filename last)
+            "-f", format, output.name, # output options (filename last)
         ])
 
         log_conversion(conversion_command)
 
         # read stdin / write stdout
         with open(os.devnull, 'rb') as devnull:
-            p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p = subprocess.Popen(conversion_command, stdin=devnull,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         p_out, p_err = p.communicate()
 
         log_subprocess_output(p_out)
@@ -985,7 +993,8 @@ class AudioSegment(object):
                 mono_data = samples_for_current_channel.tostring()
 
             mono_channels.append(
-                self._spawn(mono_data, overrides={"channels": 1, "frame_width": self.sample_width})
+                self._spawn(mono_data, overrides={
+                            "channels": 1, "frame_width": self.sample_width})
             )
 
         return mono_channels
@@ -1048,7 +1057,8 @@ class AudioSegment(object):
         DC offset from all available channels.
         """
         if channel and not 1 <= channel <= 2:
-            raise ValueError("channel value must be None, 1 (left) or 2 (right)")
+            raise ValueError(
+                "channel value must be None, 1 (left) or 2 (right)")
 
         if offset and not -1.0 <= offset <= 1.0:
             raise ValueError("offset value must be in range -1.0 to 1.0")
@@ -1074,7 +1084,8 @@ class AudioSegment(object):
             right_channel = remove_data_dc(right_channel, offset)
 
         left_channel = audioop.tostereo(left_channel, self.sample_width, 1, 0)
-        right_channel = audioop.tostereo(right_channel, self.sample_width, 0, 1)
+        right_channel = audioop.tostereo(
+            right_channel, self.sample_width, 0, 1)
 
         return self._spawn(data=audioop.add(left_channel, right_channel,
                                             self.sample_width))
@@ -1146,7 +1157,8 @@ class AudioSegment(object):
                 seg1_overlaid = seg1[pos:pos + seg2_len]
                 seg1_adjusted_gain = audioop.mul(seg1_overlaid, self.sample_width,
                                                  db_to_float(float(gain_during_overlay)))
-                output.write(audioop.add(seg1_adjusted_gain, seg2, sample_width))
+                output.write(audioop.add(
+                    seg1_adjusted_gain, seg2, sample_width))
             else:
                 output.write(audioop.add(seg1[pos:pos + seg2_len], seg2,
                                          sample_width))

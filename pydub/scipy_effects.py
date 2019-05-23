@@ -29,6 +29,7 @@ def _mk_butter_filter(freq, type, order):
         function which can filter a mono audio segment
 
     """
+
     def filter_fn(seg):
         assert seg.channels == 1
 
@@ -48,7 +49,8 @@ def _mk_butter_filter(freq, type, order):
 
 @register_pydub_effect
 def band_pass_filter(seg, low_cutoff_freq, high_cutoff_freq, order=5):
-    filter_fn = _mk_butter_filter([low_cutoff_freq, high_cutoff_freq], 'band', order=order)
+    filter_fn = _mk_butter_filter(
+        [low_cutoff_freq, high_cutoff_freq], 'band', order=order)
     return seg.apply_mono_filter_to_each_channel(filter_fn)
 
 

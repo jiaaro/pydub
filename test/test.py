@@ -54,14 +54,18 @@ class UtilityTests(unittest.TestCase):
         self.assertEqual(ratio_to_db(10, using_amplitude=False), 10)
         self.assertEqual(3, db_to_float(ratio_to_db(3)))
         self.assertEqual(12, ratio_to_db(db_to_float(12)))
-        self.assertEqual(3, db_to_float(ratio_to_db(3, using_amplitude=False), using_amplitude=False))
-        self.assertEqual(12, ratio_to_db(db_to_float(12, using_amplitude=False), using_amplitude=False))
+        self.assertEqual(3, db_to_float(ratio_to_db(
+            3, using_amplitude=False), using_amplitude=False))
+        self.assertEqual(12, ratio_to_db(db_to_float(
+            12, using_amplitude=False), using_amplitude=False))
 
 
 if sys.version_info >= (3, 6):
+
     class PathLikeObjectTests(unittest.TestCase):
 
         class MyPathLike:
+
             def __init__(self, path):
                 self.path = path
 
@@ -75,7 +79,8 @@ if sys.version_info >= (3, 6):
             self.mp3_pathlib_path = Path(self.mp3_path_str)
 
             self.mp3_path_like_str = self.MyPathLike(self.mp3_path_str)
-            self.mp3_path_like_bytes = self.MyPathLike(bytes(self.mp3_path_str, sys.getdefaultencoding()))
+            self.mp3_path_like_bytes = self.MyPathLike(
+                bytes(self.mp3_path_str, sys.getdefaultencoding()))
 
         def test_audio_segment_from_pathlib_path(self):
             seg1 = AudioSegment.from_file(self.mp3_path_str)
@@ -116,7 +121,8 @@ if sys.version_info >= (3, 6):
                 _ = AudioSegment.from_file(path)
 
         def test_non_existant_path_like_str(self):
-            path = self.MyPathLike('this/path/should/not/exist/do/not/make/this/exist')
+            path = self.MyPathLike(
+                'this/path/should/not/exist/do/not/make/this/exist')
             with self.assertRaises(FileNotFoundError):
                 _ = AudioSegment.from_file(path)
 
@@ -125,7 +131,8 @@ if sys.version_info >= (3, 6):
                 _ = AudioSegment.from_file(path)
 
         def test_non_existant_path_like_bytes(self):
-            path = self.MyPathLike(bytes('this/path/should/not/exist/do/not/make/this/exist', sys.getdefaultencoding()))
+            path = self.MyPathLike(bytes(
+                'this/path/should/not/exist/do/not/make/this/exist', sys.getdefaultencoding()))
             with self.assertRaises(FileNotFoundError):
                 _ = AudioSegment.from_file(path)
 
@@ -240,7 +247,8 @@ class AudioSegmentTests(unittest.TestCase):
 
         # should have been converted to 32 bit
         self.assertEqual(seg24.sample_width, 4)
-        # the data length should have grown by exactly 4:3 (24 bits turn into 32 bits)
+        # the data length should have grown by exactly 4:3 (24 bits turn into
+        # 32 bits)
         self.assertEqual(len(seg24.raw_data) * 3, len24 * 4)
 
     def test_192khz_audio(self):
@@ -284,9 +292,11 @@ class AudioSegmentTests(unittest.TestCase):
     def test_too_long_crossfade(self):
         s1 = self.seg1[:1000]
         s2 = self.seg2[:500]
-        self.assertRaises(ValueError, lambda: s1.append(s2, crossfade=len(s1) + 10))
+        self.assertRaises(ValueError, lambda: s1.append(
+            s2, crossfade=len(s1) + 10))
 
     def test_sum(self):
+
         def gen():
             yield self.seg1
             yield self.seg2
@@ -504,7 +514,8 @@ class AudioSegmentTests(unittest.TestCase):
 
             l, r = panned.split_to_mono()
             assertAlmostEqual(l.dBFS, orig_dbfs_l + left_dbfs_change, places=2)
-            assertAlmostEqual(r.dBFS, orig_dbfs_r + right_dbfs_change, places=2)
+            assertAlmostEqual(r.dBFS, orig_dbfs_r +
+                              right_dbfs_change, places=2)
 
         # hard left
         check_stereo_gain(0.0, -inf)
@@ -534,7 +545,8 @@ class AudioSegmentTests(unittest.TestCase):
 
             l, r = panned.split_to_mono()
             assertAlmostEqual(l.dBFS, orig_dbfs_l + left_dbfs_change, places=1)
-            assertAlmostEqual(r.dBFS, orig_dbfs_r + right_dbfs_change, places=1)
+            assertAlmostEqual(r.dBFS, orig_dbfs_r +
+                              right_dbfs_change, places=1)
 
         check_pan(-1.0, 3.0, -inf)
         check_pan(-0.5, 1.5, -4.65)
@@ -663,7 +675,8 @@ class AudioSegmentTests(unittest.TestCase):
             fd.close()
 
             for i in range(3):
-                fd = AudioSegment.from_mp3(tmp_mp3_file.name).export(tmp_mp3_file.name, "mp3")
+                fd = AudioSegment.from_mp3(tmp_mp3_file.name).export(
+                    tmp_mp3_file.name, "mp3")
                 fd.close()
 
             tmp_seg = AudioSegment.from_mp3(tmp_mp3_file.name)
@@ -766,7 +779,8 @@ class AudioSegmentTests(unittest.TestCase):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
             json = '{"title": "The Title You Want", "album": "Name of the Album", "artist": "Artist\'s name"}'
             func = partial(
-                AudioSegment.from_file(self.mp4_file_path).export, tmp_mp3_file,
+                AudioSegment.from_file(
+                    self.mp4_file_path).export, tmp_mp3_file,
                 format="mp3", tags=json)
             self.assertRaises(InvalidTag, func)
 
@@ -792,7 +806,8 @@ class AudioSegmentTests(unittest.TestCase):
         delete = sys.platform != 'win32'
 
         with NamedTemporaryFile('w+b', suffix='.mp3', delete=delete) as tmp_mp3_file:
-            AudioSegment.from_file(self.mp4_file_path).export(tmp_mp3_file, format="mp3", tags=tags)
+            AudioSegment.from_file(self.mp4_file_path).export(
+                tmp_mp3_file, format="mp3", tags=tags)
 
             if sys.platform == 'win32':
                 tmp_mp3_file.close()
@@ -808,19 +823,23 @@ class AudioSegmentTests(unittest.TestCase):
 
     def test_mp3_with_jpg_cover_img(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
-            outf = self.seg1.export(tmp_mp3_file, format="mp3", cover=self.jpg_cover_path)
+            outf = self.seg1.export(
+                tmp_mp3_file, format="mp3", cover=self.jpg_cover_path)
             testseg = AudioSegment.from_file(outf, format="mp3")
 
-            # should be within a 150ms and 1.5dB (not perfectly equal due to codecs)
+            # should be within a 150ms and 1.5dB (not perfectly equal due to
+            # codecs)
             self.assertWithinTolerance(len(self.seg1), len(testseg), 150)
             self.assertWithinTolerance(self.seg1.dBFS, testseg.dBFS, 1.5)
 
     def test_mp3_with_png_cover_img(self):
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_mp3_file:
-            outf = self.seg1.export(tmp_mp3_file, format="mp3", cover=self.png_cover_path)
+            outf = self.seg1.export(
+                tmp_mp3_file, format="mp3", cover=self.png_cover_path)
             testseg = AudioSegment.from_file(outf, format="mp3")
 
-            # should be within a 150ms and 1.5dB (not perfectly equal due to codecs)
+            # should be within a 150ms and 1.5dB (not perfectly equal due to
+            # codecs)
             self.assertWithinTolerance(len(self.seg1), len(testseg), 150)
             self.assertWithinTolerance(self.seg1.dBFS, testseg.dBFS, 1.5)
 
@@ -909,7 +928,8 @@ class AudioSegmentTests(unittest.TestCase):
         delete = sys.platform != 'win32'
 
         with NamedTemporaryFile('w+b', suffix='.ogg', delete=delete) as tmp_ogg_file:
-            AudioSegment.from_file(self.mp4_file_path).export(tmp_ogg_file, format="ogg")
+            AudioSegment.from_file(self.mp4_file_path).export(
+                tmp_ogg_file, format="ogg")
 
             if sys.platform == 'win32':
                 tmp_ogg_file.close()
@@ -934,7 +954,8 @@ class AudioSegmentTests(unittest.TestCase):
         except Exception:
             pass
         else:
-            raise Exception("AudioSegment.invert_phase() didn't catch a bad input (mono)")
+            raise Exception(
+                "AudioSegment.invert_phase() didn't catch a bad input (mono)")
 
         s_inv = s.invert_phase()
         self.assertFalse(s == s_inv)
@@ -991,16 +1012,21 @@ class AudioSegmentTests(unittest.TestCase):
         seg = self.seg_dc_offset
 
         seg1 = seg.remove_dc_offset()
-        self.assertWithinTolerance(seg1.get_dc_offset(1), 0.0, tolerance=0.0001)
-        self.assertWithinTolerance(seg1.get_dc_offset(2), 0.0, tolerance=0.0001)
+        self.assertWithinTolerance(
+            seg1.get_dc_offset(1), 0.0, tolerance=0.0001)
+        self.assertWithinTolerance(
+            seg1.get_dc_offset(2), 0.0, tolerance=0.0001)
 
         seg1 = seg.remove_dc_offset(1)
-        self.assertWithinTolerance(seg1.get_dc_offset(1), 0.0, tolerance=0.0001)
+        self.assertWithinTolerance(
+            seg1.get_dc_offset(1), 0.0, tolerance=0.0001)
         self.assertWithinTolerance(seg1.get_dc_offset(2), 0.1, tolerance=0.01)
 
         seg1 = seg.remove_dc_offset(2)
-        self.assertWithinTolerance(seg1.get_dc_offset(1), -0.16, tolerance=0.01)
-        self.assertWithinTolerance(seg1.get_dc_offset(2), 0.0, tolerance=0.0001)
+        self.assertWithinTolerance(
+            seg1.get_dc_offset(1), -0.16, tolerance=0.01)
+        self.assertWithinTolerance(
+            seg1.get_dc_offset(2), 0.0, tolerance=0.0001)
 
         seg1 = seg.remove_dc_offset(channel=1, offset=(-0.06))
         self.assertWithinTolerance(seg1.get_dc_offset(1), -0.1, tolerance=0.01)
@@ -1014,7 +1040,8 @@ class AudioSegmentTests(unittest.TestCase):
         with NamedTemporaryFile('w+b', suffix='.wav', delete=delete) as tmp_wav_file:
             tmp_wav_file.write("not really a wav".encode('utf-8'))
             tmp_wav_file.flush()
-            self.assertRaises(CouldntDecodeError, AudioSegment.from_file, tmp_wav_file.name)
+            self.assertRaises(CouldntDecodeError,
+                              AudioSegment.from_file, tmp_wav_file.name)
             files = os.listdir(tempfile.tempdir)
             self.assertEquals(files, [os.path.basename(tmp_wav_file.name)])
 
@@ -1030,30 +1057,36 @@ class SilenceTests(unittest.TestCase):
     def setUp(self):
         global test1wav, test4wav
         if not test1wav:
-            test1wav = AudioSegment.from_wav(os.path.join(data_dir, 'test1.wav'))
+            test1wav = AudioSegment.from_wav(
+                os.path.join(data_dir, 'test1.wav'))
         if not test4wav:
-            test4wav = AudioSegment.from_wav(os.path.join(data_dir, 'test4.wav'))
+            test4wav = AudioSegment.from_wav(
+                os.path.join(data_dir, 'test4.wav'))
 
         self.seg1 = test1wav
         self.seg4 = test4wav
 
     def test_detect_completely_silent_segment(self):
         seg = AudioSegment.silent(5000)
-        silent_ranges = detect_silence(seg, min_silence_len=1000, silence_thresh=-20)
+        silent_ranges = detect_silence(
+            seg, min_silence_len=1000, silence_thresh=-20)
         self.assertEqual(silent_ranges, [[0, 5000]])
 
     def test_detect_tight_silent_segment(self):
         seg = AudioSegment.silent(1000)
-        silent_ranges = detect_silence(seg, min_silence_len=1000, silence_thresh=-20)
+        silent_ranges = detect_silence(
+            seg, min_silence_len=1000, silence_thresh=-20)
         self.assertEqual(silent_ranges, [[0, 1000]])
 
     def test_detect_too_long_silence(self):
         seg = AudioSegment.silent(3000)
-        silent_ranges = detect_silence(seg, min_silence_len=5000, silence_thresh=-20)
+        silent_ranges = detect_silence(
+            seg, min_silence_len=5000, silence_thresh=-20)
         self.assertEqual(silent_ranges, [])
 
     def test_detect_silence_seg1(self):
-        silent_ranges = detect_silence(self.seg1, min_silence_len=500, silence_thresh=-20)
+        silent_ranges = detect_silence(
+            self.seg1, min_silence_len=500, silence_thresh=-20)
         self.assertEqual(silent_ranges, [[0, 775], [3141, 4033], [5516, 6051]])
 
     def test_detect_silence_seg1_with_seek_split(self):
@@ -1062,7 +1095,8 @@ class SilenceTests(unittest.TestCase):
         self.assertEqual(silent_ranges, [[0, 770], [3150, 4030], [5520, 6050]])
 
     def test_realistic_audio(self):
-        silent_ranges = detect_silence(self.seg4, min_silence_len=1000, silence_thresh=self.seg4.dBFS)
+        silent_ranges = detect_silence(
+            self.seg4, min_silence_len=1000, silence_thresh=self.seg4.dBFS)
 
         prev_end = -1
         for start, end in silent_ranges:
@@ -1140,13 +1174,16 @@ class NoConverterTests(unittest.TestCase):
         self.assertTrue(len(seg) > 1000)
 
     def test_opening_raw_file(self):
-        seg = AudioSegment.from_raw(self.raw_file, sample_width=2, frame_rate=32000, channels=2)
+        seg = AudioSegment.from_raw(
+            self.raw_file, sample_width=2, frame_rate=32000, channels=2)
         self.assertTrue(len(seg) > 1000)
 
-        seg = AudioSegment.from_file(self.raw_file, "raw", sample_width=2, frame_rate=32000, channels=2)
+        seg = AudioSegment.from_file(
+            self.raw_file, "raw", sample_width=2, frame_rate=32000, channels=2)
         self.assertTrue(len(seg) > 1000)
 
-        seg = AudioSegment.from_file(self.raw_file, format="raw", sample_width=2, frame_rate=32000, channels=2)
+        seg = AudioSegment.from_file(
+            self.raw_file, format="raw", sample_width=2, frame_rate=32000, channels=2)
         self.assertTrue(len(seg) > 1000)
 
     def test_opening_raw_file_with_missing_args_fails(self):
@@ -1167,7 +1204,8 @@ class NoConverterTests(unittest.TestCase):
         self.assertRaises(OSError, func)
 
     def test_init_AudioSegment_data_buffer(self):
-        seg = AudioSegment(data="\0" * 34, sample_width=2, frame_rate=4, channels=1)
+        seg = AudioSegment(data="\0" * 34, sample_width=2,
+                           frame_rate=4, channels=1)
 
         self.assertEqual(seg.duration_seconds, 4.25)
 
@@ -1176,17 +1214,20 @@ class NoConverterTests(unittest.TestCase):
         self.assertEqual(seg.frame_rate, 4)
 
     def test_init_AudioSegment_data_buffer_with_missing_args_fails(self):
-        func = partial(AudioSegment, data="\0" * 16, sample_width=2, frame_rate=2)
+        func = partial(AudioSegment, data="\0" * 16,
+                       sample_width=2, frame_rate=2)
         self.assertRaises(MissingAudioParameter, func)
 
-        func = partial(AudioSegment, data="\0" * 16, sample_width=2, channels=1)
+        func = partial(AudioSegment, data="\0" * 16,
+                       sample_width=2, channels=1)
         self.assertRaises(MissingAudioParameter, func)
 
         func = partial(AudioSegment, data="\0" * 16, frame_rate=2, channels=1)
         self.assertRaises(MissingAudioParameter, func)
 
     def test_init_AudioSegment_data_buffer_with_bad_values_fails(self):
-        func = partial(AudioSegment, data="\0" * 14, sample_width=4, frame_rate=2, channels=1)
+        func = partial(AudioSegment, data="\0" * 14,
+                       sample_width=4, frame_rate=2, channels=1)
         self.assertRaises(ValueError, func)
 
     def test_exporting(self):
@@ -1201,7 +1242,8 @@ class FilterTests(unittest.TestCase):
     def setUp(self):
         global test1wav
         if not test1wav:
-            test1wav = AudioSegment.from_wav(os.path.join(data_dir, 'test1.wav'))
+            test1wav = AudioSegment.from_wav(
+                os.path.join(data_dir, 'test1.wav'))
 
         self.seg1 = test1wav
 

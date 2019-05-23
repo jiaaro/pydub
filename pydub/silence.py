@@ -11,7 +11,8 @@ def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek
         return []
 
     # convert silence threshold to a float value (so we can compare it to rms)
-    silence_thresh = db_to_float(silence_thresh) * audio_segment.max_possible_amplitude
+    silence_thresh = db_to_float(silence_thresh) * \
+        audio_segment.max_possible_amplitude
 
     # find silence and add start and end indicies to the to_cut list
     silence_starts = []
@@ -62,7 +63,8 @@ def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek
 
 
 def detect_nonsilent(audio_segment, min_silence_len=1000, silence_thresh=-16, seek_step=1):
-    silent_ranges = detect_silence(audio_segment, min_silence_len, silence_thresh, seek_step)
+    silent_ranges = detect_silence(
+        audio_segment, min_silence_len, silence_thresh, seek_step)
     len_seg = len(audio_segment)
 
     # if there is no silence, the whole thing is nonsilent
@@ -104,7 +106,8 @@ def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, ke
         abruptly cut off. (default: 100ms)
     """
 
-    not_silence_ranges = detect_nonsilent(audio_segment, min_silence_len, silence_thresh, seek_step)
+    not_silence_ranges = detect_nonsilent(
+        audio_segment, min_silence_len, silence_thresh, seek_step)
 
     chunks = []
     for start_i, end_i in not_silence_ranges:

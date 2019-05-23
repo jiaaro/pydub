@@ -181,7 +181,7 @@ def findfit(cp1, cp2):
         aj_lm1 = _get_sample(cp1, size, i + len2 - 1)
 
         sum_aij_2 += aj_lm1**2 - aj_m1**2
-        sum_aij_ri = _sum2(buffer(cp1)[i*size:], cp2, len2)
+        sum_aij_ri = _sum2(buffer(cp1)[(i*size):], cp2, len2)
 
         result = (sum_ri_2 * sum_aij_2 - sum_aij_ri * sum_aij_ri) / sum_aij_2
 
@@ -189,7 +189,7 @@ def findfit(cp1, cp2):
             best_result = result
             best_i = i
 
-    factor = _sum2(buffer(cp1)[best_i*size:], cp2, len2) / sum_ri_2
+    factor = _sum2(buffer(cp1)[(best_i*size):], cp2, len2) / sum_ri_2
 
     return best_i, factor
 

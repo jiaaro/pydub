@@ -1,16 +1,17 @@
 """
-Each generator will return float samples from -1.0 to 1.0, which can be 
+Each generator will return float samples from -1.0 to 1.0, which can be
 converted to actual audio with 8, 16, 24, or 32 bit depth using the
 SiganlGenerator.to_audio_segment() method (on any of it's subclasses).
 
-See Wikipedia's "waveform" page for info on some of the generators included 
+See Wikipedia's "waveform" page for info on some of the generators included
 here: http://en.wikipedia.org/wiki/Waveform
 """
 
-import math
 import array
 import itertools
+import math
 import random
+
 from .audio_segment import AudioSegment
 from .utils import (
     db_to_float,
@@ -20,8 +21,8 @@ from .utils import (
 )
 
 
-
 class SignalGenerator(object):
+
     def __init__(self, sample_rate=44100, bit_depth=16):
         self.sample_rate = sample_rate
         self.bit_depth = bit_depth
@@ -44,7 +45,7 @@ class SignalGenerator(object):
         sample_data = itertools.islice(sample_data, 0, sample_count)
 
         data = array.array(array_type, sample_data)
-        
+
         try:
             data = data.tobytes()
         except:
@@ -58,11 +59,13 @@ class SignalGenerator(object):
         })
 
     def generate(self):
-        raise NotImplementedError("SignalGenerator subclasses must implement the generate() method, and *should not* call the superclass implementation.")
-
+        raise NotImplementedError(
+            "SignalGenerator subclasses must implement the generate() " +
+            "method, and *should not* call the superclass implementation.")
 
 
 class Sine(SignalGenerator):
+
     def __init__(self, freq, **kwargs):
         super(Sine, self).__init__(**kwargs)
         self.freq = freq
@@ -75,8 +78,8 @@ class Sine(SignalGenerator):
             sample_n += 1
 
 
-
 class Pulse(SignalGenerator):
+
     def __init__(self, freq, duty_cycle=0.5, **kwargs):
         super(Pulse, self).__init__(**kwargs)
         self.freq = freq
@@ -97,15 +100,15 @@ class Pulse(SignalGenerator):
             sample_n += 1
 
 
-
 class Square(Pulse):
+
     def __init__(self, freq, **kwargs):
         kwargs['duty_cycle'] = 0.5
         super(Square, self).__init__(freq, **kwargs)
 
 
-
 class Sawtooth(SignalGenerator):
+
     def __init__(self, freq, duty_cycle=1.0, **kwargs):
         super(Sawtooth, self).__init__(**kwargs)
         self.freq = freq
@@ -129,14 +132,15 @@ class Sawtooth(SignalGenerator):
             sample_n += 1
 
 
-
 class Triangle(Sawtooth):
+
     def __init__(self, freq, **kwargs):
         kwargs['duty_cycle'] = 0.5
         super(Triangle, self).__init__(freq, **kwargs)
 
 
 class WhiteNoise(SignalGenerator):
+
     def generate(self):
         while True:
             yield (random.random() * 2) - 1.0

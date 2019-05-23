@@ -12,11 +12,11 @@ from .utils import get_player_name, make_chunks
 PLAYER = get_player_name()
 
 
-
 def _play_with_ffplay(seg):
     with NamedTemporaryFile("w+b", suffix=".wav") as f:
         seg.export(f.name, "wav")
-        subprocess.call([PLAYER, "-nodisp", "-autoexit", "-hide_banner", f.name])
+        subprocess.call(
+            [PLAYER, "-nodisp", "-autoexit", "-hide_banner", f.name])
 
 
 def _play_with_pyaudio(seg):
@@ -41,9 +41,9 @@ def _play_with_pyaudio(seg):
 def _play_with_simpleaudio(seg):
     import simpleaudio
     return simpleaudio.play_buffer(
-        seg.raw_data, 
-        num_channels=seg.channels, 
-        bytes_per_sample=seg.sample_width, 
+        seg.raw_data,
+        num_channels=seg.channels,
+        bytes_per_sample=seg.sample_width,
         sample_rate=seg.frame_rate
     )
 
@@ -59,7 +59,7 @@ def play(audio_segment):
         pass
     else:
         return
-    
+
     try:
         _play_with_pyaudio(audio_segment)
         return
@@ -67,5 +67,5 @@ def play(audio_segment):
         pass
     else:
         return
-    
+
     _play_with_ffplay(audio_segment)

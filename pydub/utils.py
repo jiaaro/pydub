@@ -80,7 +80,7 @@ def db_to_float(db, using_amplitude=True):
     db = float(db)
     if using_amplitude:
         return 10 ** (db / 20)
-    else:  # using power
+    else: # using power
         return 10 ** (db / 10)
 
 
@@ -101,7 +101,7 @@ def ratio_to_db(ratio, val2=None, using_amplitude=True):
 
     if using_amplitude:
         return 20 * log(ratio, 10)
-    else:  # using power
+    else: # using power
         return 10 * log(ratio, 10)
 
 
@@ -236,7 +236,8 @@ def get_extra_info(stderr):
     for i in re.finditer(re_stream, stderr):
         if i.group('space_end') is not None and len(i.group('space_start')) <= len(
                 i.group('space_end')):
-            content_line = ','.join([i.group('content_0'), i.group('content_1')])
+            content_line = ','.join(
+                [i.group('content_0'), i.group('content_1')])
         else:
             content_line = i.group('content_0')
         tokens = [x.strip() for x in re.split('[:,]', content_line) if x]
@@ -264,7 +265,8 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
         else:
             command_args += ["-"]
         stdin_parameter = PIPE
-        file, close_file = _fd_or_path_or_tempfile(filepath, 'rb', tempfile=False)
+        file, close_file = _fd_or_path_or_tempfile(
+            filepath, 'rb', tempfile=False)
         file.seek(0)
         stdin_data = file.read()
         if close_file:
@@ -389,7 +391,6 @@ def get_supported_codecs():
 
     if sys.platform == 'win32':
         output = output.replace("\r", "")
-
 
     rgx = re.compile(r"^([D.][E.][AVS.][I.][L.][S.]) (\w*) +(.*)")
     decoders = set()
