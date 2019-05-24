@@ -35,7 +35,13 @@ def apply_mono_filter_to_each_channel(seg, filter_fn):
 @register_pydub_effect
 def normalize(seg, headroom=0.1):
     """
-    headroom is how close to the maximum volume to boost the signal up to (specified in dB)
+    Parameters
+    ----------
+
+    headroom : float, optional
+        default - 0.1
+        specifies how close to the maximum volume
+        the signal is boosted up to (specified in dB)
     """
     peak_sample_val = seg.max
 
@@ -51,8 +57,8 @@ def normalize(seg, headroom=0.1):
 
 @register_pydub_effect
 def speedup(seg, playback_speed=1.5, chunk_size=150, crossfade=25):
-    # we will keep audio in 150ms chunks since one waveform at 20Hz is 50ms long
-    # (20 Hz is the lowest frequency audible to humans)
+    # we will keep audio in 150ms chunks since one waveform at 20Hz is 50ms
+    # long (20 Hz is the lowest frequency audible to humans)
 
     # portion of AUDIO TO KEEP. if playback speed is 1.25 we keep 80% (0.8) and
     # discard 20% (0.2)
@@ -74,8 +80,11 @@ def speedup(seg, playback_speed=1.5, chunk_size=150, crossfade=25):
 
     chunks = make_chunks(seg, chunk_size + ms_to_remove_per_chunk)
     if len(chunks) < 2:
-        raise Exception("Could not speed up AudioSegment, it was too short {2:0.2f}s for the current settings:\n{0}ms chunks at {1:0.1f}x speedup".format(
-            chunk_size, playback_speed, seg.duration_seconds))
+        raise Exception("Could not speed up AudioSegment, it was " +
+                        ("too short by {2:0.2f}s for the current settings:" +
+                         "\n{0} ms chunks at {1:0.1f}x speedup")
+                        .format(chunk_size, playback_speed,
+                                seg.duration_seconds))
 
     # we'll actually truncate a bit less than we calculated to make up for the
     # crossfade between chunks
@@ -113,28 +122,36 @@ def strip_silence(seg, silence_len=1000, silence_thresh=-16, padding=100):
 
 
 @register_pydub_effect
-def compress_dynamic_range(seg, threshold=-20.0, ratio=4.0, attack=5.0, release=50.0):
+def compress_dynamic_range(seg, threshold=-20.0, ratio=4.0, attack=5.0,
+                           release=50.0):
     """
-    Keyword Arguments:
+    Parameters
+    ----------
 
-        threshold - default: -20.0
-            Threshold in dBFS. default of -20.0 means -20dB relative to the
-            maximum possible volume. 0dBFS is the maximum possible value so
-            all values for this argument sould be negative.
+    threshold : float, optional
+        default - -20.0
+        Threshold in dBFS. default of -20.0 means -20 dB relative to the
+        maximum possible volume. 0 dBFS is the maximum possible value, so
+        all values for this argument should be negative.
 
-        ratio - default: 4.0
-            Compression ratio. Audio louder than the threshold will be
-            reduced to 1/ratio the volume. A ratio of 4.0 is equivalent to
-            a setting of 4:1 in a pro-audio compressor like the Waves C1.
+    ratio : float, optional
+        default - 4.0
+        Compression ratio. Audio louder than the threshold will be
+        reduced to 1/ratio the volume. A ratio of 4.0 is equivalent to
+        a setting of 4:1 in a pro-audio compressor like the Waves C1.
 
-        attack - default: 5.0
-            Attack in milliseconds. How long it should take for the compressor
-            to kick in once the audio has exceeded the threshold.
+    attack : float, optional
+        default - 5.0
+        Attack in milliseconds. How long it should take for the compressor
+        to kick in once the audio has exceeded the threshold.
 
-        release - default: 50.0
-            Release in milliseconds. How long it should take for the compressor
-            to stop compressing after the audio has falled below the threshold.
+    release : float, optional
+        default - 50.0
+        Release in milliseconds. How long it should take for the compressor
+        to stop compressing after the audio has fallen below the threshold.
 
+    Notes
+    -----
 
     For an overview of Dynamic Range Compression, and more detailed explanation
     of the related terminology, see:
@@ -165,8 +182,8 @@ def compress_dynamic_range(seg, threshold=-20.0, ratio=4.0, attack=5.0, release=
     for i in xrange(int(seg.frame_count())):
         rms_now = rms_at(i)
 
-        # with a ratio of 4.0 this means the volume will exceed the threshold by
-        # 1/4 the amount (of dB) that it would otherwise
+        # with a ratio of 4.0 this means the volume will exceed the
+        # threshold by 1/4 the amount (of dB) that it would otherwise
         max_attenuation = (1 - (1.0 / ratio)) * db_over_threshold(rms_now)
 
         attenuation_inc = max_attenuation / attack_frames
@@ -189,14 +206,23 @@ def compress_dynamic_range(seg, threshold=-20.0, ratio=4.0, attack=5.0, release=
 
     return seg._spawn(data=b''.join(output))
 
-# Invert the phase of the signal.
-
 
 @register_pydub_effect
 def invert_phase(seg, channels=(1, 1)):
     """
-    channels- specifies which channel (left or right) to reverse the phase of.
-    Note that mono AudioSegments will become stereo.
+    Invert the phase of one or more channels
+
+    Parameters
+    ----------
+
+    channels:
+        specifies which channel(s) (left or right)
+        to reverse the phase of.
+
+    Notes
+    -----
+
+    Mono AudioSegments will become stereo.
     """
     if channels == (1, 1):
         inverted = audioop.mul(seg._data, seg.sample_width, -1.0)
@@ -223,8 +249,12 @@ def invert_phase(seg, channels=(1, 1)):
 @register_pydub_effect
 def low_pass_filter(seg, cutoff):
     """
-        cutoff - Frequency (in Hz) where higher frequency signal will begin to
-            be reduced by 6dB per octave (doubling in frequency) above this point
+    Parameters
+    ----------
+
+    cutoff: float
+        Frequency (in Hz) where the signal will begin to be reduced by
+        6dB per octave (doubling in frequency) as frequency gets larger
     """
     RC = 1.0 / (cutoff * 2 * math.pi)
     dt = 1.0 / seg.frame_rate
@@ -253,8 +283,12 @@ def low_pass_filter(seg, cutoff):
 @register_pydub_effect
 def high_pass_filter(seg, cutoff):
     """
-        cutoff - Frequency (in Hz) where lower frequency signal will begin to
-            be reduced by 6dB per octave (doubling in frequency) below this point
+    Parameters
+    ----------
+
+    cutoff: float
+        Frequency (in Hz) where the signal will begin to be reduced by
+        6dB per octave (doubling in frequency) as frequency gets smaller
     """
     RC = 1.0 / (cutoff * 2 * math.pi)
     dt = 1.0 / seg.frame_rate
@@ -287,17 +321,23 @@ def high_pass_filter(seg, cutoff):
 @register_pydub_effect
 def pan(seg, pan_amount):
     """
-    pan_amount should be between -1.0 (100% left) and +1.0 (100% right)
+    Parameters
+    ----------
 
-    When pan_amount == 0.0 the left/right balance is not changed.
+    pan_amount : float
+        This should be between -1.0 (100% left) and +1.0 (100% right)
+        When pan_amount == 0.0 the left/right balance is not changed.
+
+    Notes
+    -----
 
     Panning does not alter the *perceived* loundness, but since loudness
     is decreasing on one side, the other side needs to get louder to
     compensate. When panned hard left, the left channel will be 3dB louder.
     """
     if not -1.0 <= pan_amount <= 1.0:
-        raise ValueError(
-            "pan_amount should be between -1.0 (100% left) and +1.0 (100% right)")
+        raise ValueError("pan_amount should be between " +
+                         "-1.0 (100% left) and +1.0 (100% right)")
 
     max_boost_db = ratio_to_db(2.0)
     boost_db = abs(pan_amount) * max_boost_db
@@ -320,10 +360,17 @@ def pan(seg, pan_amount):
 @register_pydub_effect
 def apply_gain_stereo(seg, left_gain=0.0, right_gain=0.0):
     """
-    left_gain - amount of gain to apply to the left channel (in dB)
-    right_gain - amount of gain to apply to the right channel (in dB)
+    Parameters
+    ----------
 
-    note: mono audio segments will be converted to stereo
+    left_gain, right_gain : float, optional
+        default - 0.0
+        The gain to apply to the left and right channels, respectively (in dB)
+
+    Notes
+    -----
+
+    Mono audio segments will be converted to stereo
     """
     if seg.channels == 1:
         left = right = seg

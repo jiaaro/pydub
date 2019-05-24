@@ -31,6 +31,7 @@ from .utils import (
     get_encoder_name,
     get_array_type,
     audioop,
+    replace_last,
 )
 from .exceptions import (
     TooManyMissingFrames,
@@ -187,14 +188,14 @@ class AudioSegment(object):
 
         # prevent partial specification of arguments
         if any(audio_params) and None in audio_params:
-            raise MissingAudioParameter(
-                "Either all audio parameters or no parameter must be specified")
+            raise MissingAudioParameter("Either all audio parameters or " +
+                                        "no parameter must be specified")
 
         # all arguments are given
         elif self.sample_width is not None:
             if len(data) % (self.sample_width * self.channels) != 0:
-                raise ValueError(
-                    "data length must be a multiple of '(sample_width * channels)'")
+                raise ValueError("data length must be a multiple of " +
+                                 "'(sample_width * channels)'")
 
             self.frame_width = self.channels * self.sample_width
             self._data = data
@@ -257,13 +258,13 @@ class AudioSegment(object):
     @property
     def raw_data(self):
         """
-        public access to the raw audio data as a bytestring
+        Return the raw audio data as a bytestring
         """
         return self._data
 
     def get_array_of_samples(self, array_type_override=None):
         """
-        returns the raw_data as an array of samples
+        Return the raw data as an array of samples
         """
         if array_type_override is None:
             array_type_override = self.array_type
@@ -275,7 +276,7 @@ class AudioSegment(object):
 
     def __len__(self):
         """
-        returns the length of this audio segment in milliseconds
+        Return the length of this audio segment in milliseconds
         """
         return round(1000 * (self.frame_count() / self.frame_rate))
 
@@ -336,8 +337,11 @@ class AudioSegment(object):
         """
         Get a section of the audio segment by sample index.
 
-        NOTE: Negative indices do *not* address samples backword
-        from the end of the audio segment like a python list.
+        Notes
+        -----
+
+        Negative indices do *not* address samples backward
+        from the end of the audio segment like a list.
         This is intentional.
         """
         max_val = int(self.frame_count())
@@ -461,8 +465,16 @@ class AudioSegment(object):
     def silent(cls, duration=1000, frame_rate=11025):
         """
         Generate a silent audio segment.
-        duration specified in milliseconds
-        (default duration: 1000ms, default frame_rate: 11025).
+
+        Parameters
+        ----------
+
+        duration : optional
+            default - 1000
+            specified in milliseconds
+
+        frame_rate : optional
+            default - 11025
         """
         frames = int(frame_rate * (duration / 1000.0))
         data = b"\0\0" * frames
@@ -502,12 +514,6 @@ class AudioSegment(object):
             sample_width=sample_width,
             frame_rate=frame_rate,
         )
-
-    @classmethod
-    def from_file_using_temporary_files(cls, file, format=None, codec=None,
-                                        parameters=None, **kwargs):
-        return cls.from_file(file, format, codec, parameters,
-                             use_temp_files=True, **kwargs)
 
     @classmethod
     def from_file(cls, file, format=None, codec=None,
@@ -717,7 +723,8 @@ class AudioSegment(object):
 
     @classmethod
     def from_raw(cls, file, **kwargs):
-        return cls.from_file(file, 'raw', sample_width=kwargs['sample_width'], frame_rate=kwargs['frame_rate'],
+        return cls.from_file(file, 'raw', sample_width=kwargs['sample_width'],
+                             frame_rate=kwargs['frame_rate'],
                              channels=kwargs['channels'])
 
     @classmethod
@@ -729,39 +736,42 @@ class AudioSegment(object):
             file.close()
         return obj
 
-    def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None, id3v2_version='4',
-               cover=None):
+    def export(self, out_f=None, format='mp3', codec=None, bitrate=None,
+               parameters=None, tags=None, id3v2_version='4', cover=None):
         """
-        Export an AudioSegment to a file with given options
+        Export an AudioSegment to a file with the given options
 
-        out_f (string):
-            Path to destination audio file. Also accepts os.PathLike objects on
-            python >= 3.6
+        Parameters
+        ----------
 
-        format (string)
+        out_f : string, os.PathLike (python 3.6+)
+            Path to the destination audio file.
+
+        format : string
             Format for destination audio file.
             ('mp3', 'wav', 'raw', 'ogg' or other ffmpeg/avconv supported files)
 
-        codec (string)
-            Codec used to encoding for the destination.
+        codec : string
+            Codec used for encoding.
 
-        bitrate (string)
-            Bitrate used when encoding destination file. (64, 92, 128, 256, 312k...)
-            Each codec accepts different bitrate arguments so take a look at the
-            ffmpeg documentation for details (bitrate usually shown as -b, -ba or
-            -a:b).
+        bitrate : string
+            Bitrate used when encoding destination file
+            (64, 92, 128, 256, 312k...).
+            Each codec accepts different bitrate arguments so take a look at
+            the ffmpeg documentation for details
+            (bitrate usually shown as -b, -ba or -a:b).
 
-        parameters (string)
+        parameters : string
             Aditional ffmpeg/avconv parameters
 
-        tags (dict)
+        tags : dict
             Set metadata information to destination files
             usually used as tags. ({title='Song Title', artist='Song Artist'})
 
-        id3v2_version (string)
+        id3v2_version : string
             Set ID3v2 version for tags. (default: '4')
 
-        cover (file)
+        cover : file
             Set cover for audio file from image file. (png or jpg)
         """
         id3v2_allowed_versions = ['3', '4']
@@ -806,13 +816,18 @@ class AudioSegment(object):
         if codec is None:
             codec = self.DEFAULT_CODECS.get(format, None)
 
+        allowed_formats = ('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff')
+
         if cover is not None:
-            if cover.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff')) and format == "mp3":
+            if cover.lower().endswith(allowed_formats) and format == "mp3":
                 conversion_command.extend(
                     ["-i", cover, "-map", "0", "-map", "1", "-c:v", "mjpeg"])
             else:
-                raise AttributeError(
-                    "Currently cover images are only supported by MP3 files. The allowed image formats are: .tif, .jpg, .bmp, .jpeg and .png.")
+                raise AttributeError("Currently cover images are " +
+                                     "only supported by MP3 files. " +
+                                     "The allowed image formats are: " +
+                                     replace_last(", ", " and ",
+                                                  ", ".join(allowed_formats)))
 
         if codec is not None:
             # force audio encoder
@@ -839,7 +854,8 @@ class AudioSegment(object):
                     # set id3v2 tag version
                     if id3v2_version not in id3v2_allowed_versions:
                         raise InvalidID3TagVersion(
-                            "id3v2_version not allowed, allowed versions: %s" % id3v2_allowed_versions)
+                            "id3v2_version not allowed, allowed versions: %s"
+                            % id3v2_allowed_versions)
                     conversion_command.extend([
                         "-id3v2_version", id3v2_version
                     ])
@@ -864,8 +880,9 @@ class AudioSegment(object):
 
         if p.returncode != 0:
             raise CouldntEncodeError(
-                "Encoding failed. ffmpeg/avlib returned error code: {0}\n\nCommand:{1}\n\nOutput from ffmpeg/avlib:\n\n{2}".format(
-                    p.returncode, conversion_command, p_err))
+                "Encoding failed. ffmpeg/avlib returned error code: " +
+                "{0}\n\nCommand:{1}\n\nOutput from ffmpeg/avlib:\n\n{2}"
+                .format(p.returncode, conversion_command, p_err))
 
         output.seek(0)
         out_f.write(output.read())
@@ -886,8 +903,16 @@ class AudioSegment(object):
 
     def frame_count(self, ms=None):
         """
-        returns the number of frames for the given number of milliseconds, or
-            if not specified, the number of frames in the whole AudioSegment
+        Returns the number of frames for the given number of milliseconds
+        or the whole AudioSegment
+
+        Parameters
+        ----------
+
+        ms : float, optional
+            default - None
+            Number of milliseconds to get frames for.
+            If ms is None, return the number of frames in the whole segment
         """
         if ms is not None:
             return ms * (self.frame_rate / 1000.0)
@@ -1005,8 +1030,15 @@ class AudioSegment(object):
 
     def get_dc_offset(self, channel=1):
         """
-        Returns a value between -1.0 and 1.0 representing the DC offset of a
-        channel (1 for left, 2 for right).
+        Returns a value between -1.0 and 1.0 representing the DC offset of
+        the specified channel
+
+        Parameters
+        ----------
+
+        channel : int, optional
+            default - 1
+            1 for left, 2 for right
         """
         if not 1 <= channel <= 2:
             raise ValueError("channel value must be 1 (left) or 2 (right)")
@@ -1018,13 +1050,15 @@ class AudioSegment(object):
         else:
             data = audioop.tomono(self._data, self.sample_width, 0, 1)
 
-        return float(audioop.avg(data, self.sample_width)) / self.max_possible_amplitude
+        avg_value = float(audioop.avg(data, self.sample_width))
+        return avg_value / self.max_possible_amplitude
 
     def remove_dc_offset(self, channel=None, offset=None):
         """
-        Removes DC offset of given channel. Calculates offset if it's not given.
-        Offset values must be in range -1.0 to 1.0. If channel is None, removes
-        DC offset from all available channels.
+        Remove DC offset of the given channel.
+        Calculate offset if it is not given.
+        Offset values must be in the range [-1.0, 1.0].
+        If channel is None, removes DC offset from all available channels.
         """
         if channel and not 1 <= channel <= 2:
             raise ValueError(
@@ -1064,27 +1098,34 @@ class AudioSegment(object):
         return self._spawn(data=audioop.mul(self._data, self.sample_width,
                                             db_to_float(float(volume_change))))
 
-    def overlay(self, seg, position=0, loop=False, times=None, gain_during_overlay=None):
+    def overlay(self, seg, position=0, loop=False, times=None,
+                gain_during_overlay=None):
         """
-        Overlay the provided segment on to this segment starting at the
-        specificed position and using the specfied looping beahvior.
+        Overlay the provided segment onto this segment starting at the
+        specified position, using the specified looping behavior.
 
-        seg (AudioSegment):
-            The audio segment to overlay on to this one.
+        Parameters
+        ----------
 
-        position (optional int):
-            The position to start overlaying the provided segment in to this
+        seg : AudioSegment
+            The audio segment to overlay onto this one.
+
+        position : int, optional
+            default - 0
+            The position to start overlaying the provided segment onto this
             one.
 
-        loop (optional bool):
+        loop : bool, optional
+            default - False
             Loop seg as many times as necessary to match this segment's length.
-            Overrides loops param.
+            Overrides loops parameter.
 
-        times (optional int):
+        times : int, optional
             Loop seg the specified number of times or until it matches this
             segment's length. 1 means once, 2 means twice, ... 0 would make the
             call a no-op
-        gain_during_overlay (optional int):
+
+        gain_during_overlay : int, optional
             Changes this segment's volume by the specified amount during the
             duration of time that seg is overlaid on top of it. When negative,
             this has the effect of 'ducking' the audio under the overlay.
@@ -1125,8 +1166,11 @@ class AudioSegment(object):
 
             if gain_during_overlay:
                 seg1_overlaid = seg1[pos:pos + seg2_len]
-                seg1_adjusted_gain = audioop.mul(seg1_overlaid, self.sample_width,
-                                                 db_to_float(float(gain_during_overlay)))
+                seg1_adjusted_gain = audioop.mul(
+                    seg1_overlaid,
+                    self.sample_width,
+                    db_to_float(float(gain_during_overlay))
+                )
                 output.write(audioop.add(
                     seg1_adjusted_gain, seg2, sample_width))
             else:
@@ -1147,13 +1191,13 @@ class AudioSegment(object):
         if not crossfade:
             return seg1._spawn(seg1._data + seg2._data)
         elif crossfade > len(self):
-            raise ValueError("Crossfade is longer than the original AudioSegment ({}ms > {}ms)".format(
-                crossfade, len(self)
-            ))
+            raise ValueError("Crossfade is longer than the original " +
+                             "AudioSegment ({}ms > {}ms)"
+                             .format(crossfade, len(self)))
         elif crossfade > len(seg):
-            raise ValueError("Crossfade is longer than the appended AudioSegment ({}ms > {}ms)".format(
-                crossfade, len(seg)
-            ))
+            raise ValueError("Crossfade is longer than the appended " +
+                             "AudioSegment ({}ms > {}ms)"
+                             .format(crossfade, len(seg)))
 
         xf = seg1[-crossfade:].fade(to_gain=-120, start=0, end=float('inf'))
         xf *= seg2[:crossfade].fade(from_gain=-120, start=0, end=float('inf'))
@@ -1174,19 +1218,22 @@ class AudioSegment(object):
         """
         Fade the volume of this audio segment.
 
-        to_gain (float):
-            resulting volume_change in db
+        Parameters
+        ----------
 
-        start (int):
-            default = beginning of the segment
-            when in this segment to start fading in milliseconds
+        to_gain : float, optional
+            resulting volume_change in dB
 
-        end (int):
-            default = end of the segment
-            when in this segment to start fading in milliseconds
+        start : int, optional
+            default - beginning of the segment
+            when in this segment to start fading, in milliseconds
 
-        duration (int):
-            default = until the end of the audio segment
+        end : int, optional
+            default - end of the segment
+            when in this segment to stop fading, in milliseconds
+
+        duration : int, optional
+            default - until the end of the audio segment
             the duration of the fade
         """
         if None not in [duration, end, start]:
@@ -1280,11 +1327,12 @@ class AudioSegment(object):
 
     def _repr_html_(self):
         src = """
-                    <audio controls>
-                        <source src="data:audio/mpeg;base64,{base64}" type="audio/mpeg"/>
-                        Your browser does not support the audio element.
-                    </audio>
-                  """
+                <audio controls>
+                    <source src="data:audio/mpeg;base64,{base64}"
+                            type="audio/mpeg"/>
+                    Your browser does not support the audio element.
+                </audio>
+              """
         fh = self.export()
         data = base64.b64encode(fh.read()).decode('ascii')
         return src.format(base64=data)

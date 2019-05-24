@@ -35,6 +35,11 @@ ARRAY_RANGES = {
 }
 
 
+def replace_last(old, new, s):
+    li = s.rsplit(old, 1)
+    return new.join(li)
+
+
 def get_frame_width(bit_depth):
     return FRAME_WIDTHS[bit_depth]
 
@@ -72,23 +77,45 @@ def _fd_or_path_or_tempfile(fd, mode='w+b', tempfile=True):
     return fd, close_fd
 
 
-def db_to_float(db, using_amplitude=True):
+def db_to_float(dB, using_amplitude=True):
     """
-    Converts the input db to a float, which represents the equivalent
+    Convert the input dB value to a float which represents the equivalent
     ratio in power.
+
+    Parameters
+    ----------
+
+    dB
+        The value to convert
+
+    using_amplitude : bool, optional
+        default - True
     """
-    db = float(db)
+    dB = float(dB)
     if using_amplitude:
-        return 10 ** (db / 20)
+        return 10 ** (dB / 20)
     else: # using power
-        return 10 ** (db / 10)
+        return 10 ** (dB / 10)
 
 
 def ratio_to_db(ratio, val2=None, using_amplitude=True):
     """
-    Converts the input float to db, which represents the equivalent
-    to the ratio in power represented by the multiplier passed in.
+    Convert the input ratio value to a dB value which represents the
+    equivalent to the ratio in power represented by the multiplier passed in.
+
+    Parameters
+    ----------
+
+    ratio
+        The value to convert, or the numerator of this value
+
+    val2 : optional
+        The denominator of the value to convert
+
+    using_amplitude : bool, optional
+        default - True
     """
+
     ratio = float(ratio)
 
     # accept 2 values and use the ratio of val1 to val2
@@ -117,6 +144,7 @@ def register_pydub_effect(fn, name=None):
         def normalize_audio_segment(audio_segment):
             ...
     """
+
     if isinstance(fn, basestring):
         name = fn
         return lambda fn: register_pydub_effect(fn, name)
@@ -131,10 +159,9 @@ def register_pydub_effect(fn, name=None):
 
 def make_chunks(audio_segment, chunk_length):
     """
-    Breaks an AudioSegment into chunks that are <chunk_length> milliseconds
-    long.
-    if chunk_length is 50 then you'll get a list of 50 millisecond long audio
-    segments back (except the last one, which can be shorter)
+    Break an AudioSegment into chunks that are <chunk_length> milliseconds
+    long (e.g. if chunk_length is 50, then you'll get a list of 50 millisecond
+    long audio segments back). The last chunk can be shorter.
     """
     number_of_chunks = ceil(len(audio_segment) / float(chunk_length))
     return [audio_segment[i * chunk_length:(i + 1) * chunk_length]
@@ -157,50 +184,50 @@ def which(program):
             return program_path
 
 
+def get_name(*choices, **kwargs):
+    """
+    Helper function for get_encoder_name, get player_name, and get_prober_name
+    """
+    choices = list(choices)
+    for choice in choices:
+        if which(choice):
+            return choice
+    else:
+        raise ValueError("choices cannot be empty")
+
+    default_choice = kwargs.pop("default", choices[0])
+
+    # should raise exception
+    warn("Couldn't find %s - " +
+         "defaulting to %s, but may not work" %
+         (replace_last(", ", " or ", ", ".join(choices)), default_choice),
+         RuntimeWarning)
+    return default_choice
+
+
 def get_encoder_name():
     """
-    Return enconder default application for system, either avconv or ffmpeg
+    Return default encoder application for system, either avconv or ffmpeg
     """
-    if which("avconv"):
-        return "avconv"
-    elif which("ffmpeg"):
-        return "ffmpeg"
-    else:
-        # should raise exception
-        warn("Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work", RuntimeWarning)
-        return "ffmpeg"
+    return get_name("avconv", "ffmpeg", default="ffmpeg")
 
 
 def get_player_name():
     """
-    Return enconder default application for system, either avconv or ffmpeg
+    Return default player application for system, either avplay or ffplay
     """
-    if which("avplay"):
-        return "avplay"
-    elif which("ffplay"):
-        return "ffplay"
-    else:
-        # should raise exception
-        warn("Couldn't find ffplay or avplay - defaulting to ffplay, but may not work", RuntimeWarning)
-        return "ffplay"
+    return get_name("avplay", "ffplay", default="ffplay")
 
 
 def get_prober_name():
     """
-    Return probe application, either avconv or ffmpeg
+    Return default probe application for system, either avprobe or ffprobe
     """
-    if which("avprobe"):
-        return "avprobe"
-    elif which("ffprobe"):
-        return "ffprobe"
-    else:
-        # should raise exception
-        warn("Couldn't find ffprobe or avprobe - defaulting to ffprobe, but may not work", RuntimeWarning)
-        return "ffprobe"
+    return get_name("avprobe", "ffprobe", default="ffprobe")
 
 
 def fsdecode(filename):
-    """Wrapper for os.fsdecode which was introduced in python 3.2 ."""
+    """Wrapper for os.fsdecode which was introduced in python 3.2."""
 
     if sys.version_info >= (3, 2):
         PathLikeTypes = (basestring, bytes)
@@ -232,10 +259,12 @@ def get_extra_info(stderr):
     """
     extra_info = {}
 
-    re_stream = r'(?P<space_start> +)Stream #0[:\.](?P<stream_id>([0-9]+))(?P<content_0>.+)\n?((?P<space_end> +)(?P<content_1>.+))?'
+    re_stream = r'(?P<space_start> +)Stream #0[:\.]' + \
+                r'(?P<stream_id>([0-9]+))(?P<content_0>.+)\n?' + \
+                r'((?P<space_end> +)(?P<content_1>.+))?'
     for i in re.finditer(re_stream, stderr):
-        if i.group('space_end') is not None and len(i.group('space_start')) <= len(
-                i.group('space_end')):
+        if i.group('space_end') is not None and \
+                len(i.group('space_start')) <= len(i.group('space_end')):
             content_line = ','.join(
                 [i.group('content_0'), i.group('content_1')])
         else:
@@ -246,7 +275,9 @@ def get_extra_info(stderr):
 
 
 def mediainfo_json(filepath, read_ahead_limit=-1):
-    """Return json dictionary with media info(codec, duration, size, bitrate...) from filepath
+    """
+    Return a json dictionary containing media info
+    (codec, duration, size, bitrate, etc) from filepath
     """
     prober = get_prober_name()
     command_args = [
@@ -321,7 +352,9 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
 
 
 def mediainfo(filepath):
-    """Return dictionary with media info(codec, duration, size, bitrate...) from filepath
+    """
+    Return a dictionary containing media info
+    (codec, duration, size, bitrate, etc) from filepath
     """
 
     prober = get_prober_name()

@@ -284,7 +284,7 @@ def maxpp(cp, size):
 
     prevextremevalid = False
     prevextreme = None
-    max = 0
+    maxval = 0
 
     prevval = getsample(cp, size, 0)
     val = getsample(cp, size, 1)
@@ -298,8 +298,8 @@ def maxpp(cp, size):
         if diff * prevdiff < 0:
             if prevextremevalid:
                 extremediff = abs(prevval - prevextreme)
-                if extremediff > max:
-                    max = extremediff
+                if extremediff > maxval:
+                    maxval = extremediff
             prevextremevalid = True
             prevextreme = prevval
 
@@ -307,7 +307,7 @@ def maxpp(cp, size):
         if diff != 0:
             prevdiff = diff
 
-    return max
+    return maxval
 
 
 def cross(cp, size):

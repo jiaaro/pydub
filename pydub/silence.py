@@ -3,7 +3,8 @@ import itertools
 from .utils import db_to_float
 
 
-def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek_step=1):
+def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16,
+                   seek_step=1):
     seg_len = len(audio_segment)
 
     # you can't have a silent portion of a sound that is longer than the sound
@@ -62,7 +63,8 @@ def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek
     return silent_ranges
 
 
-def detect_nonsilent(audio_segment, min_silence_len=1000, silence_thresh=-16, seek_step=1):
+def detect_nonsilent(audio_segment, min_silence_len=1000, silence_thresh=-16,
+                     seek_step=1):
     silent_ranges = detect_silence(
         audio_segment, min_silence_len, silence_thresh, seek_step)
     len_seg = len(audio_segment)
@@ -90,20 +92,29 @@ def detect_nonsilent(audio_segment, min_silence_len=1000, silence_thresh=-16, se
     return nonsilent_ranges
 
 
-def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, keep_silence=100,
-                     seek_step=1):
+def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16,
+                     keep_silence=100, seek_step=1):
     """
-    audio_segment - original pydub.AudioSegment() object
+    Parameters
+    ----------
 
-    min_silence_len - (in ms) minimum length of a silence to be used for
-        a split. default: 1000ms
+    audio_segment : AudioSegment
+        Original pydub.AudioSegment() object
 
-    silence_thresh - (in dBFS) anything quieter than this will be
-        considered silence. default: -16dBFS
+    min_silence_len : int, optional
+        default - 1000
+        Minimum length of a silence to be used for a split, in milliseconds
 
-    keep_silence - (in ms) amount of silence to leave at the beginning
-        and end of the chunks. Keeps the sound from sounding like it is
-        abruptly cut off. (default: 100ms)
+    silence_thresh : float, optional
+        default - -16.0
+        Anything quieter than this will be considered silence.
+        Measured in dBFS
+
+    keep_silence : int, optional
+        default - 100
+        The amount of silence to leave at the beginning and end of the chunks,
+        in milliseconds. Keeps the sound from sounding like
+        it is abruptly cut off.
     """
 
     not_silence_ranges = detect_nonsilent(

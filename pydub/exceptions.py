@@ -1,6 +1,6 @@
 class PydubException(Exception):
     """
-    Base class for any Pydub exception
+    Base class for Pydub exceptions
     """
 
 

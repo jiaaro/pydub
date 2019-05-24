@@ -1,7 +1,7 @@
 """
 Each generator will return float samples from -1.0 to 1.0, which can be
 converted to actual audio with 8, 16, 24, or 32 bit depth using the
-SiganlGenerator.to_audio_segment() method (on any of it's subclasses).
+SignalGenerator.to_audio_segment() method (on any subclass of SignalGenerator).
 
 See Wikipedia's "waveform" page for info on some of the generators included
 here: http://en.wikipedia.org/wiki/Waveform
@@ -29,11 +29,19 @@ class SignalGenerator(object):
 
     def to_audio_segment(self, duration=1000.0, volume=0.0):
         """
-        Duration in milliseconds
-            (default: 1 second)
-        Volume in DB relative to maximum amplitude
-            (default 0.0 dBFS, which is the maximum value)
+        Parameters
+        ----------
+
+        duration : float, optional
+            default - 1000.0
+            Measured in milliseconds
+
+        volume : float, optional
+            default - 0.0
+            Measured in dB relative to maximum amplitude.
+            0.0 dBFS is the maximum value
         """
+
         minval, maxval = get_min_max_value(self.bit_depth)
         sample_width = get_frame_width(self.bit_depth)
         array_type = get_array_type(self.bit_depth)
