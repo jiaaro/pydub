@@ -818,7 +818,10 @@ class AudioSegment(object):
         if format == 'wav':
             return out_f
 
-        output = NamedTemporaryFile(mode="w+b", delete=False)
+        # aac 文件输出的时候必须带输出
+        suffix = None
+        if None is not format: suffix = "."+format
+        output = NamedTemporaryFile(mode="w+b", delete=False, suffix=suffix)
 
         # build converter command to export
         conversion_command = [
@@ -870,9 +873,16 @@ class AudioSegment(object):
         if sys.platform == 'darwin' and codec == 'mp3':
             conversion_command.extend(["-write_xing", "0"])
 
-        conversion_command.extend([
-            "-f", format, output.name,  # output options (filename last)
-        ])
+
+        # 一些特殊格式 调用 -f 是会报错的
+        if None is not format and format not in ['aac', 'm4a']:
+            conversion_command.extend([
+                "-f", format, output.name,  # output options (filename last)
+            ])
+        else:
+            conversion_command.extend([
+                output.name,  # output options (filename last)
+            ])
 
         log_conversion(conversion_command)
 
