@@ -818,7 +818,7 @@ class AudioSegment(object):
         if format == 'wav':
             return out_f
 
-        # aac 文件输出的时候必须带输出
+        # aac file output must be suffixed
         suffix = None
         if None is not format: suffix = "."+format
         output = NamedTemporaryFile(mode="w+b", delete=False, suffix=suffix)
@@ -874,7 +874,7 @@ class AudioSegment(object):
             conversion_command.extend(["-write_xing", "0"])
 
 
-        # 一些特殊格式 调用 -f 是会报错的
+        # Some special format calls to -f will give an error
         if None is not format and format not in ['aac', 'm4a']:
             conversion_command.extend([
                 "-f", format, output.name,  # output options (filename last)
