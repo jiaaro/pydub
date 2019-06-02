@@ -107,7 +107,7 @@ def strip_silence(seg, silence_len=1000, silence_thresh=-16, padding=100):
 
     seg = chunks[0]
     for chunk in chunks[1:]:
-        seg.append(chunk, crossfade=crossfade)
+        seg = seg.append(chunk, crossfade=crossfade)
 
     return seg
 

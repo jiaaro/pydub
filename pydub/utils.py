@@ -8,6 +8,7 @@ from subprocess import Popen, PIPE
 from math import log, ceil
 from tempfile import TemporaryFile
 from warnings import warn
+from functools import wraps
 
 try:
     import audioop
@@ -50,21 +51,25 @@ def get_min_max_value(bit_depth):
 
 
 def _fd_or_path_or_tempfile(fd, mode='w+b', tempfile=True):
+    close_fd = False
     if fd is None and tempfile:
         fd = TemporaryFile(mode=mode)
+        close_fd = True
 
     if isinstance(fd, basestring):
         fd = open(fd, mode=mode)
+        close_fd = True
 
     try:
         if isinstance(fd, os.PathLike):
             fd = open(fd, mode=mode)
+            close_fd = True
     except AttributeError:
         # module os has no attribute PathLike, so we're on python < 3.6.
         # The protocol we're trying to support doesn't exist, so just pass.
         pass
 
-    return fd
+    return fd, close_fd
 
 
 def db_to_float(db, using_amplitude=True):
@@ -239,7 +244,7 @@ def get_extra_info(stderr):
     return extra_info
 
 
-def mediainfo_json(filepath):
+def mediainfo_json(filepath, read_ahead_limit=-1):
     """Return json dictionary with media info(codec, duration, size, bitrate...) from filepath
     """
     prober = get_prober_name()
@@ -253,11 +258,17 @@ def mediainfo_json(filepath):
         stdin_parameter = None
         stdin_data = None
     except TypeError:
-        command_args += ["-"]
+        if prober == 'ffprobe':
+            command_args += ["-read_ahead_limit", str(read_ahead_limit),
+                             "cache:pipe:0"]
+        else:
+            command_args += ["-"]
         stdin_parameter = PIPE
-        file = _fd_or_path_or_tempfile(filepath, 'rb', tempfile=False)
+        file, close_file = _fd_or_path_or_tempfile(filepath, 'rb', tempfile=False)
         file.seek(0)
         stdin_data = file.read()
+        if close_file:
+            file.close()
 
     command = [prober, '-of', 'json'] + command_args
     res = Popen(command, stdin=stdin_parameter, stdout=PIPE, stderr=PIPE)
@@ -351,3 +362,56 @@ def mediainfo(filepath):
                 info[key] = value
 
     return info
+
+
+def cache_codecs(function):
+    cache = {}
+
+    @wraps(function)
+    def wrapper():
+        try:
+            return cache[0]
+        except:
+            cache[0] = function()
+            return cache[0]
+
+    return wrapper
+
+
+@cache_codecs
+def get_supported_codecs():
+    encoder = get_encoder_name()
+    command = [encoder, "-codecs"]
+    res = Popen(command, stdout=PIPE, stderr=PIPE)
+    output = res.communicate()[0].decode("utf-8")
+    if res.returncode != 0:
+        return []
+
+    if sys.platform == 'win32':
+        output = output.replace("\r", "")
+
+
+    rgx = re.compile(r"^([D.][E.][AVS.][I.][L.][S.]) (\w*) +(.*)")
+    decoders = set()
+    encoders = set()
+    for line in output.split('\n'):
+        match = rgx.match(line.strip())
+        if not match:
+            continue
+        flags, codec, name = match.groups()
+
+        if flags[0] == 'D':
+            decoders.add(codec)
+
+        if flags[1] == 'E':
+            encoders.add(codec)
+
+    return (decoders, encoders)
+
+
+def get_supported_decoders():
+    return get_supported_codecs()[0]
+
+
+def get_supported_encoders():
+    return get_supported_codecs()[1]
