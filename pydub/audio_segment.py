@@ -632,7 +632,14 @@ class AudioSegment(object):
 
         if is_format("wav"):
             try:
-                return cls._from_safe_wav(file)
+                if start_second is None and duration is None:
+                    return cls._from_safe_wav(file)
+                elif start_second is not None and duration is None:
+                    return cls._from_safe_wav(file)[start_second*1000:]
+                elif start_second is None and duration is not None:
+                    return cls._from_safe_wav(file)[:duration*1000]
+                else:
+                    return cls._from_safe_wav(file)[start_second*1000:(start_second+duration)*1000]
             except:
                 file.seek(0)
         elif is_format("raw") or is_format("pcm"):
@@ -645,7 +652,14 @@ class AudioSegment(object):
                 'channels': channels,
                 'frame_width': channels * sample_width
             }
-            return cls(data=file.read(), metadata=metadata)
+            if start_second is None and duration is None:
+                return cls(data=file.read(), metadata=metadata)
+            elif start_second is not None and duration is None:
+                return cls(data=file.read(), metadata=metadata)[start_second*1000:]
+            elif start_second is None and duration is not None:
+                return cls(data=file.read(), metadata=metadata)[:duration*1000]
+            else:
+                return cls(data=file.read(), metadata=metadata)[start_second*1000:(start_second+duration)*1000]
 
         conversion_command = [cls.converter,
                               '-y',  # always overwrite existing files

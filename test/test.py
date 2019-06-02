@@ -1211,6 +1211,71 @@ class FilterTests(unittest.TestCase):
         self.assertAlmostEqual(less_treble.dBFS, s.dBFS, places=0)
 
 
+class PartialAudioSegmentLoadTests(unittest.TestCase):
+
+    def setUp(self):
+        self.wave_path_str = os.path.join(data_dir, 'test1.wav')
+        self.mp3_path_str = os.path.join(data_dir, 'test1.mp3')
+        self.raw_path_str = os.path.join(data_dir, 'test1.raw')
+
+    def tearDown(self):
+        AudioSegment.converter = get_encoder_name()
+
+    def test_partial_load_duration_equals_cropped_mp3_audio_segment(self):
+        partial_seg1 = AudioSegment.from_file(self.mp3_path_str)[:1000]
+        partial_seg2 = AudioSegment.from_file(self.mp3_path_str, duration=1.)
+        self.assertEqual(len(partial_seg1), len(partial_seg2))
+        self.assertEqual(partial_seg1._data, partial_seg2._data)
+
+    def test_partial_load_start_second_equals_cropped_mp3_audio_segment(self):
+        partial_seg1 = AudioSegment.from_file(self.mp3_path_str)[1000:]
+        partial_seg2 = AudioSegment.from_file(self.mp3_path_str, start_second=1.)[0:]
+        self.assertEqual(len(partial_seg1), len(partial_seg2))
+        self.assertEqual(partial_seg1._data, partial_seg2._data)
+
+    def test_partial_load_start_second_and_duration_equals_cropped_mp3_audio_segment(self):
+        partial_seg1 = AudioSegment.from_file(self.mp3_path_str)[1000:2000]
+        partial_seg2 = AudioSegment.from_file(self.mp3_path_str, start_second=1., duration=1.)
+        self.assertEqual(len(partial_seg1), len(partial_seg2))
+        self.assertEqual(partial_seg1._data, partial_seg2._data)
+
+    def test_partial_load_duration_equals_cropped_wav_audio_segment(self):
+        partial_seg1 = AudioSegment.from_file(self.wave_path_str)[:1000]
+        partial_seg2 = AudioSegment.from_file(self.wave_path_str, duration=1.)
+        self.assertEqual(len(partial_seg1), len(partial_seg2))
+        self.assertEqual(partial_seg1._data, partial_seg2._data)
+
+    def test_partial_load_start_second_equals_cropped_wav_audio_segment(self):
+        partial_seg1 = AudioSegment.from_file(self.wave_path_str)[1000:]
+        partial_seg2 = AudioSegment.from_file(self.wave_path_str, start_second=1.)[0:]
+        self.assertEqual(len(partial_seg1), len(partial_seg2))
+        self.assertEqual(partial_seg1._data, partial_seg2._data)
+
+    def test_partial_load_start_second_and_duration_equals_cropped_wav_audio_segment(self):
+        partial_seg1 = AudioSegment.from_file(self.wave_path_str)[1000:2000]
+        partial_seg2 = AudioSegment.from_file(self.wave_path_str, start_second=1., duration=1.)
+        self.assertEqual(len(partial_seg1), len(partial_seg2))
+        self.assertEqual(partial_seg1._data, partial_seg2._data)
+
+    def test_partial_load_duration_equals_cropped_raw_audio_segment(self):
+        partial_seg1 = AudioSegment.from_file(self.raw_path_str, format="raw", sample_width=2, frame_rate=32000, channels=2)[:1000]
+        partial_seg2 = AudioSegment.from_file(self.raw_path_str, format="raw", sample_width=2, frame_rate=32000, channels=2, duration=1.)
+        self.assertEqual(len(partial_seg1), len(partial_seg2))
+        self.assertEqual(partial_seg1._data, partial_seg2._data)
+
+    def test_partial_load_start_second_equals_cropped_raw_audio_segment(self):
+        partial_seg1 = AudioSegment.from_file(self.raw_path_str, format="raw", sample_width=2, frame_rate=32000, channels=2)[1000:]
+        partial_seg2 = AudioSegment.from_file(self.raw_path_str, format="raw", sample_width=2, frame_rate=32000, channels=2, start_second=1.)[0:]
+        self.assertEqual(len(partial_seg1), len(partial_seg2))
+        self.assertEqual(partial_seg1._data, partial_seg2._data)
+
+    def test_partial_load_start_second_and_duration_equals_cropped_raw_audio_segment(self):
+        partial_seg1 = AudioSegment.from_file(self.raw_path_str, format="raw", sample_width=2, frame_rate=32000, channels=2)[1000:2000]
+        partial_seg2 = AudioSegment.from_file(self.raw_path_str, format="raw", sample_width=2, frame_rate=32000, channels=2, start_second=1., duration=1.)
+        self.assertEqual(len(partial_seg1), len(partial_seg2))
+        self.assertEqual(partial_seg1._data, partial_seg2._data)
+
+
 if __name__ == "__main__":
     import sys
 
