@@ -518,7 +518,14 @@ class AudioSegment(object):
             try:
                 obj = cls._from_safe_wav(file)
                 file.close()
-                return obj
+                if start_second is None and duration is None:
+                    return obj
+                elif start_second is not None and duration is None:
+                    return obj[start_second*1000:]
+                elif start_second is None and duration is not None:
+                    return obj[:duration*1000]
+                else:
+                    return obj[start_second*1000:(start_second+duration)*1000]
             except:
                 file.seek(0)
         elif is_format("raw") or is_format("pcm"):
@@ -533,7 +540,14 @@ class AudioSegment(object):
             }
             obj = cls(data=file.read(), metadata=metadata)
             file.close()
-            return obj
+            if start_second is None and duration is None:
+                return obj
+            elif start_second is not None and duration is None:
+                return obj[start_second * 1000:]
+            elif start_second is None and duration is not None:
+                return obj[:duration * 1000]
+            else:
+                return obj[start_second * 1000:(start_second + duration) * 1000]
 
         input_file = NamedTemporaryFile(mode='wb', delete=False)
         try:
@@ -605,7 +619,15 @@ class AudioSegment(object):
             os.unlink(input_file.name)
             os.unlink(output.name)
 
-        return obj
+        if start_second is None and duration is None:
+            return obj
+        elif start_second is not None and duration is None:
+            return obj[0:]
+        elif start_second is None and duration is not None:
+            return obj[:duration * 1000]
+        else:
+            return obj[0:duration * 1000]
+
 
     @classmethod
     def from_file(cls, file, format=None, codec=None, parameters=None, start_second=None, duration=None, **kwargs):
@@ -737,7 +759,14 @@ class AudioSegment(object):
 
         file.close()
 
-        return obj
+        if start_second is None and duration is None:
+            return obj
+        elif start_second is not None and duration is None:
+            return obj[0:]
+        elif start_second is None and duration is not None:
+            return obj[:duration * 1000]
+        else:
+            return obj[0:duration * 1000]
 
     @classmethod
     def from_mp3(cls, file, parameters=None):
