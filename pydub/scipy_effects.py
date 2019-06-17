@@ -1,5 +1,4 @@
-"""
-This module provides scipy versions of high_pass_filter, and low_pass_filter
+"""This module provides scipy versions of high_pass_filter and low_pass_filter
 as well as an additional band_pass_filter.
 
 Of course, you will need to install scipy for these to work.
@@ -9,26 +8,36 @@ will be used when calling audio_segment.high_pass_filter() and
 audio_segment.high_pass_filter() instead of the slower, less powerful versions
 provided by pydub.effects.
 """
+
 from scipy.signal import butter, sosfilt
 from .utils import register_pydub_effect
 
 
-def _mk_butter_filter(freq, type, order):
-    """
-    Args:
-        freq: The cutoff frequency for highpass and lowpass filters. For
-            band filters, a list of [low_cutoff, high_cutoff]
-        type: "lowpass", "highpass", or "band"
-        order: nth order butterworth filter (default: 5th order). The
-            attenuation is -6dB/octave beyond the cutoff frequency (for 1st
-            order). A Higher order filter will have more attenuation, each level
-            adding an additional -6dB (so a 3rd order butterworth filter would
-            be -18dB/octave).
+def _mk_butter_filter(freq, type, order=5):
+    """Create a butterworth filter with the given cutoff frequency,
+    type, and order.
 
-    Returns:
-        function which can filter a mono audio segment
+    Parameters
+    ----------
+    freq : float or list
+        The cutoff frequency for high-pass and low-pass filters.
+        For band-pass filters, a list of [low_cutoff, high_cutoff].
+    type : string
+        "lowpass", "highpass", or "bandpass"
+    order : int, optional
+        Default = 5
+        The order of the butterworth filter.
+        The attenuation is -6 dB/octave beyond the cutoff frequency for a
+        1st order filter. A Higher order filter will have more attenuation,
+        each level adding an additional -6 dB (e.g. a 3rd order butterworth
+        filter would have an attenuation of -18 dB/octave).
 
+    Returns
+    -------
+    function
+        A function which can filter a mono audio segment.
     """
+
     def filter_fn(seg):
         assert seg.channels == 1
 
@@ -48,7 +57,7 @@ def _mk_butter_filter(freq, type, order):
 
 @register_pydub_effect
 def band_pass_filter(seg, low_cutoff_freq, high_cutoff_freq, order=5):
-    filter_fn = _mk_butter_filter([low_cutoff_freq, high_cutoff_freq], 'band', order=order)
+    filter_fn = _mk_butter_filter([low_cutoff_freq, high_cutoff_freq], 'bandpass', order=order)
     return seg.apply_mono_filter_to_each_channel(filter_fn)
 
 

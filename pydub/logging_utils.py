@@ -1,6 +1,3 @@
-"""
-
-"""
 import logging
 
 converter_logger = logging.getLogger("pydub.converter")
