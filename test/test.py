@@ -1106,6 +1106,7 @@ class NoConverterTests(unittest.TestCase):
     def setUp(self):
         self.wave_file = os.path.join(data_dir, 'test1.wav')
         self.wave24_file = os.path.join(data_dir, 'test1-24bit.wav')
+        self.wave_empty = os.path.join(data_dir, 'test1_empty.wav')
         self.mp3_file = os.path.join(data_dir, 'test1.mp3')
         self.raw_file = os.path.join(data_dir, 'test1.raw')
         AudioSegment.converter = "definitely-not-a-path-to-anything-asdjklqwop"
@@ -1194,6 +1195,19 @@ class NoConverterTests(unittest.TestCase):
         exported = AudioSegment.from_wav(seg.export(format="wav"))
 
         self.assertEqual(len(exported), len(seg))
+
+    def test_opening_empty_wav_file(self):
+        seg = AudioSegment.from_wav(self.wave_empty)
+        self.assertTrue(len(seg) == 0)
+
+        seg = AudioSegment.from_file(self.wave_empty)
+        self.assertTrue(len(seg) == 0)
+
+        seg = AudioSegment.from_file(self.wave_empty, "wav")
+        self.assertTrue(len(seg) == 0)
+
+        seg = AudioSegment.from_file(self.wave_empty, format="wav")
+        self.assertTrue(len(seg) == 0)
 
 
 class FilterTests(unittest.TestCase):

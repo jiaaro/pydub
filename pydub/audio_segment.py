@@ -93,7 +93,7 @@ def extract_wav_headers(data):
     # def search_subchunk(data, subchunk_id):
     pos = 12  # The size of the RIFF chunk descriptor
     subchunks = []
-    while pos + 8 < len(data) and len(subchunks) < 10:
+    while pos + 8 <= len(data) and len(subchunks) < 10:
         subchunk_id = data[pos:pos + 4]
         subchunk_size = struct.unpack_from('<I', data[pos + 4:pos + 8])[0]
         subchunks.append(WavSubChunk(subchunk_id, pos, subchunk_size))
