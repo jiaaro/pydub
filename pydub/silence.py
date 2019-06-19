@@ -91,22 +91,26 @@ def detect_nonsilent(audio_segment, min_silence_len=1000, silence_thresh=-16, se
 def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, keep_silence=100,
                      seek_step=1):
     """
-    audio_segment - original pydub.AudioSegment() object
-
-    min_silence_len - (in ms) minimum length of a silence to be used for
-        a split. default: 1000ms
-
-    silence_thresh - (in dBFS) anything quieter than this will be
-        considered silence. default: -16dBFS
-
-    keep_silence - (in ms or True/False) leave some silence at the beginning
-        and end of the chunks. Keeps the sound from sounding like it
-        is abruptly cut off.
+    Parameters
+    ----------
+    audio_segment : AudioSegment
+        Original pydub.AudioSegment() object.
+    min_silence_len : int, optional
+        Default = 1000
+        Minimum length of a silence to be used for a split, in milliseconds.
+    silence_thresh : float, optional
+        Default = -16.0
+        Anything quieter than this will be considered silence.
+        Measured in dBFS.
+    keep_silence : int or bool, optional
+        Default = 100
+        The amount of silence to leave at the beginning and end of the chunks,
+        in milliseconds. Keeps the sound from sounding like
+        it is abruptly cut off.
         When the length of the silence is less than the keep_silence duration
         it is split evenly between the preceding and following non-silent
         segments.
         If True is specified, all the silence is kept, if False none is kept.
-        default: 100ms
     """
 
     if isinstance(keep_silence, bool):
@@ -139,15 +143,26 @@ def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, ke
 
 
 def detect_leading_silence(sound, silence_threshold=-50.0, chunk_size=10):
-    '''
-    sound is a pydub.AudioSegment
-    silence_threshold in dB
-    chunk_size in ms
-    iterate over chunks until you find the first one with sound
-    '''
+    """Return the amount of silence at the beginning
+    of the sound segment, in milliseconds.
+
+    Parameters
+    ----------
+    sound : AudioSegment
+        The segment on which to detect leading silence.
+    silence_threshold : float, optional
+        Default = -50.0
+        The loudest sound that is considered to be silent, in dB.
+    chunk_size : int, optional
+        Default = 10
+        The length of each chunk, in milliseconds.
+        Each chunk is iterated over until the first
+        non-silent chunk is found.
+    """
+
     trim_ms = 0 # ms
     assert chunk_size > 0 # to avoid infinite loop
-    while sound[trim_ms:trim_ms+chunk_size].dBFS < silence_threshold and trim_ms < len(sound):
+    while sound[trim_ms:trim_ms+chunk_size].dBFS <= silence_threshold and trim_ms < len(sound):
         trim_ms += chunk_size
 
     return trim_ms

@@ -252,14 +252,14 @@ class AudioSegment(object):
 
     @property
     def raw_data(self):
-        """
-        public access to the raw audio data as a bytestring
+        """Return the raw audio data as a bytestring.
+
         """
         return self._data
 
     def get_array_of_samples(self, array_type_override=None):
-        """
-        returns the raw_data as an array of samples
+        """Return the raw data as an array of samples.
+
         """
         if array_type_override is None:
             array_type_override = self.array_type
@@ -270,8 +270,8 @@ class AudioSegment(object):
         return get_array_type(self.sample_width * 8)
 
     def __len__(self):
-        """
-        returns the length of this audio segment in milliseconds
+        """Return the length of this audio segment in milliseconds.
+
         """
         return round(1000 * (self.frame_count() / self.frame_rate))
 
@@ -328,13 +328,15 @@ class AudioSegment(object):
         return self._spawn(data)
 
     def get_sample_slice(self, start_sample=None, end_sample=None):
-        """
-        Get a section of the audio segment by sample index.
+        """Get a section of the audio segment by sample index.
 
-        NOTE: Negative indices do *not* address samples backword
-        from the end of the audio segment like a python list.
+        Notes
+        -----
+        Negative indices do *not* address samples backward
+        from the end of the audio segment like a list.
         This is intentional.
         """
+
         max_val = int(self.frame_count())
 
         def bounded(val, default):
@@ -359,8 +361,8 @@ class AudioSegment(object):
             return self.apply_gain(arg)
 
     def __radd__(self, rarg):
-        """
-        Permit use of sum() builtin with an iterable of AudioSegments
+        """Permit use of sum() builtin with an iterable of AudioSegments.
+
         """
         if rarg == 0:
             return self
@@ -375,7 +377,8 @@ class AudioSegment(object):
             return self.apply_gain(-arg)
 
     def __mul__(self, arg):
-        """
+        """Overloaded multiplication operator.
+
         If the argument is an AudioSegment, overlay the multiplied audio
         segment.
 
@@ -383,22 +386,24 @@ class AudioSegment(object):
         audio.
 
         The following would return an AudioSegment that contains the
-        audio of audio_seg eight times
-
-        `audio_seg * 8`
+        audio of `audio_seg` eight times::
+            `audio_seg * 8`
         """
+
         if isinstance(arg, AudioSegment):
             return self.overlay(arg, position=0, loop=True)
         else:
             return self._spawn(data=self._data * arg)
 
     def _spawn(self, data, overrides={}):
-        """
-        Creates a new audio segment using the metadata from the current one
-        and the data passed in. Should be used whenever an AudioSegment is
-        being returned by an operation that would alters the current one,
+        """Creates a new audio segment using the metadata from the current one
+        and the data passed in.
+
+        This should be used whenever an AudioSegment is
+        being returned by an operation that would alter the current one,
         since AudioSegment objects are immutable.
         """
+
         # accept lists of data chunks
         if isinstance(data, list):
             data = b''.join(data)
@@ -453,9 +458,17 @@ class AudioSegment(object):
 
     @classmethod
     def silent(cls, duration=1000, frame_rate=11025):
-        """
-        Generate a silent audio segment.
-        duration specified in milliseconds (default duration: 1000ms, default frame_rate: 11025).
+        """Generate a silent audio segment.
+
+        Parameters
+        ----------
+        duration : optional
+            Default = 1000
+            The duration, specified in milliseconds.
+
+        frame_rate : optional
+            Default = 11025
+            The frame rate.
         """
         frames = int(frame_rate * (duration / 1000.0))
         data = b"\0\0" * frames
@@ -755,39 +768,37 @@ class AudioSegment(object):
 
     def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None, id3v2_version='4',
                cover=None):
+        """Export an AudioSegment to a file with the given options.
+
+        Parameters
+        ----------
+        out_f : string, os.PathLike (python 3.6+)
+            Path to the destination audio file.
+        format : string
+            Format for the destination audio file
+            ('mp3', 'wav', 'raw', 'ogg', etc.).
+            This can be any format supported by ffmpeg/avconv.
+        codec : string
+            Codec used for encoding.
+        bitrate : string
+            Bitrate used when encoding the destination file
+            (64k, 92k, 128k, 256k, 312k, etc.).
+            Each codec accepts different bitrate arguments so take a look at
+            the ffmpeg documentation for details
+            (bitrate is usually shown as -b, -ba or -a:b).
+        parameters : string
+            Additional ffmpeg/avconv parameters.
+        tags : dict
+            Set metadata information of destination files,
+            usually used as tags
+            (e.g. {title='Song Title', artist='Song Artist'}).
+        id3v2_version : string, optional
+            Default = '4'
+            Set ID3v2 version for tags.
+        cover : file
+            Set cover for audio file from image file (png or jpg).
         """
-        Export an AudioSegment to a file with given options
 
-        out_f (string):
-            Path to destination audio file. Also accepts os.PathLike objects on
-            python >= 3.6
-
-        format (string)
-            Format for destination audio file.
-            ('mp3', 'wav', 'raw', 'ogg' or other ffmpeg/avconv supported files)
-
-        codec (string)
-            Codec used to encoding for the destination.
-
-        bitrate (string)
-            Bitrate used when encoding destination file. (64, 92, 128, 256, 312k...)
-            Each codec accepts different bitrate arguments so take a look at the
-            ffmpeg documentation for details (bitrate usually shown as -b, -ba or
-            -a:b).
-
-        parameters (string)
-            Aditional ffmpeg/avconv parameters
-
-        tags (dict)
-            Set metadata information to destination files
-            usually used as tags. ({title='Song Title', artist='Song Artist'})
-
-        id3v2_version (string)
-            Set ID3v2 version for tags. (default: '4')
-
-        cover (file)
-            Set cover for audio file from image file. (png or jpg)
-        """
         id3v2_allowed_versions = ['3', '4']
 
         out_f, _ = _fd_or_path_or_tempfile(out_f, 'wb+')
@@ -907,9 +918,15 @@ class AudioSegment(object):
         return self._data[frame_start:frame_end]
 
     def frame_count(self, ms=None):
-        """
-        returns the number of frames for the given number of milliseconds, or
-            if not specified, the number of frames in the whole AudioSegment
+        """Return the number of frames for the given number of milliseconds
+        or the whole AudioSegment.
+
+        Parameters
+        ----------
+        ms : float, optional
+            default = None
+            Number of milliseconds to get frames for.
+            If ms is None, return the number of frames in the whole segment.
         """
         if ms is not None:
             return ms * (self.frame_rate / 1000.0)
@@ -1042,10 +1059,16 @@ class AudioSegment(object):
         return self.frame_rate and self.frame_count() / self.frame_rate or 0.0
 
     def get_dc_offset(self, channel=1):
+        """Return a value between -1.0 and 1.0 representing the DC offset of
+        the specified channel.
+
+        Parameters
+        ----------
+        channel : int, optional
+            default = 1
+            1 for left, 2 for right.
         """
-        Returns a value between -1.0 and 1.0 representing the DC offset of a
-        channel (1 for left, 2 for right).
-        """
+
         if not 1 <= channel <= 2:
             raise ValueError("channel value must be 1 (left) or 2 (right)")
 
@@ -1059,10 +1082,11 @@ class AudioSegment(object):
         return float(audioop.avg(data, self.sample_width)) / self.max_possible_amplitude
 
     def remove_dc_offset(self, channel=None, offset=None):
-        """
-        Removes DC offset of given channel. Calculates offset if it's not given.
-        Offset values must be in range -1.0 to 1.0. If channel is None, removes
-        DC offset from all available channels.
+        """Remove DC offset of the given channel.
+
+        Calculate offset if it is not given.
+        Offset values must be in the range [-1.0, 1.0].
+        If channel is None, removes DC offset from all available channels.
         """
         if channel and not 1 <= channel <= 2:
             raise ValueError("channel value must be None, 1 (left) or 2 (right)")
@@ -1101,26 +1125,26 @@ class AudioSegment(object):
                                             db_to_float(float(volume_change))))
 
     def overlay(self, seg, position=0, loop=False, times=None, gain_during_overlay=None):
-        """
-        Overlay the provided segment on to this segment starting at the
-        specificed position and using the specfied looping beahvior.
+        """Overlay the provided segment onto this segment starting at the
+        specified position, using the specified looping behavior.
 
-        seg (AudioSegment):
-            The audio segment to overlay on to this one.
-
-        position (optional int):
-            The position to start overlaying the provided segment in to this
-            one.
-
-        loop (optional bool):
+        Parameters
+        ----------
+        seg : AudioSegment
+            The audio segment to overlay onto this one.
+        position : int, optional
+            default = 0
+            The position at which to start overlaying the provided segment
+            onto this one.
+        loop : bool, optional
+            default = False
             Loop seg as many times as necessary to match this segment's length.
-            Overrides loops param.
-
-        times (optional int):
+            Overrides loops parameter.
+        times : int, optional
             Loop seg the specified number of times or until it matches this
-            segment's length. 1 means once, 2 means twice, ... 0 would make the
-            call a no-op
-        gain_during_overlay (optional int):
+            segment's length. 1 means once, 2 means twice, etc.
+            0 would make the call a no-op.
+        gain_during_overlay : int, optional
             Changes this segment's volume by the specified amount during the
             duration of time that seg is overlaid on top of it. When negative,
             this has the effect of 'ducking' the audio under the overlay.
@@ -1206,24 +1230,26 @@ class AudioSegment(object):
 
     def fade(self, to_gain=0, from_gain=0, start=None, end=None,
              duration=None):
+        """Fade the volume of this audio segment.
+
+        Parameters
+        ----------
+        to_gain : float, optional
+            The resulting volume_change in dB.
+
+        start : int, optional
+            Default = beginning of the segment
+            When in this segment to start fading, in milliseconds.
+
+        end : int, optional
+            Default = end of the segment
+            When in this segment to stop fading, in milliseconds.
+
+        duration : int, optional
+            Default = length of the segment (end-start)
+            The duration of the fade.
         """
-        Fade the volume of this audio segment.
 
-        to_gain (float):
-            resulting volume_change in db
-
-        start (int):
-            default = beginning of the segment
-            when in this segment to start fading in milliseconds
-
-        end (int):
-            default = end of the segment
-            when in this segment to start fading in milliseconds
-
-        duration (int):
-            default = until the end of the audio segment
-            the duration of the fade
-        """
         if None not in [duration, end, start]:
             raise TypeError('Only two of the three arguments, "start", '
                             '"end", and "duration" may be specified')
