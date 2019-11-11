@@ -22,7 +22,7 @@ def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek
     slice_starts = range(0, last_slice_start + 1, seek_step)
 
     # guarantee last_slice_start is included in the range
-    # to make sure the last portion of the audio is seached
+    # to make sure the last portion of the audio is searched
     if last_slice_start % seek_step:
         slice_starts = itertools.chain(slice_starts, [last_slice_start])
 
