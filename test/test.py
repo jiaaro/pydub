@@ -134,7 +134,7 @@ if sys.version_info >= (3, 6):
                 _ = AudioSegment.from_file(path)
 
         def assertWithinRange(self, val, lower_bound, upper_bound):
-            self.assertTrue(lower_bound < val < upper_bound,
+            self.assertTrue(lower_bound <= val <= upper_bound,
                             "%s is not in the acceptable range: %s - %s" %
                             (val, lower_bound, upper_bound))
 
@@ -210,7 +210,7 @@ class AudioSegmentTests(unittest.TestCase):
         self.png_cover_path = os.path.join(data_dir, 'cover.png')
 
     def assertWithinRange(self, val, lower_bound, upper_bound):
-        self.assertTrue(lower_bound < val < upper_bound,
+        self.assertTrue(lower_bound <= val <= upper_bound,
                         "%s is not in the acceptable range: %s - %s" %
                         (val, lower_bound, upper_bound))
 
