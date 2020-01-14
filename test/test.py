@@ -141,9 +141,9 @@ if sys.version_info >= (3, 6):
         def assertWithinTolerance(self, val, expected, tolerance=None,
                                   percentage=None):
             if percentage is not None:
-                tolerance = val * percentage
-            lower_bound = val - tolerance
-            upper_bound = val + tolerance
+                tolerance = expected * percentage
+            lower_bound = expected - tolerance
+            upper_bound = expected + tolerance
             self.assertWithinRange(val, lower_bound, upper_bound)
 
         def test_export_pathlib_path(self):
@@ -217,9 +217,9 @@ class AudioSegmentTests(unittest.TestCase):
     def assertWithinTolerance(self, val, expected, tolerance=None,
                               percentage=None):
         if percentage is not None:
-            tolerance = val * percentage
-        lower_bound = val - tolerance
-        upper_bound = val + tolerance
+            tolerance = expected * percentage
+        lower_bound = expected - tolerance
+        upper_bound = expected + tolerance
         self.assertWithinRange(val, lower_bound, upper_bound)
 
     def test_direct_instantiation_with_bytes(self):
