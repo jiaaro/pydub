@@ -886,10 +886,10 @@ class AudioSegmentTests(unittest.TestCase):
 
     def test_dBFS(self):
         seg_8bit = self.seg1.set_sample_width(1)
-        self.assertWithinTolerance(seg_8bit.dBFS, -8.88, tolerance=0.01)
-        self.assertWithinTolerance(self.seg1.dBFS, -8.88, tolerance=0.01)
-        self.assertWithinTolerance(self.seg2.dBFS, -10.39, tolerance=0.01)
-        self.assertWithinTolerance(self.seg3.dBFS, -6.47, tolerance=0.01)
+        self.assertWithinTolerance(seg_8bit.dBFS, -18.06, tolerance=0.02)
+        self.assertWithinTolerance(self.seg1.dBFS, -17.76, tolerance=0.02)
+        self.assertWithinTolerance(self.seg2.dBFS, -20.78, tolerance=0.02)
+        self.assertWithinTolerance(self.seg3.dBFS, -12.94, tolerance=0.02)
 
     def test_compress(self):
         compressed = self.seg1.compress_dynamic_range()
