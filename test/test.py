@@ -243,6 +243,32 @@ class AudioSegmentTests(unittest.TestCase):
         # the data length should have grown by exactly 4:3 (24 bits turn into 32 bits)
         self.assertEqual(len(seg24.raw_data) * 3, len24 * 4)
 
+    def test_8_bit_audio(self):
+        original_path = os.path.join(data_dir,'test1.wav')
+        original_segment = AudioSegment.from_file(original_path)
+        target_rms = original_segment.rms//2**8
+
+        path_with_8bits = os.path.join(data_dir,'test1-8bit.wav')
+
+        def check_8bit_segment(segment):
+            self.assertWithinTolerance(segment.rms,target_rms,tolerance=0)
+
+        # check reading directly
+        check_8bit_segment(AudioSegment.from_file(path_with_8bits))
+
+        # check using ffmpeg on it
+        with open(path_with_8bits,'rb') as file_8bit:
+            check_8bit_segment(AudioSegment.from_file(file_8bit))
+
+        # check conversion from higher-width sample
+        check_8bit_segment(AudioSegment.from_file(original_path).set_sample_width(1))
+
+        # check audio export
+        with NamedTemporaryFile('w+b', suffix='.wav') as tmp_file:
+            original_segment.set_sample_width(1).export(tmp_file,format='wav')
+            tmp_file.seek(0)
+            check_8bit_segment(AudioSegment.from_file(tmp_file))
+
     def test_192khz_audio(self):
         test_files = [('test-192khz-16bit.wav', 16),
                       ('test-192khz-24bit.wav', 32),
