@@ -13,10 +13,13 @@ PLAYER = get_player_name()
 
 
 
-def _play_with_ffplay(seg):
+def _play_with_ffplay(seg, quiet):
     with NamedTemporaryFile("w+b", suffix=".wav") as f:
         seg.export(f.name, "wav")
-        subprocess.call([PLAYER, "-nodisp", "-autoexit", "-hide_banner", f.name])
+        if not quiet:
+            subprocess.call([PLAYER, "-nodisp", "-autoexit", "-hide_banner", f.name])
+        else:
+            subprocess.call([PLAYER, "-nodisp", "-autoexit", "-hide_banner", "-loglevel", "quiet", f.name])
 
 
 def _play_with_pyaudio(seg):
@@ -48,7 +51,16 @@ def _play_with_simpleaudio(seg):
     )
 
 
-def play(audio_segment):
+def play(audio_segment, quiet=False):
+    """
+    Plays the audio within audio_segment
+
+    audio_segment: The audio container
+    quiet: Flag to suppress output while playing(only while using ffplay), Defaults to False
+
+    audio_segment: pydub.audio_segment.AudioSegment
+    quiet: Boolean
+    """
     try:
         playback = _play_with_simpleaudio(audio_segment)
         try:
@@ -68,4 +80,4 @@ def play(audio_segment):
     else:
         return
     
-    _play_with_ffplay(audio_segment)
+    _play_with_ffplay(audio_segment, quiet)
