@@ -102,6 +102,7 @@ def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, ke
     keep_silence - (in ms) amount of silence to leave at the beginning
         and end of the chunks. Keeps the sound from sounding like it is
         abruptly cut off. (default: 100ms)
+    with_timing - return timestamp in ms with each chunk (start, chunk)
     """
 
     not_silence_ranges = detect_nonsilent(audio_segment, min_silence_len, silence_thresh, seek_step)
