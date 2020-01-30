@@ -774,7 +774,7 @@ class AudioSegment(object):
             ('mp3', 'wav', 'raw', 'ogg' or other ffmpeg/avconv supported files)
 
         codec (string)
-            Codec used to encoding for the destination.
+            Codec used to encode the destination file.
 
         bitrate (string)
             Bitrate used when encoding destination file. (64, 92, 128, 256, 312k...)
@@ -782,7 +782,7 @@ class AudioSegment(object):
             ffmpeg documentation for details (bitrate usually shown as -b, -ba or
             -a:b).
 
-        parameters (string)
+        parameters (list of strings)
             Aditional ffmpeg/avconv parameters
 
         tags (dict)
@@ -797,6 +797,12 @@ class AudioSegment(object):
         """
         id3v2_allowed_versions = ['3', '4']
 
+        if format == "raw" and (codec is not None or parameters is not None):
+            raise AttributeError(
+                    'Can not invoke ffmpeg when export format is "raw"; '
+                    'specify an ffmpeg raw format like format="s16le" instead '
+                    'or call export(format="raw") with no codec or parameters')
+
         out_f, _ = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
 
@@ -805,8 +811,10 @@ class AudioSegment(object):
             out_f.seek(0)
             return out_f
 
-        # for wav output we can just write the data directly to out_f
-        if format == "wav":
+        # wav with no ffmpeg parameters can just be written directly to out_f
+        easy_wav = format == "wav" and codec is None and parameters is None
+
+        if easy_wav:
             data = out_f
         else:
             data = NamedTemporaryFile(mode="wb", delete=False)
@@ -821,8 +829,8 @@ class AudioSegment(object):
         wave_data.writeframesraw(self._data)
         wave_data.close()
 
-        # for wav files, we're done (wav data is written directly to out_f)
-        if format == 'wav':
+        # for easy wav files, we're done (wav data is written directly to out_f)
+        if easy_wav:
             return out_f
 
         output = NamedTemporaryFile(mode="w+b", delete=False)
