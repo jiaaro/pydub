@@ -232,7 +232,7 @@ def get_extra_info(stderr):
     """
     extra_info = {}
 
-    re_stream = r'(?P<space_start> +)Stream #0[:\.](?P<stream_id>([0-9]+))(?P<content_0>.+)\n?((?P<space_end> +)(?P<content_1>.+))?'
+    re_stream = r'(?P<space_start> +)Stream #0[:\.](?P<stream_id>([0-9]+))(?P<content_0>.+)\n?(?! *Stream)((?P<space_end> +)(?P<content_1>.+))?'
     for i in re.finditer(re_stream, stderr):
         if i.group('space_end') is not None and len(i.group('space_start')) <= len(
                 i.group('space_end')):

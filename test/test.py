@@ -586,6 +586,27 @@ class AudioSegmentTests(unittest.TestCase):
                                    len(seg),
                                    percentage=0.01)
 
+    def test_export_as_wav_with_codec(self):
+        seg = self.seg1
+        exported_wav = seg.export(format='wav', codec='pcm_s32le')
+        seg_exported_wav = AudioSegment.from_wav(exported_wav)
+
+        self.assertWithinTolerance(len(seg_exported_wav),
+                                   len(seg),
+                                   percentage=0.01)
+        self.assertEqual(seg_exported_wav.sample_width, 4)
+
+    def test_export_as_wav_with_parameters(self):
+        seg = self.seg1
+        exported_wav = seg.export(format='wav', parameters=['-ar', '16000', '-ac', '1'])
+        seg_exported_wav = AudioSegment.from_wav(exported_wav)
+
+        self.assertWithinTolerance(len(seg_exported_wav),
+                                   len(seg),
+                                   percentage=0.01)
+        self.assertEqual(seg_exported_wav.frame_rate, 16000)
+        self.assertEqual(seg_exported_wav.channels, 1)
+
     def test_export_as_raw(self):
         seg = self.seg1
         exported_raw = seg.export(format='raw')
@@ -595,6 +616,16 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertWithinTolerance(len(seg_exported_raw),
                                    len(seg),
                                    percentage=0.01)
+
+    def test_export_as_raw_with_codec(self):
+        seg = self.seg1
+        with self.assertRaises(AttributeError):
+            seg.export(format='raw', codec='pcm_s32le')
+
+    def test_export_as_raw_with_parameters(self):
+        seg = self.seg1
+        with self.assertRaises(AttributeError):
+            seg.export(format='raw', parameters=['-ar', '16000', '-ac', '1'])
 
     def test_export_as_ogg(self):
         seg = self.seg1

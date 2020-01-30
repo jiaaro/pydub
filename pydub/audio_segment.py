@@ -137,6 +137,10 @@ def fix_wav_headers(data):
     if not headers or headers[-1].id != b'data':
         return
 
+    # TODO: Handle huge files in some other way
+    if len(data) > 2**32:
+        raise CouldntDecodeError("Unable to process >4GB files")
+
     # Set the file size in the RIFF chunk descriptor
     data[4:8] = struct.pack('<I', len(data) - 8)
 
@@ -675,7 +679,10 @@ class AudioSegment(object):
             stdin_parameter = subprocess.PIPE
             stdin_data = file.read()
 
-        info = mediainfo_json(orig_file, read_ahead_limit=read_ahead_limit)
+        if codec:
+            info = None
+        else:
+            info = mediainfo_json(orig_file, read_ahead_limit=read_ahead_limit)
         if info:
             audio_streams = [x for x in info['streams']
                              if x['codec_type'] == 'audio']
@@ -770,7 +777,7 @@ class AudioSegment(object):
             ('mp3', 'wav', 'raw', 'ogg' or other ffmpeg/avconv supported files)
 
         codec (string)
-            Codec used to encoding for the destination.
+            Codec used to encode the destination file.
 
         bitrate (string)
             Bitrate used when encoding destination file. (64, 92, 128, 256, 312k...)
@@ -778,7 +785,7 @@ class AudioSegment(object):
             ffmpeg documentation for details (bitrate usually shown as -b, -ba or
             -a:b).
 
-        parameters (string)
+        parameters (list of strings)
             Aditional ffmpeg/avconv parameters
 
         tags (dict)
@@ -793,6 +800,12 @@ class AudioSegment(object):
         """
         id3v2_allowed_versions = ['3', '4']
 
+        if format == "raw" and (codec is not None or parameters is not None):
+            raise AttributeError(
+                    'Can not invoke ffmpeg when export format is "raw"; '
+                    'specify an ffmpeg raw format like format="s16le" instead '
+                    'or call export(format="raw") with no codec or parameters')
+
         out_f, _ = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
 
@@ -801,8 +814,10 @@ class AudioSegment(object):
             out_f.seek(0)
             return out_f
 
-        # for wav output we can just write the data directly to out_f
-        if format == "wav":
+        # wav with no ffmpeg parameters can just be written directly to out_f
+        easy_wav = format == "wav" and codec is None and parameters is None
+
+        if easy_wav:
             data = out_f
         else:
             data = NamedTemporaryFile(mode="wb", delete=False)
@@ -822,8 +837,8 @@ class AudioSegment(object):
         wave_data.writeframesraw(pcm_for_wav)
         wave_data.close()
 
-        # for wav files, we're done (wav data is written directly to out_f)
-        if format == 'wav':
+        # for easy wav files, we're done (wav data is written directly to out_f)
+        if easy_wav:
             return out_f
 
         output = NamedTemporaryFile(mode="w+b", delete=False)
