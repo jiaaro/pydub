@@ -676,7 +676,10 @@ class AudioSegment(object):
             stdin_parameter = subprocess.PIPE
             stdin_data = file.read()
 
-        info = mediainfo_json(orig_file, read_ahead_limit=read_ahead_limit)
+        if codec:
+            info = None
+        else:
+            info = mediainfo_json(orig_file, read_ahead_limit=read_ahead_limit)
         if info:
             audio_streams = [x for x in info['streams']
                              if x['codec_type'] == 'audio']
