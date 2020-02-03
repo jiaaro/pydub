@@ -486,9 +486,9 @@ class AudioSegmentTests(unittest.TestCase):
 
         monomp3 = AudioSegment.from_mp3(mono.export())
         self.assertWithinTolerance(len(monomp3), len(self.seg2),
-                                   percentage=0.01)
+                                   tolerance=105)
 
-        merged = monomp3.append(stereo, crossfade=100)
+        merged = mono.append(stereo, crossfade=100)
         self.assertWithinTolerance(len(merged),
                                    len(self.seg1) + len(self.seg2) - 100,
                                    tolerance=1)
