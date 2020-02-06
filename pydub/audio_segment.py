@@ -228,6 +228,9 @@ class AudioSegment(object):
             self.frame_rate = wav_data.sample_rate
             self.frame_width = self.channels * self.sample_width
             self._data = wav_data.raw_data
+            if self.sample_width == 1:
+                # convert from unsigned integers in wav
+                self._data = audioop.bias(self._data, 1, -128)
 
         # Convert 24-bit audio to 32-bit audio.
         # (stdlib audioop and array modules do not support 24-bit data)
@@ -692,7 +695,7 @@ class AudioSegment(object):
             else:
                 bits_per_sample = audio_streams[0]['bits_per_sample']
             if bits_per_sample == 8:
-                acodec = 'pcm_s8'
+                acodec = 'pcm_u8'
             else:
                 acodec = 'pcm_s%dle' % bits_per_sample
 
@@ -819,6 +822,11 @@ class AudioSegment(object):
         else:
             data = NamedTemporaryFile(mode="wb", delete=False)
 
+        pcm_for_wav = self._data
+        if self.sample_width == 1:
+            # convert to unsigned integers for wav
+            pcm_for_wav = audioop.bias(self._data, 1, 128)
+
         wave_data = wave.open(data, 'wb')
         wave_data.setnchannels(self.channels)
         wave_data.setsampwidth(self.sample_width)
@@ -826,7 +834,7 @@ class AudioSegment(object):
         # For some reason packing the wave header struct with
         # a float in python 2 doesn't throw an exception
         wave_data.setnframes(int(self.frame_count()))
-        wave_data.writeframesraw(self._data)
+        wave_data.writeframesraw(pcm_for_wav)
         wave_data.close()
 
         # for easy wav files, we're done (wav data is written directly to out_f)
@@ -935,20 +943,12 @@ class AudioSegment(object):
         if sample_width == self.sample_width:
             return self
 
-        data = self._data
-
-        if self.sample_width == 1:
-            data = audioop.bias(data, 1, -128)
-
-        if data:
-            data = audioop.lin2lin(data, self.sample_width, sample_width)
-
-        if sample_width == 1:
-            data = audioop.bias(data, 1, 128)
-
         frame_width = self.channels * sample_width
-        return self._spawn(data, overrides={'sample_width': sample_width,
-                                            'frame_width': frame_width})
+
+        return self._spawn(
+            audioop.lin2lin(self._data, self.sample_width, sample_width),
+            overrides={'sample_width': sample_width, 'frame_width': frame_width}
+        )
 
     def set_frame_rate(self, frame_rate):
         if frame_rate == self.frame_rate:
@@ -1024,10 +1024,7 @@ class AudioSegment(object):
 
     @property
     def rms(self):
-        if self.sample_width == 1:
-            return self.set_sample_width(2).rms
-        else:
-            return audioop.rms(self._data, self.sample_width)
+        return audioop.rms(self._data, self.sample_width)
 
     @property
     def dBFS(self):
