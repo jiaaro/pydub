@@ -16,7 +16,7 @@ PLAYER = get_player_name()
 def _play_with_ffplay(seg):
     with NamedTemporaryFile("w+b", suffix=".wav") as f:
         seg.export(f.name, "wav")
-        subprocess.call([PLAYER, "-nodisp", "-autoexit", "-hide_banner", f.name])
+        subprocess.call([PLAYER, "-nodisp", "-autoexit", "-hide_banner", "-loglevel", "quiet", f.name])
 
 
 def _play_with_pyaudio(seg):
