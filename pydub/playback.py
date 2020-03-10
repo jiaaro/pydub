@@ -51,9 +51,11 @@ def _play_with_simpleaudio(seg):
     )
 
 
-def play(audio_segment):
+def play(audio_segment, block=True):
     try:
         playback = _play_with_simpleaudio(audio_segment)
+        if !block:
+            return
         try:
             playback.wait_done()
         except KeyboardInterrupt:
