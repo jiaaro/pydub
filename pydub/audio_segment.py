@@ -93,7 +93,7 @@ def extract_wav_headers(data):
     # def search_subchunk(data, subchunk_id):
     pos = 12  # The size of the RIFF chunk descriptor
     subchunks = []
-    while pos + 8 < len(data) and len(subchunks) < 10:
+    while pos + 8 <= len(data) and len(subchunks) < 10:
         subchunk_id = data[pos:pos + 4]
         subchunk_size = struct.unpack_from('<I', data[pos + 4:pos + 8])[0]
         subchunks.append(WavSubChunk(subchunk_id, pos, subchunk_size))
@@ -136,6 +136,10 @@ def fix_wav_headers(data):
     headers = extract_wav_headers(data)
     if not headers or headers[-1].id != b'data':
         return
+
+    # TODO: Handle huge files in some other way
+    if len(data) > 2**32:
+        raise CouldntDecodeError("Unable to process >4GB files")
 
     # Set the file size in the RIFF chunk descriptor
     data[4:8] = struct.pack('<I', len(data) - 8)
@@ -224,6 +228,9 @@ class AudioSegment(object):
             self.frame_rate = wav_data.sample_rate
             self.frame_width = self.channels * self.sample_width
             self._data = wav_data.raw_data
+            if self.sample_width == 1:
+                # convert from unsigned integers in wav
+                self._data = audioop.bias(self._data, 1, -128)
 
         # Convert 24-bit audio to 32-bit audio.
         # (stdlib audioop and array modules do not support 24-bit data)
@@ -672,7 +679,10 @@ class AudioSegment(object):
             stdin_parameter = subprocess.PIPE
             stdin_data = file.read()
 
-        info = mediainfo_json(orig_file, read_ahead_limit=read_ahead_limit)
+        if codec:
+            info = None
+        else:
+            info = mediainfo_json(orig_file, read_ahead_limit=read_ahead_limit)
         if info:
             audio_streams = [x for x in info['streams']
                              if x['codec_type'] == 'audio']
@@ -685,7 +695,7 @@ class AudioSegment(object):
             else:
                 bits_per_sample = audio_streams[0]['bits_per_sample']
             if bits_per_sample == 8:
-                acodec = 'pcm_s8'
+                acodec = 'pcm_u8'
             else:
                 acodec = 'pcm_s%dle' % bits_per_sample
 
@@ -767,7 +777,7 @@ class AudioSegment(object):
             ('mp3', 'wav', 'raw', 'ogg' or other ffmpeg/avconv supported files)
 
         codec (string)
-            Codec used to encoding for the destination.
+            Codec used to encode the destination file.
 
         bitrate (string)
             Bitrate used when encoding destination file. (64, 92, 128, 256, 312k...)
@@ -775,7 +785,7 @@ class AudioSegment(object):
             ffmpeg documentation for details (bitrate usually shown as -b, -ba or
             -a:b).
 
-        parameters (string)
+        parameters (list of strings)
             Aditional ffmpeg/avconv parameters
 
         tags (dict)
@@ -790,6 +800,12 @@ class AudioSegment(object):
         """
         id3v2_allowed_versions = ['3', '4']
 
+        if format == "raw" and (codec is not None or parameters is not None):
+            raise AttributeError(
+                    'Can not invoke ffmpeg when export format is "raw"; '
+                    'specify an ffmpeg raw format like format="s16le" instead '
+                    'or call export(format="raw") with no codec or parameters')
+
         out_f, _ = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
 
@@ -798,11 +814,18 @@ class AudioSegment(object):
             out_f.seek(0)
             return out_f
 
-        # for wav output we can just write the data directly to out_f
-        if format == "wav":
+        # wav with no ffmpeg parameters can just be written directly to out_f
+        easy_wav = format == "wav" and codec is None and parameters is None
+
+        if easy_wav:
             data = out_f
         else:
             data = NamedTemporaryFile(mode="wb", delete=False)
+
+        pcm_for_wav = self._data
+        if self.sample_width == 1:
+            # convert to unsigned integers for wav
+            pcm_for_wav = audioop.bias(self._data, 1, 128)
 
         wave_data = wave.open(data, 'wb')
         wave_data.setnchannels(self.channels)
@@ -811,11 +834,11 @@ class AudioSegment(object):
         # For some reason packing the wave header struct with
         # a float in python 2 doesn't throw an exception
         wave_data.setnframes(int(self.frame_count()))
-        wave_data.writeframesraw(self._data)
+        wave_data.writeframesraw(pcm_for_wav)
         wave_data.close()
 
-        # for wav files, we're done (wav data is written directly to out_f)
-        if format == 'wav':
+        # for easy wav files, we're done (wav data is written directly to out_f)
+        if easy_wav:
             return out_f
 
         # aac file output must be suffixed
@@ -930,20 +953,12 @@ class AudioSegment(object):
         if sample_width == self.sample_width:
             return self
 
-        data = self._data
-
-        if self.sample_width == 1:
-            data = audioop.bias(data, 1, -128)
-
-        if data:
-            data = audioop.lin2lin(data, self.sample_width, sample_width)
-
-        if sample_width == 1:
-            data = audioop.bias(data, 1, 128)
-
         frame_width = self.channels * sample_width
-        return self._spawn(data, overrides={'sample_width': sample_width,
-                                            'frame_width': frame_width})
+
+        return self._spawn(
+            audioop.lin2lin(self._data, self.sample_width, sample_width),
+            overrides={'sample_width': sample_width, 'frame_width': frame_width}
+        )
 
     def set_frame_rate(self, frame_rate):
         if frame_rate == self.frame_rate:
@@ -967,12 +982,29 @@ class AudioSegment(object):
             fn = audioop.tostereo
             frame_width = self.frame_width * 2
             fac = 1
+            converted = fn(self._data, self.sample_width, fac, fac)
         elif channels == 1 and self.channels == 2:
             fn = audioop.tomono
             frame_width = self.frame_width // 2
             fac = 0.5
-
-        converted = fn(self._data, self.sample_width, fac, fac)
+            converted = fn(self._data, self.sample_width, fac, fac)
+        elif channels == 1:
+            channels_data = [seg.get_array_of_samples() for seg in self.split_to_mono()]
+            frame_count = int(self.frame_count())
+            converted = array.array(
+                channels_data[0].typecode,
+                b'\0' * (frame_count * self.sample_width)
+            )
+            for raw_channel_data in channels_data:
+                for i in range(frame_count):
+                    converted[i] += raw_channel_data[i] // self.channels
+            frame_width = self.frame_width // self.channels
+        elif self.channels == 1:
+            dup_channels = [self for iChannel in range(channels)]
+            return AudioSegment.from_mono_audiosegments(*dup_channels)
+        else:
+            raise ValueError(
+                "AudioSegment.set_channels only supports mono-to-multi channel and multi-to-mono channel conversion")
 
         return self._spawn(data=converted,
                            overrides={
@@ -1002,10 +1034,7 @@ class AudioSegment(object):
 
     @property
     def rms(self):
-        if self.sample_width == 1:
-            return self.set_sample_width(2).rms
-        else:
-            return audioop.rms(self._data, self.sample_width)
+        return audioop.rms(self._data, self.sample_width)
 
     @property
     def dBFS(self):

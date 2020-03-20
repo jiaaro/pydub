@@ -134,16 +134,16 @@ if sys.version_info >= (3, 6):
                 _ = AudioSegment.from_file(path)
 
         def assertWithinRange(self, val, lower_bound, upper_bound):
-            self.assertTrue(lower_bound < val < upper_bound,
+            self.assertTrue(lower_bound <= val <= upper_bound,
                             "%s is not in the acceptable range: %s - %s" %
                             (val, lower_bound, upper_bound))
 
         def assertWithinTolerance(self, val, expected, tolerance=None,
                                   percentage=None):
             if percentage is not None:
-                tolerance = val * percentage
-            lower_bound = val - tolerance
-            upper_bound = val + tolerance
+                tolerance = expected * percentage
+            lower_bound = expected - tolerance
+            upper_bound = expected + tolerance
             self.assertWithinRange(val, lower_bound, upper_bound)
 
         def test_export_pathlib_path(self):
@@ -210,16 +210,16 @@ class AudioSegmentTests(unittest.TestCase):
         self.png_cover_path = os.path.join(data_dir, 'cover.png')
 
     def assertWithinRange(self, val, lower_bound, upper_bound):
-        self.assertTrue(lower_bound < val < upper_bound,
+        self.assertTrue(lower_bound <= val <= upper_bound,
                         "%s is not in the acceptable range: %s - %s" %
                         (val, lower_bound, upper_bound))
 
     def assertWithinTolerance(self, val, expected, tolerance=None,
                               percentage=None):
         if percentage is not None:
-            tolerance = val * percentage
-        lower_bound = val - tolerance
-        upper_bound = val + tolerance
+            tolerance = expected * percentage
+        lower_bound = expected - tolerance
+        upper_bound = expected + tolerance
         self.assertWithinRange(val, lower_bound, upper_bound)
 
     def test_direct_instantiation_with_bytes(self):
@@ -242,6 +242,32 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(seg24.sample_width, 4)
         # the data length should have grown by exactly 4:3 (24 bits turn into 32 bits)
         self.assertEqual(len(seg24.raw_data) * 3, len24 * 4)
+
+    def test_8_bit_audio(self):
+        original_path = os.path.join(data_dir,'test1.wav')
+        original_segment = AudioSegment.from_file(original_path)
+        target_rms = original_segment.rms//2**8
+
+        path_with_8bits = os.path.join(data_dir,'test1-8bit.wav')
+
+        def check_8bit_segment(segment):
+            self.assertWithinTolerance(segment.rms,target_rms,tolerance=0)
+
+        # check reading directly
+        check_8bit_segment(AudioSegment.from_file(path_with_8bits))
+
+        # check using ffmpeg on it
+        with open(path_with_8bits,'rb') as file_8bit:
+            check_8bit_segment(AudioSegment.from_file(file_8bit))
+
+        # check conversion from higher-width sample
+        check_8bit_segment(AudioSegment.from_file(original_path).set_sample_width(1))
+
+        # check audio export
+        with NamedTemporaryFile('w+b', suffix='.wav') as tmp_file:
+            original_segment.set_sample_width(1).export(tmp_file,format='wav')
+            tmp_file.seek(0)
+            check_8bit_segment(AudioSegment.from_file(tmp_file))
 
     def test_192khz_audio(self):
         test_files = [('test-192khz-16bit.wav', 16),
@@ -460,9 +486,9 @@ class AudioSegmentTests(unittest.TestCase):
 
         monomp3 = AudioSegment.from_mp3(mono.export())
         self.assertWithinTolerance(len(monomp3), len(self.seg2),
-                                   percentage=0.01)
+                                   tolerance=105)
 
-        merged = monomp3.append(stereo, crossfade=100)
+        merged = mono.append(stereo, crossfade=100)
         self.assertWithinTolerance(len(merged),
                                    len(self.seg1) + len(self.seg2) - 100,
                                    tolerance=1)
@@ -560,6 +586,27 @@ class AudioSegmentTests(unittest.TestCase):
                                    len(seg),
                                    percentage=0.01)
 
+    def test_export_as_wav_with_codec(self):
+        seg = self.seg1
+        exported_wav = seg.export(format='wav', codec='pcm_s32le')
+        seg_exported_wav = AudioSegment.from_wav(exported_wav)
+
+        self.assertWithinTolerance(len(seg_exported_wav),
+                                   len(seg),
+                                   percentage=0.01)
+        self.assertEqual(seg_exported_wav.sample_width, 4)
+
+    def test_export_as_wav_with_parameters(self):
+        seg = self.seg1
+        exported_wav = seg.export(format='wav', parameters=['-ar', '16000', '-ac', '1'])
+        seg_exported_wav = AudioSegment.from_wav(exported_wav)
+
+        self.assertWithinTolerance(len(seg_exported_wav),
+                                   len(seg),
+                                   percentage=0.01)
+        self.assertEqual(seg_exported_wav.frame_rate, 16000)
+        self.assertEqual(seg_exported_wav.channels, 1)
+
     def test_export_as_raw(self):
         seg = self.seg1
         exported_raw = seg.export(format='raw')
@@ -569,6 +616,16 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertWithinTolerance(len(seg_exported_raw),
                                    len(seg),
                                    percentage=0.01)
+
+    def test_export_as_raw_with_codec(self):
+        seg = self.seg1
+        with self.assertRaises(AttributeError):
+            seg.export(format='raw', codec='pcm_s32le')
+
+    def test_export_as_raw_with_parameters(self):
+        seg = self.seg1
+        with self.assertRaises(AttributeError):
+            seg.export(format='raw', parameters=['-ar', '16000', '-ac', '1'])
 
     def test_export_as_ogg(self):
         seg = self.seg1
@@ -882,14 +939,14 @@ class AudioSegmentTests(unittest.TestCase):
         speedup_seg = self.seg1.speedup(2.0)
 
         self.assertWithinTolerance(
-            len(self.seg1) / 2, len(speedup_seg), percentage=0.01)
+            len(self.seg1) / 2, len(speedup_seg), percentage=0.02)
 
     def test_dBFS(self):
         seg_8bit = self.seg1.set_sample_width(1)
-        self.assertWithinTolerance(seg_8bit.dBFS, -8.88, tolerance=0.01)
-        self.assertWithinTolerance(self.seg1.dBFS, -8.88, tolerance=0.01)
-        self.assertWithinTolerance(self.seg2.dBFS, -10.39, tolerance=0.01)
-        self.assertWithinTolerance(self.seg3.dBFS, -6.47, tolerance=0.01)
+        self.assertWithinTolerance(seg_8bit.dBFS, -18.06, tolerance=1.5)
+        self.assertWithinTolerance(self.seg1.dBFS, -17.76, tolerance=1.5)
+        self.assertWithinTolerance(self.seg2.dBFS, -20.78, tolerance=1.5)
+        self.assertWithinTolerance(self.seg3.dBFS, -12.94, tolerance=1.5)
 
     def test_compress(self):
         compressed = self.seg1.compress_dynamic_range()
@@ -1106,6 +1163,7 @@ class NoConverterTests(unittest.TestCase):
     def setUp(self):
         self.wave_file = os.path.join(data_dir, 'test1.wav')
         self.wave24_file = os.path.join(data_dir, 'test1-24bit.wav')
+        self.wave_empty = os.path.join(data_dir, 'test1_empty.wav')
         self.mp3_file = os.path.join(data_dir, 'test1.mp3')
         self.raw_file = os.path.join(data_dir, 'test1.raw')
         AudioSegment.converter = "definitely-not-a-path-to-anything-asdjklqwop"
@@ -1194,6 +1252,19 @@ class NoConverterTests(unittest.TestCase):
         exported = AudioSegment.from_wav(seg.export(format="wav"))
 
         self.assertEqual(len(exported), len(seg))
+
+    def test_opening_empty_wav_file(self):
+        seg = AudioSegment.from_wav(self.wave_empty)
+        self.assertTrue(len(seg) == 0)
+
+        seg = AudioSegment.from_file(self.wave_empty)
+        self.assertTrue(len(seg) == 0)
+
+        seg = AudioSegment.from_file(self.wave_empty, "wav")
+        self.assertTrue(len(seg) == 0)
+
+        seg = AudioSegment.from_file(self.wave_empty, format="wav")
+        self.assertTrue(len(seg) == 0)
 
 
 class FilterTests(unittest.TestCase):
