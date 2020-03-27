@@ -65,6 +65,15 @@ Concatenate audio (add one file to the end of another)
 without_the_middle = beginning + end
 ```
 
+Convert it Mid-Side form
+```python
+song=stereo_to_ms(song)
+```
+Or get it back to normal
+```python
+song=ms_to_stereo(song)
+```
+
 How long is it?
 
 ```python
