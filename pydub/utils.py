@@ -415,3 +415,20 @@ def get_supported_decoders():
 
 def get_supported_encoders():
     return get_supported_codecs()[1]
+
+def stereo_to_ms(seg):
+	'''
+	Left-Right -> Mid-Side
+	'''
+    channel = seg.split_to_mono()
+ 	channel = [channel[0].overlay(channel[1]),channel[0].overlay(channel[1].invert_phase())]
+    return AudioSegment.from_mono_audiosegments(channel[0],channel[1])
+	pass
+def ms_to_stereo(seg):
+	'''
+	Mid-Side -> Left-Right
+	'''
+    channel = seg.split_to_mono()
+ 	channel = [channel[0].overlay(channel[1])-3,channel[0].overlay(channel[1].invert_phase())-3]
+    return AudioSegment.from_mono_audiosegments(channel[0],channel[1])
+	pass
