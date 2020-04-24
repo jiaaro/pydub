@@ -553,6 +553,18 @@ shifted_samples_array = array.array(sound.array_type, shifted_samples)
 new_sound = sound._spawn(shifted_samples_array)
 ```
 
+Here's how to convert to a numpy float32 array:
+
+```python
+import numpy as np
+from pydub import AudioSegment
+
+sound = AudioSegment.from_file("sound1.wav")
+samples = sound.get_array_of_samples()
+
+fp_arr = np.array(samples).astype(np.float32) / np.iinfo(samples.typecode).max
+```
+
 ### AudioSegment(…).get_dc_offset()
 
 Returns a value between -1.0 and 1.0 representing the DC offset of a channel. This is calculated using `audioop.avg()` and normalizing the result by samples max value.
