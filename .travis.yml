@@ -15,6 +15,7 @@ python:
   - "3.4"
   - "3.5"
   - "3.6"
+  - "3.7"
   - "pypy2.7-5.8.0"
 script:
   - python test/test.py
