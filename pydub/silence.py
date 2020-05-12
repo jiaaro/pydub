@@ -89,7 +89,7 @@ def detect_nonsilent(audio_segment, min_silence_len=1000, silence_thresh=-16, se
 
 
 def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, keep_silence=100,
-                     seek_step=1):
+                     seek_step=1, with_timing=False):
     """
     audio_segment - original pydub.AudioSegment() object
 
@@ -99,43 +99,28 @@ def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, ke
     silence_thresh - (in dBFS) anything quieter than this will be
         considered silence. default: -16dBFS
 
-    keep_silence - (in ms or True/False) leave some silence at the beginning
-        and end of the chunks. Keeps the sound from sounding like it
-        is abruptly cut off.
-        When the length of the silence is less than the keep_silence duration
-        it is split evenly between the preceding and following non-silent
-        segments.
-        If True is specified, all the silence is kept, if False none is kept.
-        default: 100ms
+    keep_silence - (in ms) amount of silence to leave at the beginning
+        and end of the chunks. Keeps the sound from sounding like it is
+        abruptly cut off. (default: 100ms)
+    with_timing - return timestamp in ms with each chunk (start, chunk)
     """
-
-    if isinstance(keep_silence, bool):
-        keep_silence = len(audio_segment) if keep_silence else 0
 
     not_silence_ranges = detect_nonsilent(audio_segment, min_silence_len, silence_thresh, seek_step)
 
-    # from the itertools documentation
-    def pairwise(iterable):
-        "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-        a, b = itertools.tee(iterable)
-        next(b, None)
-        return zip(a, b)
-
-    start_min = 0
     chunks = []
-    for (start_i, end_i), (start_ii, end_ii) in pairwise(not_silence_ranges):
-        end_max = end_i + (start_ii - end_i + 1)//2  # +1 for rounding with integer division
-        start_i = max(start_min, start_i - keep_silence)
-        end_i = min(end_max, end_i + keep_silence)
-
-        chunks.append(audio_segment[start_i:end_i])
-        start_min = end_max
-
-    chunks.append(audio_segment[max(start_min, start_ii - keep_silence):
-                                min(len(audio_segment), end_ii + keep_silence)])
-
+    if with_timing:
+        for start_i, end_i in not_silence_ranges:
+            start_i = max(0, start_i - keep_silence)
+            end_i += keep_silence
+            chunks.append((int(start_i / 1000), audio_segment[start_i:end_i]))
+    else:
+        for start_i, end_i in not_silence_ranges:
+            start_i = max(0, start_i - keep_silence)
+            end_i += keep_silence
+            chunks.append(audio_segment[start_i:end_i])
 
     return chunks
+
 
 
 def detect_leading_silence(sound, silence_threshold=-50.0, chunk_size=10):
