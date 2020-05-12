@@ -8,7 +8,7 @@ from setuptools import setup
 
 setup(
     name='pydub',
-    version='0.23.1',
+    version='0.24.0',
     author='James Robert',
     author_email='jiaaro@gmail.com',
     description='Manipulate audio with an simple and easy high level interface',
