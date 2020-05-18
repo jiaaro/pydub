@@ -10,8 +10,8 @@ python:
   - "3.5"
   - "3.6"
   - "3.7"
-  - "pypy2.7"
-  - "pypy3.5"
+  - "pypy2"
+  - "pypy3"
 script:
   - python test/test.py
 after_script:
