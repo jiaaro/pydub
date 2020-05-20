@@ -1,21 +1,17 @@
 sudo: required
-dist: trusty
+dist: bionic
 language: python
-env:
-  - CONVERTER=ffmpeg
-  - CONVERTER="libav-tools libavcodec-extra-54"
 before_install:
-  - sudo add-apt-repository ppa:mc3man/trusty-media -y
   - sudo apt-get update --fix-missing
 install:
-  - sudo apt-get install -y ${CONVERTER} libopus-dev python-scipy python3-scipy
+  - sudo apt-get install -y ffmpeg libopus-dev python-scipy python3-scipy
 python:
   - "2.7"
-  - "3.3"
-  - "3.4"
   - "3.5"
   - "3.6"
-  - "pypy2.7-5.8.0"
+  - "3.7"
+  - "pypy2"
+  - "pypy3"
 script:
   - python test/test.py
 after_script:
