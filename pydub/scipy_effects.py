@@ -66,12 +66,16 @@ def low_pass_filter(seg, cutoff_freq, order=5):
 
 @register_pydub_effect
 def eq(seg,focus_freq,bandwidth=100,mode="peak",gain_dB=0,order=2):
-	'''
-    focus_freq - middle frequency or known frequency of band (in Hz)
-    bandwidth - range of the equalizer band
-    mode - Mode of Equalization(Peak/Notch,High Shelf, Low Shelf)
-    order - Rolloff factor(1 - 6dB/Octave 2 - 12dB/Octave)
-	'''
+    """
+    Args:
+        focus_freq - middle frequency or known frequency of band (in Hz)
+        bandwidth - range of the equalizer band
+        mode - Mode of Equalization(Peak/Notch(Bell Curve),High Shelf, Low Shelf)
+        order - Rolloff factor(1 - 6dB/Octave 2 - 12dB/Octave)
+    
+    Returns:
+        Equalized/Filtered AudioSegment
+    """
 	if gain_dB>=0:
 		if mode=="peak":
 			sec=band_pass_filter(seg,focus_freq-bandwidth/2,focus_freq+bandwidth/2,order=order)
