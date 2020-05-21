@@ -602,7 +602,7 @@ class AudioSegment(object):
             if p.returncode != 0:
                 raise CouldntDecodeError(
                     "Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(
-                        p.returncode, p_err))
+                        p.returncode, p_err.decode(errors='ignore') ))
             obj = cls._from_safe_wav(output)
         finally:
             input_file.close()
@@ -722,7 +722,7 @@ class AudioSegment(object):
                 file.close()
             raise CouldntDecodeError(
                 "Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(
-                    p.returncode, p_err))
+                    p.returncode, p_err.decode(errors='ignore') ))
 
         p_out = bytearray(p_out)
         fix_wav_headers(p_out)
@@ -910,7 +910,7 @@ class AudioSegment(object):
         if p.returncode != 0:
             raise CouldntEncodeError(
                 "Encoding failed. ffmpeg/avlib returned error code: {0}\n\nCommand:{1}\n\nOutput from ffmpeg/avlib:\n\n{2}".format(
-                    p.returncode, conversion_command, p_err))
+                    p.returncode, conversion_command, p_err.decode(errors='ignore') ))
 
         output.seek(0)
         out_f.write(output.read())
