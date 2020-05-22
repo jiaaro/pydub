@@ -114,6 +114,14 @@ def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, ke
 
     not_silence_ranges = detect_nonsilent(audio_segment, min_silence_len, silence_thresh, seek_step)
 
+    # everything is silent
+    if not not_silence_ranges:
+        return []
+
+    # no silence
+    if len(not_silence_ranges) == 1:
+        return [audio_segment[:]]
+
     # from the itertools documentation
     def pairwise(iterable):
         "s -> (s0,s1), (s1,s2), (s2, s3), ..."
