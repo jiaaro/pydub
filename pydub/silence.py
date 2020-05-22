@@ -131,8 +131,11 @@ def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, ke
         chunks.append(audio_segment[start_i:end_i])
         start_min = end_max
 
-    chunks.append(audio_segment[max(start_min, start_ii - keep_silence):
-                                min(len(audio_segment), end_ii + keep_silence)])
+    if "start_ii" in locals():
+        chunks.append(audio_segment[max(start_min, start_ii - keep_silence):
+                                    min(len(audio_segment), end_ii + keep_silence)])
+    else:
+        chunks.append(audio_segment)
 
 
     return chunks
