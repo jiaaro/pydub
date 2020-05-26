@@ -125,18 +125,17 @@ def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, ke
             in detect_nonsilent(audio_segment, min_silence_len, silence_thresh, seek_step)
     ]
 
+    for range_i, range_ii in pairwise(output_ranges):
+        last_end = range_i[1]
+        next_start = range_ii[0]
+        if next_start < last_end:
+            range_i[1] = (last_end+next_start)//2
+            range_ii[0] = range_i[1]
 
-    if output_ranges:
-        output_ranges[0][0] = max(0,output_ranges[0][0])
-        for range_i, range_ii in pairwise(output_ranges):
-            last_end = range_i[1]
-            next_start = range_ii[0]
-            if next_start < last_end:
-                range_i[1] = (last_end+next_start)//2
-                range_ii[0] = range_i[1]
-        output_ranges[-1][1] = min(len(audio_segment),output_ranges[-1][1])
-
-    return [ audio_segment[start:end] for start,end in output_ranges ]
+    return [
+        audio_segment[ max(start,0) : min(end,len(audio_segment)) ]
+        for start,end in output_ranges
+    ]
 
 
 def detect_leading_silence(sound, silence_threshold=-50.0, chunk_size=10):
