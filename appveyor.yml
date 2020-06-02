@@ -11,6 +11,9 @@ environment:
       FFMPEG: "4.2.3"
     - PYTHON: "C:/Python36"
       FFMPEG: "latest"
+matrix:
+  allow_failures:
+    - FFMPEG: "latest"
 init:
   - "ECHO %PYTHON%"
   - ps: "ls C:/Python*"
