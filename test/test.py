@@ -484,9 +484,21 @@ class AudioSegmentTests(unittest.TestCase):
 
         self.assertEqual(len(mono), len(self.seg2))
 
-        monomp3 = AudioSegment.from_mp3(mono.export())
-        self.assertWithinTolerance(len(monomp3), len(self.seg2),
-                                   tolerance=105)
+        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_file:
+            if sys.platform == 'win32':
+                tmp_file.close()
+
+            mono.export(tmp_file.name, 'mp3')
+            monomp3 = AudioSegment.from_mp3(tmp_file.name)
+
+            self.assertWithinTolerance(
+                len(monomp3),
+                len(self.seg2),
+                tolerance=105
+            )
+
+            if sys.platform == 'win32':
+                os.remove(tmp_file.name)
 
         merged = mono.append(stereo, crossfade=100)
         self.assertWithinTolerance(len(merged),
@@ -724,7 +736,7 @@ class AudioSegmentTests(unittest.TestCase):
                 fd.close()
 
             tmp_seg = AudioSegment.from_mp3(tmp_mp3_file.name)
-            self.assertFalse(len(tmp_seg) < len(seg))
+            self.assertAlmostEqual(len(tmp_seg), len(seg), places=1)
 
             if sys.platform == 'win32':
                 os.remove(tmp_mp3_file.name)
