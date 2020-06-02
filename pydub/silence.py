@@ -109,11 +109,6 @@ def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, ke
         default: 100ms
     """
 
-    if isinstance(keep_silence, bool):
-        keep_silence = len(audio_segment) if keep_silence else 0
-
-    not_silence_ranges = detect_nonsilent(audio_segment, min_silence_len, silence_thresh, seek_step)
-
     # from the itertools documentation
     def pairwise(iterable):
         "s -> (s0,s1), (s1,s2), (s2, s3), ..."
@@ -121,21 +116,26 @@ def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, ke
         next(b, None)
         return zip(a, b)
 
-    start_min = 0
-    chunks = []
-    for (start_i, end_i), (start_ii, end_ii) in pairwise(not_silence_ranges):
-        end_max = end_i + (start_ii - end_i + 1)//2  # +1 for rounding with integer division
-        start_i = max(start_min, start_i - keep_silence)
-        end_i = min(end_max, end_i + keep_silence)
+    if isinstance(keep_silence, bool):
+        keep_silence = len(audio_segment) if keep_silence else 0
 
-        chunks.append(audio_segment[start_i:end_i])
-        start_min = end_max
+    output_ranges = [
+        [ start - keep_silence, end + keep_silence ]
+        for (start,end)
+            in detect_nonsilent(audio_segment, min_silence_len, silence_thresh, seek_step)
+    ]
 
-    chunks.append(audio_segment[max(start_min, start_ii - keep_silence):
-                                min(len(audio_segment), end_ii + keep_silence)])
+    for range_i, range_ii in pairwise(output_ranges):
+        last_end = range_i[1]
+        next_start = range_ii[0]
+        if next_start < last_end:
+            range_i[1] = (last_end+next_start)//2
+            range_ii[0] = range_i[1]
 
-
-    return chunks
+    return [
+        audio_segment[ max(start,0) : min(end,len(audio_segment)) ]
+        for start,end in output_ranges
+    ]
 
 
 def detect_leading_silence(sound, silence_threshold=-50.0, chunk_size=10):

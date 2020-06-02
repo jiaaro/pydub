@@ -30,6 +30,7 @@ from pydub.exceptions import (
 )
 from pydub.silence import (
     detect_silence,
+    split_on_silence,
 )
 from pydub.generators import (
     Sine,
@@ -1105,6 +1106,20 @@ class SilenceTests(unittest.TestCase):
 
         self.seg1 = test1wav
         self.seg4 = test4wav
+
+    def test_split_on_silence_complete_silence(self):
+        seg = AudioSegment.silent(5000)
+        self.assertEquals( split_on_silence(seg), [] )
+
+    def test_split_on_silence_test1(self):
+        self.assertEqual(
+            len(split_on_silence(self.seg1, min_silence_len=500, silence_thresh=-20)),
+            3
+        )
+    def test_split_on_silence_no_silence(self):
+        splits = split_on_silence(self.seg1, min_silence_len=5000, silence_thresh=-200, keep_silence=True)
+        lens = [len(split) for split in splits]
+        self.assertEqual( lens, [len(self.seg1)] )
 
     def test_detect_completely_silent_segment(self):
         seg = AudioSegment.silent(5000)
