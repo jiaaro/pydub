@@ -484,7 +484,14 @@ class AudioSegmentTests(unittest.TestCase):
 
         self.assertEqual(len(mono), len(self.seg2))
 
-        monomp3 = AudioSegment.from_mp3(mono.export())
+        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_file:
+            mono.export(tmp_file)
+            if sys.platform == 'win32':
+                tmp_file.close()
+            monomp3 = AudioSegment.from_mp3(tmp_file.name)
+            if sys.platform == 'win32':
+                os.remove(tmp_file.name)
+                
         self.assertWithinTolerance(len(monomp3), len(self.seg2),
                                    tolerance=105)
 
