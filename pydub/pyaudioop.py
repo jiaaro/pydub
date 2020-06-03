@@ -523,7 +523,7 @@ def ratecv(cp, size, nchannels, inrate, outrate, state, weightA=1, weightB=0):
                 )
                 _put_sample(result, size, out_i, _overflow(cur_o, size))
                 out_i += 1
-                d -= inrate
+            d -= inrate
 
 
 def lin2ulaw(cp, size):

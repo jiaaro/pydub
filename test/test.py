@@ -30,6 +30,7 @@ from pydub.exceptions import (
 )
 from pydub.silence import (
     detect_silence,
+    split_on_silence,
 )
 from pydub.generators import (
     Sine,
@@ -484,9 +485,21 @@ class AudioSegmentTests(unittest.TestCase):
 
         self.assertEqual(len(mono), len(self.seg2))
 
-        monomp3 = AudioSegment.from_mp3(mono.export())
-        self.assertWithinTolerance(len(monomp3), len(self.seg2),
-                                   tolerance=105)
+        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_file:
+            if sys.platform == 'win32':
+                tmp_file.close()
+
+            mono.export(tmp_file.name, 'mp3')
+            monomp3 = AudioSegment.from_mp3(tmp_file.name)
+
+            self.assertWithinTolerance(
+                len(monomp3),
+                len(self.seg2),
+                tolerance=105
+            )
+
+            if sys.platform == 'win32':
+                os.remove(tmp_file.name)
 
         merged = mono.append(stereo, crossfade=100)
         self.assertWithinTolerance(len(merged),
@@ -724,7 +737,7 @@ class AudioSegmentTests(unittest.TestCase):
                 fd.close()
 
             tmp_seg = AudioSegment.from_mp3(tmp_mp3_file.name)
-            self.assertFalse(len(tmp_seg) < len(seg))
+            self.assertAlmostEqual(len(tmp_seg), len(seg), places=1)
 
             if sys.platform == 'win32':
                 os.remove(tmp_mp3_file.name)
@@ -1093,6 +1106,20 @@ class SilenceTests(unittest.TestCase):
 
         self.seg1 = test1wav
         self.seg4 = test4wav
+
+    def test_split_on_silence_complete_silence(self):
+        seg = AudioSegment.silent(5000)
+        self.assertEquals( split_on_silence(seg), [] )
+
+    def test_split_on_silence_test1(self):
+        self.assertEqual(
+            len(split_on_silence(self.seg1, min_silence_len=500, silence_thresh=-20)),
+            3
+        )
+    def test_split_on_silence_no_silence(self):
+        splits = split_on_silence(self.seg1, min_silence_len=5000, silence_thresh=-200, keep_silence=True)
+        lens = [len(split) for split in splits]
+        self.assertEqual( lens, [len(self.seg1)] )
 
     def test_detect_completely_silent_segment(self):
         seg = AudioSegment.silent(5000)
