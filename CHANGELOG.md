@@ -1,7 +1,7 @@
 # v0.24.1
 - Fix bug where ffmpeg errors in Python 3 are illegible
 - Fix bug where `split_on_silence` fails when there are one or fewer nonsilent segments
-- Fix bug where fallback audioop implementation
+- Fix bug in fallback audioop implementation
 
 # v0.24.0
 - Fix inconsistent handling of 8-bit audio
