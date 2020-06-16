@@ -65,7 +65,7 @@ def low_pass_filter(seg, cutoff_freq, order=5):
 
 
 @register_pydub_effect
-def _eq(seg,focus_freq,bandwidth=100,mode="peak",gain_dB=0,order=2):
+def _eq(seg, focus_freq, bandwidth=100, mode="peak", gain_dB=0, order=2):
     """
     Args:
         focus_freq - middle frequency or known frequency of band (in Hz)
@@ -76,95 +76,100 @@ def _eq(seg,focus_freq,bandwidth=100,mode="peak",gain_dB=0,order=2):
     Returns:
         Equalized/Filtered AudioSegment
     """
-	filt_mode=["peak","low_shelf","high_shelf"]
+	filt_mode = ["peak","low_shelf","high_shelf"]
 	if mode not in filt_mode:
 		raise ValueError("Incorrect Mode Selection")
-		pass
-	if gain_dB>=0:
-		if mode=="peak":
-			sec=band_pass_filter(seg,focus_freq-bandwidth/2,focus_freq+bandwidth/2,order=order)
-			seg=seg.overlay(sec-(3-gain_dB))
+		
+	if gain_dB >= 0:
+		if mode == "peak":
+			sec = band_pass_filter(seg,focus_freq-bandwidth/2,focus_freq+bandwidth/2,order=order)
+			seg = seg.overlay(sec-(3-gain_dB))
 			return seg
-			pass
-		if mode=="low_shelf":
-			sec=low_pass_filter(seg,focus_freq,order=order)
-			seg=seg.overlay(sec-(3-gain_dB))
+		
+		if mode == "low_shelf":
+			sec = low_pass_filter(seg,focus_freq,order=order)
+			seg = seg.overlay(sec-(3-gain_dB))
 			return seg
-			pass
+		
+		if mode == "high_shelf":
+			sec = high_pass_filter(seg,focus_freq,order=order)
+			seg = seg.overlay(sec-(3-gain_dB))
+			return seg
+		
+	if gain_dB < 0:
+		if mode == "peak":
+			sec = high_pass_filter(seg,focus_freq-bandwidth/2,order=order)
+			seg = seg.overlay(sec-(3+gain_dB))+gain_dB
+			sec = low_pass_filter(seg,focus_freq+bandwidth/2,order=order)
+			seg = seg.overlay(sec-(3+gain_dB))+gain_dB
+			return seg
+		
+		if mode == "low_shelf":
+			sec = high_pass_filter(seg,focus_freq,order=order)
+			seg = seg.overlay(sec-(3+gain_dB))+gain_dB
+			return seg
+		
 		if mode=="high_shelf":
-			sec=high_pass_filter(seg,focus_freq,order=order)
-			seg=seg.overlay(sec-(3-gain_dB))
-			return seg
-			pass
-		pass
-	if gain_dB<0:
-		if mode=="peak":
-			sec=high_pass_filter(seg,focus_freq-bandwidth/2,order=order)
-			seg=seg.overlay(sec-(3+gain_dB))+gain_dB
-			sec=low_pass_filter(seg,focus_freq+bandwidth/2,order=order)
-			seg=seg.overlay(sec-(3+gain_dB))+gain_dB
-			return seg
-			pass
-		if mode=="low_shelf":
-			sec=high_pass_filter(seg,focus_freq,order=order)
-			seg=seg.overlay(sec-(3+gain_dB))+gain_dB
-			return seg
-			pass
-		if mode=="high_shelf":
 			sec=low_pass_filter(seg,focus_freq,order=order)
 			seg=seg.overlay(sec-(3+gain_dB))+gain_dB
 			return seg
-			pass
-		pass
-	pass
+		
 
 @register_pydub_effect
-def eq(seg,focus_freq,bandwidth=100,channel_mode="L+R",filter_mode="peak",gain_dB=0,order=2):
+def eq(seg, focus_freq, bandwidth=100, channel_mode="L+R", filter_mode="peak", gain_dB=0, order=2):
 	"""
 	Args:
 		focus_freq - middle frequency or known frequency of band (in Hz)
 		bandwidth - range of the equalizer band
+		channel_mode - Select Channels to be affected by the filter.
+			L+R - Standard Stereo Filter
+			L - Only Left Channel is Filtered
+			R - Only Right Channel is Filtered
+			M+S - Blumlien Stereo Filter(Mid-Side)
+			M - Only Mid Channel is Filtered
+			S - Only Side Channel is Filtered
+			Mono Audio Segments are completely Filtered.
 		filter_mode - Mode of Equalization(Peak/Notch(Bell Curve),High Shelf, Low Shelf)
 		order - Rolloff factor(1 - 6dB/Octave 2 - 12dB/Octave)
 	
 	Returns:
 		Equalized/Filtered AudioSegment
     """
-	filt_mode=["L+R","M+S","L","R","M","S"]
+	filt_mode = ["L+R","M+S","L","R","M","S"]
 	if mode not in filt_mode:
 		raise ValueError("Incorrect Channel Mode Selection")
-		pass
-	if seg.channels==1:
+		
+	if seg.channels == 1:
 		return _eq(seg,focus_freq,bandwidth,filter_mode,gain_dB,order)
-		pass
-	if channel_mode=="L+R":
+		
+	if channel_mode == "L+R":
 		return _eq(seg,focus_freq,bandwidth,filter_mode,gain_dB,order)
-		pass
-	if channel_mode=="L":
-		seg=seg.split_to_mono()
-		seg=[_eq(seg[0],focus_freq,bandwidth,filter_mode,gain_dB,order),seg[1]]
+		
+	if channel_mode == "L":
+		seg = seg.split_to_mono()
+		seg = [_eq(seg[0],focus_freq,bandwidth,filter_mode,gain_dB,order),seg[1]]
 		return AudioSegment.from_mono_audio_segements(seg[0],seg[1])
-		pass
-	if channel_mode=="R":
-		seg=seg.split_to_mono()
-		seg=[seg[0],_eq(seg[1],focus_freq,bandwidth,filter_mode,gain_dB,order)]
+		
+	if channel_mode == "R":
+		seg = seg.split_to_mono()
+		seg = [seg[0],_eq(seg[1],focus_freq,bandwidth,filter_mode,gain_dB,order)]
 		return AudioSegment.from_mono_audio_segements(seg[0],seg[1])
-		pass
-	if channel_mode=="M+S":
-		seg=stereo_to_ms(seg)
-		seg=_eq(seg,focus_freq,bandwidth,filter_mode,gain_dB,order)
+		
+	if channel_mode == "M+S":
+		seg = stereo_to_ms(seg)
+		seg = _eq(seg,focus_freq,bandwidth,filter_mode,gain_dB,order)
 		return ms_to_stereo(seg)
-		pass
-	if channel_mode=="M":
-		seg=stereo_to_ms(seg)
-		seg=[_eq(seg[0],focus_freq,bandwidth,filter_mode,gain_dB,order),seg[1]]
-		seg=AudioSegment.from_mono_audio_segements(seg[0],seg[1])
+		
+	if channel_mode == "M":
+		seg = stereo_to_ms(seg).split_to_mono()
+		seg = [_eq(seg[0],focus_freq,bandwidth,filter_mode,gain_dB,order),seg[1]]
+		seg = AudioSegment.from_mono_audio_segements(seg[0],seg[1])
 		return ms_to_stereo(seg)
-		pass
-	if channel_mode=="S":
-		seg=stereo_to_ms(seg)
-		seg=[seg[0],_eq(seg[1],focus_freq,bandwidth,filter_mode,gain_dB,order)]
-		seg=AudioSegment.from_mono_audio_segements(seg[0],seg[1])
+		
+	if channel_mode == "S":
+		seg = stereo_to_ms(seg).split_to_mono()
+		seg = [seg[0],_eq(seg[1],focus_freq,bandwidth,filter_mode,gain_dB,order)]
+		seg = AudioSegment.from_mono_audio_segements(seg[0],seg[1])
 		return ms_to_stereo(seg)
-		pass
-	pass
+		
+	
