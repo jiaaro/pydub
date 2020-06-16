@@ -76,7 +76,7 @@ def _eq(seg, focus_freq, bandwidth=100, mode="peak", gain_dB=0, order=2):
     Returns:
         Equalized/Filtered AudioSegment
     """
-	filt_mode = ["peak","low_shelf","high_shelf"]
+	filt_mode = ["peak", "low_shelf", "high_shelf"]
 	if mode not in filt_mode:
 		raise ValueError("Incorrect Mode Selection")
 		
@@ -128,14 +128,14 @@ def eq(seg, focus_freq, bandwidth=100, channel_mode="L+R", filter_mode="peak", g
 			M+S - Blumlien Stereo Filter(Mid-Side)
 			M - Only Mid Channel is Filtered
 			S - Only Side Channel is Filtered
-			Mono Audio Segments are completely Filtered.
+			Mono Audio Segments are completely filtered.
 		filter_mode - Mode of Equalization(Peak/Notch(Bell Curve),High Shelf, Low Shelf)
 		order - Rolloff factor(1 - 6dB/Octave 2 - 12dB/Octave)
 	
 	Returns:
 		Equalized/Filtered AudioSegment
     """
-	filt_mode = ["L+R","M+S","L","R","M","S"]
+	filt_mode = ["L+R", "M+S", "L", "R", "M", "S"]
 	if mode not in filt_mode:
 		raise ValueError("Incorrect Channel Mode Selection")
 		
