@@ -297,8 +297,8 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
             stream[prop] = value
 
     for token in extra_info[stream['index']]:
-        m = re.match('([su]([0-9]{1,2})p?) \(([0-9]{1,2}) bit\)$', token)
-        m2 = re.match('([su]([0-9]{1,2})p?)( \(default\))?$', token)
+        m = re.match(r'([su]([0-9]{1,2})p?) \(([0-9]{1,2}) bit\)$', token)
+        m2 = re.match(r'([su]([0-9]{1,2})p?)( \(default\))?$', token)
         if m:
             set_property(stream, 'sample_fmt', m.group(1))
             set_property(stream, 'bits_per_sample', int(m.group(2)))
@@ -307,11 +307,11 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
             set_property(stream, 'sample_fmt', m2.group(1))
             set_property(stream, 'bits_per_sample', int(m2.group(2)))
             set_property(stream, 'bits_per_raw_sample', int(m2.group(2)))
-        elif re.match('(flt)p?( \(default\))?$', token):
+        elif re.match(r'(flt)p?( \(default\))?$', token):
             set_property(stream, 'sample_fmt', token)
             set_property(stream, 'bits_per_sample', 32)
             set_property(stream, 'bits_per_raw_sample', 32)
-        elif re.match('(dbl)p?( \(default\))?$', token):
+        elif re.match(r'(dbl)p?( \(default\))?$', token):
             set_property(stream, 'sample_fmt', token)
             set_property(stream, 'bits_per_sample', 64)
             set_property(stream, 'bits_per_raw_sample', 64)
