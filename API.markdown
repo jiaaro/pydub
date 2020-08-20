@@ -560,7 +560,7 @@ import numpy as np
 from pydub import AudioSegment
 
 sound = AudioSegment.from_file("sound1.wav")
-sound = sound.set_frame_rate(1600)
+sound = sound.set_frame_rate(16000)
 channel_sounds = seg.split_to_mono()
 samples = [s.get_array_of_samples() for s in channel_sounds]
 
@@ -576,7 +576,8 @@ import scipy.io.wavfile
 
 wav_io = io.BytesIO()
 scipy.io.wavfile.write(wav_io, 16000, fp_arr)
-sound = pydub.AudioSegment.from_wav(io.BytesIO(wav_io.getvalue()))
+wav_io.seek(0)
+sound = pydub.AudioSegment.from_wav(wav_io)
 ```
 
 ### AudioSegment(…).get_dc_offset()
