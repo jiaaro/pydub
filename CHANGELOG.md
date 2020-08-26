@@ -1,3 +1,6 @@
+# on master
+- Don't show a runtime warning about the optional ffplay dependency being missing until someone trys to use it
+
 # v0.24.1
 - Fix bug where ffmpeg errors in Python 3 are illegible
 - Fix bug where `split_on_silence` fails when there are one or fewer nonsilent segments
