@@ -1284,7 +1284,7 @@ class AudioSegment(object):
             scale_step = gain_delta / duration
 
             for i in range(duration):
-                volume_change = from_power + (scale_step * i)
+                volume_change = (from_power + (scale_step * i)) ** 0.5
                 chunk = self[start + i]
                 chunk = audioop.mul(chunk._data,
                                     self.sample_width,
@@ -1298,7 +1298,7 @@ class AudioSegment(object):
             scale_step = gain_delta / fade_frames
 
             for i in range(int(fade_frames)):
-                volume_change = from_power + (scale_step * i)
+                volume_change = (from_power + (scale_step * i)) ** 0.5
                 sample = self.get_frame(int(start_frame + i))
                 sample = audioop.mul(sample, self.sample_width, volume_change)
 
