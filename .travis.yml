@@ -1,5 +1,5 @@
-sudo: required
-dist: bionic
+os: linux
+dist: focal
 language: python
 before_install:
   - sudo apt-get update --fix-missing
@@ -7,11 +7,15 @@ install:
   - sudo apt-get install -y ffmpeg libopus-dev python-scipy python3-scipy
 python:
   - "2.7"
-  - "3.5"
   - "3.6"
   - "3.7"
+  - "3.8"
+  - "3.9-dev"
   - "pypy2"
   - "pypy3"
+jobs:
+  allow_failures:
+    - python: "3.9-dev"
 script:
   - python test/test.py
 after_script:
