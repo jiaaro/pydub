@@ -806,8 +806,14 @@ class AudioSegment(object):
                     'Can not invoke ffmpeg when export format is "raw"; '
                     'specify an ffmpeg raw format like format="s16le" instead '
                     'or call export(format="raw") with no codec or parameters')
+        # Determine the wanted output_extension
+        # Check is required as out_f argument can also be anything
+        # with .write and .seek methods, not just str / os.PathLike.
+        if isinstance(out_f, basestring) or (sys.version_info >= (3, 6) and isinstance(out_f, os.PathLike)):
+            _, output_ext = os.path.splitext(out_f) if out_f else ("", "")
+        else:
+            output_ext = ""
 
-        _, output_ext = os.path.splitext(out_f)
         out_f, _ = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
 
