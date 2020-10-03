@@ -893,9 +893,11 @@ class AudioSegment(object):
         if sys.platform == 'darwin' and codec == 'mp3':
             conversion_command.extend(["-write_xing", "0"])
 
-        conversion_command.extend([
-            "-f", format, output.name,  # output options (filename last)
-        ])
+        if format is not None:
+            conversion_command.extend(["-f", format])
+
+        # filename should be the last conversion command arg
+        conversion_command.append(output.name)
 
         log_conversion(conversion_command)
 
