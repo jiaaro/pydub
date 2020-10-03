@@ -772,9 +772,10 @@ class AudioSegment(object):
             Path to destination audio file. Also accepts os.PathLike objects on
             python >= 3.6
 
-        format (string)
-            Format for destination audio file.
-            ('mp3', 'wav', 'raw', 'ogg' or other ffmpeg/avconv supported files)
+        format (string/None)
+            Format for destination audio file. Defaults to 'mp3'.
+            ('mp3', 'wav', 'raw', 'ogg' or other ffmpeg/avconv supported files).
+            Setting this value to None will skip the '-f' ffmpeg option entirely.
 
         codec (string)
             Codec used to encode the destination file.
