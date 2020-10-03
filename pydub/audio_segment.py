@@ -806,6 +806,7 @@ class AudioSegment(object):
                     'specify an ffmpeg raw format like format="s16le" instead '
                     'or call export(format="raw") with no codec or parameters')
 
+        _, output_ext = os.path.splitext(out_f)
         out_f, _ = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
 
@@ -841,7 +842,7 @@ class AudioSegment(object):
         if easy_wav:
             return out_f
 
-        output = NamedTemporaryFile(mode="w+b", delete=False)
+        output = NamedTemporaryFile(mode="w+b", delete=False, suffix=output_ext)
 
         # build converter command to export
         conversion_command = [
