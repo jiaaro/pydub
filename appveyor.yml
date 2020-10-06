@@ -2,18 +2,18 @@ build: false
 environment:
   matrix:
     - PYTHON: "C:/Python27"
-      FFMPEG: "4.2.3"
+      FFMPEG: "release"
     - PYTHON: "C:/Python34"
-      FFMPEG: "4.2.3"
+      FFMPEG: "release"
     - PYTHON: "C:/Python35"
-      FFMPEG: "4.2.3"
+      FFMPEG: "release"
     - PYTHON: "C:/Python36"
-      FFMPEG: "4.2.3"
+      FFMPEG: "release"
     - PYTHON: "C:/Python36"
-      FFMPEG: "latest"
+      FFMPEG: "release"
 matrix:
   allow_failures:
-    - FFMPEG: "latest"
+    - FFMPEG: "git"
 init:
   - "ECHO %PYTHON%"
   - ps: "ls C:/Python*"
@@ -21,9 +21,9 @@ install:
   - "%PYTHON%/python.exe -m pip install wheel"
   - "%PYTHON%/python.exe -m pip install -e ."
   # Install ffmpeg
-  - ps: Start-FileDownload ('https://ffmpeg.zeranoe.com/builds/win64/shared/ffmpeg-' + $env:FFMPEG + '-win64-shared.zip') ffmpeg-shared.zip
-  - 7z x ffmpeg-shared.zip > NULL
-  - "SET PATH=%cd%\\ffmpeg-%FFMPEG%-win64-shared\\bin;%PATH%"
+  - ps: Start-FileDownload ('https://www.gyan.dev/ffmpeg/builds/ffmpeg-' + $env:FFMPEG + '-full.7z') ffmpeg-full.7z
+  - 7z x ffmpeg-full.7z > NULL
+  - "for /F %%x in ('dir /b ffmpeg-*-full_build') do SET PATH=%cd%\\%%x\\bin;%PATH%"
   # check ffmpeg installation (also shows version)
   - "ffmpeg.exe -version"
 test_script:
