@@ -1,0 +1,36 @@
+name: Locust summary
+
+on:
+  pull_request_target:
+    types: [ opened, reopened ]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: PR head repo
+        id: head_repo_name
+        run: |
+          HEAD_REPO_NAME=$(jq -r '.pull_request.head.repo.full_name' "$GITHUB_EVENT_PATH")
+          echo "PR head repo: $HEAD_REPO_NAME"
+          echo "::set-output name=repo::$HEAD_REPO_NAME"
+      - name: Checkout git repo
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ steps.head_repo_name.outputs.repo }}
+          fetch-depth: 0
+      - name: Generate Locust summary
+        uses: simiotics/locust-action@main
+        id: locust
+        with:
+          format: html-github
+      - name: Comment on PR
+        uses: actions/github-script@v3
+        with:
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '${{ steps.locust.outputs.summary }}',
+            })
