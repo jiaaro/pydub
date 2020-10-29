@@ -304,9 +304,8 @@ playlist = playlist.fade_out(30)
 playlist_length = len(playlist) / (1000*60)
 
 # lets save it!
-out_f = open("%s_minute_playlist.mp3" % playlist_length, 'wb')
-
-playlist.export(out_f, format='mp3')
+with open("%s_minute_playlist.mp3" % playlist_length, 'wb') as out_f:
+    playlist.export(out_f, format='mp3')
 ```
 
 ## License ([MIT License](http://opensource.org/licenses/mit-license.php))

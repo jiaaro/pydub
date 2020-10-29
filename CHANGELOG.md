@@ -1,3 +1,24 @@
+# on master
+- Don't show a runtime warning about the optional ffplay dependency being missing until someone trys to use it
+
+# v0.24.1
+- Fix bug where ffmpeg errors in Python 3 are illegible
+- Fix bug where `split_on_silence` fails when there are one or fewer nonsilent segments
+- Fix bug in fallback audioop implementation
+
+# v0.24.0
+- Fix inconsistent handling of 8-bit audio
+- Fix bug where certain files will fail to parse
+- Fix bug where pyaudio stream is not closed on error
+- Allow codecs and parameters in wav and raw export
+- Fix bug in `pydub.AudioSegment.from_file` where supplied codec is ignored
+- Allow `pydub.silence.split_on_silence` to take a boolean for `keep_silence`
+- Fix bug where `pydub.silence.split_on_silence` sometimes adds non-silence from adjacent segments
+- Fix bug where `pydub.AudioSegment.extract_wav_headers` fails on empty wav files
+- Add new function `pydub.silence.detect_leading_silence`
+- Support conversion between an arbitrary number of channels and mono in `pydub.AudioSegment.set_channels`
+- Fix several issues related to reading from filelike objects
+
 # v0.23.1
 - Fix bug in passing ffmpeg/avconv parameters for `pydub.AudioSegment.from_mp3()`, `pydub.AudioSegment.from_flv()`, `pydub.AudioSegment.from_ogg()`, and `pydub.AudioSegment.from_wav()`
 - Fix logic bug in `pydub.effects.strip_silence()`
