@@ -6,7 +6,10 @@ except ImportError:
     from builtins import min as builtin_min
 import math
 import struct
-from fractions import gcd
+try:
+    from fractions import gcd
+except ImportError:  # Python 3.9+
+    from math import gcd
 from ctypes import create_string_buffer
 
 

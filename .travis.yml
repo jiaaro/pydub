@@ -10,12 +10,9 @@ python:
   - "3.6"
   - "3.7"
   - "3.8"
-  - "3.9-dev"
+  - "3.9"
   - "pypy2"
   - "pypy3"
-jobs:
-  allow_failures:
-    - python: "3.9-dev"
 script:
   - python test/test.py
 after_script:
