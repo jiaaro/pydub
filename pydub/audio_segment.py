@@ -839,6 +839,7 @@ class AudioSegment(object):
 
         # for easy wav files, we're done (wav data is written directly to out_f)
         if easy_wav:
+            out_f.seek(0)
             return out_f
 
         output = NamedTemporaryFile(mode="w+b", delete=False)
