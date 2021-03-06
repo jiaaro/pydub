@@ -17,9 +17,6 @@ setup(
     url='http://pydub.com',
     packages=['pydub'],
     long_description=__doc__,
-    package_data={
-        '': ['LICENSE'],
-    },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: MIT License',

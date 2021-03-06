@@ -776,7 +776,8 @@ class AudioSegment(object):
 
         p_out = bytearray(p_out)
         fix_wav_headers(p_out)
-        obj = cls._from_safe_wav(BytesIO(p_out))
+        p_out = bytes(p_out)
+        obj = cls(p_out)
 
         if close_file:
             file.close()
@@ -896,6 +897,7 @@ class AudioSegment(object):
 
         # for easy wav files, we're done (wav data is written directly to out_f)
         if easy_wav:
+            out_f.seek(0)
             return out_f
 
         output = NamedTemporaryFile(mode="w+b", delete=False)
