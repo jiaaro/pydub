@@ -726,7 +726,8 @@ class AudioSegment(object):
 
         p_out = bytearray(p_out)
         fix_wav_headers(p_out)
-        obj = cls._from_safe_wav(BytesIO(p_out))
+        p_out = bytes(p_out)
+        obj = cls(p_out)
 
         if close_file:
             file.close()
