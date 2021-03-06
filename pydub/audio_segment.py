@@ -613,7 +613,7 @@ class AudioSegment(object):
         return obj
 
     @classmethod
-    def from_file(cls, file, format=None, codec=None, parameters=None, **kwargs):
+    def from_file(cls, file, format=None, codec=None, close=False, parameters=None, **kwargs):
         orig_file = file
         try:
             filename = fsdecode(file)
@@ -729,7 +729,7 @@ class AudioSegment(object):
         p_out = bytes(p_out)
         obj = cls(p_out)
 
-        if close_file:
+        if close_file and close:
             file.close()
 
         return obj
