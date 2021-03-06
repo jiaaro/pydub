@@ -10,7 +10,6 @@ Currently Undocumented:
 - Signal Processing (compression, EQ, normalize, speed change - `pydub.effects`, `pydub.scipy_effects`)
 - Signal generators (Sine, Square, Sawtooth, Whitenoise, etc - `pydub.generators`)
 - Effect registration system (basically the `pydub.utils.register_pydub_effect` decorator)
-- Silence utilities (detect silence, split on silence, etc - `pydub.silence`)
 
 
 ## AudioSegment()
@@ -608,3 +607,83 @@ Collection of DSP effects that are implemented by `AudioSegment` objects.
 ### AudioSegment(…).invert_phase()
 
 Make a copy of this `AudioSegment` and inverts the phase of the signal. Can generate anti-phase waves for noise suppression or cancellation.
+
+## Silence
+
+Various functions for finding/manipulating silence in AudioSegments. For creating silent AudioSegments, see AudioSegment.silent().
+
+### silence.detect_silence()
+
+Returns a list of all silent sections [start, end] in milliseconds of audio_segment. Inverse of detect_nonsilent(). Can be very slow since it has to iterate over the whole segment.
+
+```python
+from pydub import AudioSegment, silence
+
+print(silence.detect_silence(AudioSegment.silent(2000)))
+# [[0, 2000]]
+```
+
+**Supported keyword arguments**:
+
+- `min_silence_len` | example: `500` | default: 1000
+  The minimum length for silent sections in milliseconds. If it is greater than the length of the audio segment an empty list will be returned.
+
+- `silence_thresh` | example: `-20` | default: -16
+  The upper bound for how quiet is silent in dBFS.
+
+- `seek_step` | example: `5` | default: 1
+  Size of the step for checking for silence in milliseconds. Smaller is more precise. Must be a positive whole number.
+
+### silence.detect_nonsilent()
+
+Returns a list of all silent sections [start, end] in milliseconds of audio_segment. Inverse of detect_silence() and has all the same arguments. Can be very slow since it has to iterate over the whole segment.
+
+**Supported keyword arguments**:
+
+- `min_silence_len` | example: `500` | default: 1000
+  The minimum length for silent sections in milliseconds. If it is greater than the length of the audio segment an empty list will be returned.
+
+- `silence_thresh` | example: `-20` | default: -16
+  The upper bound for how quiet is silent in dBFS.
+
+- `seek_step` | example: `5` | default: 1
+  Size of the step for checking for silence in milliseconds. Smaller is more precise. Must be a positive whole number.
+
+### silence.split_on_silence()
+
+Returns list of audio segments from splitting audio_segment on silent sections.
+
+**Supported keyword arguments**:
+
+- `min_silence_len` | example: `500` | default: 1000
+  The minimum length for silent sections in milliseconds. If it is greater than the length of the audio segment an empty list will be returned.
+
+- `silence_thresh` | example: `-20` | default: -16
+  The upper bound for how quiet is silent in dBFS.
+
+- `seek_step` | example: `5` | default: 1
+  Size of the step for checking for silence in milliseconds. Smaller is more precise. Must be a positive whole number.
+
+- `keep_silence` ~ example: True | default: 100
+  How much silence to keep in ms or a bool. leave some silence at the beginning and end of the chunks. Keeps the sound from sounding like it is abruptly cut off.
+  When the length of the silence is less than the keep_silence duration it is split evenly between the preceding and following non-silent segments.
+  If True is specified, all the silence is kept, if False none is kept.
+
+### silence.detect_leading_silence()
+
+Returns the millisecond/index that the leading silence ends. If there is no end it will return the length of the audio_segment.
+
+```python
+from pydub import AudioSegment, silence
+
+print(silence.detect_silence(AudioSegment.silent(2000)))
+# 2000
+```
+
+**Supported keyword arguments**:
+
+- `silence_thresh` | example: `-20` | default: -50
+  The upper bound for how quiet is silent in dBFS.
+
+- `chunk_size` | example: `5` | default: 10
+  Size of the step for checking for silence in milliseconds. Smaller is more precise. Must be a positive whole number.
