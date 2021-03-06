@@ -98,6 +98,10 @@ The first argument is the path (as a string) of the file to read, **or** a file 
   **`raw` only** — `1` for mono, `2` for stereo.
 - `frame_rate` | example: `2`
   **`raw` only** — Also known as sample rate, common values are `44100` (44.1kHz - CD audio), and `48000` (48kHz - DVD audio)
+- `start_second` | example: `2.0` | default: `None`
+  Offset (in seconds) to start loading the audio file. If `None`, the audio will start loading from the beginning.
+- `duration` | example: `2.5` | default: `None`
+  Number of seconds to be loaded. If `None`, full audio will be loaded.
 
 
 ### AudioSegment(…).export()
