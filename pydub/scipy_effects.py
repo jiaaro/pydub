@@ -135,8 +135,8 @@ def eq(seg, focus_freq, bandwidth=100, channel_mode="L+R", filter_mode="peak", g
     Returns:
         Equalized/Filtered AudioSegment
     """
-    filt_mode = ["L+R", "M+S", "L", "R", "M", "S"]
-    if mode not in filt_mode:
+    channel_modes = ["L+R", "M+S", "L", "R", "M", "S"]
+    if channel_mode not in channel_modes:
         raise ValueError("Incorrect Channel Mode Selection")
         
     if seg.channels == 1:
