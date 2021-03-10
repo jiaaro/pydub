@@ -1,3 +1,6 @@
+# v0.25.1
+- Fix crashing bug in new scipy-powered EQ effects
+
 # v0.25.0
 - Don't show a runtime warning about the optional ffplay dependency being missing until someone trys to use it
 - Documentation improvements
