@@ -713,6 +713,10 @@ class AudioSegment(object):
             conversion_command += ["-i", filename]
             stdin_parameter = None
             stdin_data = None
+            if cls.converter == 'ffmpeg':
+                conversion_command += ["-nostdin"]
+            else:
+                pass
         else:
             if cls.converter == 'ffmpeg':
                 conversion_command += ["-read_ahead_limit", str(read_ahead_limit),
