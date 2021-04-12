@@ -4,11 +4,15 @@ import json
 import os
 import re
 import sys
+from contextlib import contextmanager
+from errno import ENOENT
 from subprocess import Popen, PIPE
 from math import log, ceil
 from tempfile import TemporaryFile
 from warnings import warn
 from functools import wraps
+
+from .exceptions import MissingConverter
 
 try:
     import audioop
@@ -157,6 +161,24 @@ def which(program):
             return program_path
 
 
+@contextmanager
+def try_run_executable():
+    """Handle exception for missing application.
+
+    raises:
+        MissingConverter: Prompt user to install missing dependency.
+    """
+    try:
+        yield
+    except EnvironmentError as e:
+        if e.errno == ENOENT:
+            message = "{0}\n\n{1}\n".format(
+                str(sys.exc_info()),
+                "Check if ffmpeg or avlib are installed."
+            )
+            raise MissingConverter(message)
+
+
 def get_encoder_name():
     """
     Return enconder default application for system, either avconv or ffmpeg
@@ -166,7 +188,6 @@ def get_encoder_name():
     elif which("ffmpeg"):
         return "ffmpeg"
     else:
-        # should raise exception
         warn("Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work", RuntimeWarning)
         return "ffmpeg"
 
@@ -180,7 +201,6 @@ def get_player_name():
     elif which("ffplay"):
         return "ffplay"
     else:
-        # should raise exception
         warn("Couldn't find ffplay or avplay - defaulting to ffplay, but may not work", RuntimeWarning)
         return "ffplay"
 
@@ -194,7 +214,6 @@ def get_prober_name():
     elif which("ffprobe"):
         return "ffprobe"
     else:
-        # should raise exception
         warn("Couldn't find ffprobe or avprobe - defaulting to ffprobe, but may not work", RuntimeWarning)
         return "ffprobe"
 
@@ -271,7 +290,8 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
             file.close()
 
     command = [prober, '-of', 'json'] + command_args
-    res = Popen(command, stdin=stdin_parameter, stdout=PIPE, stderr=PIPE)
+    with try_run_executable():
+        res = Popen(command, stdin=stdin_parameter, stdout=PIPE, stderr=PIPE)
     output, stderr = res.communicate(input=stdin_data)
     output = output.decode("utf-8", 'ignore')
     stderr = stderr.decode("utf-8", 'ignore')
@@ -331,12 +351,18 @@ def mediainfo(filepath):
     ]
 
     command = [prober, '-of', 'old'] + command_args
-    res = Popen(command, stdout=PIPE)
+    with try_run_executable():
+        res = Popen(command, stdout=PIPE)
     output = res.communicate()[0].decode("utf-8")
 
     if res.returncode != 0:
         command = [prober] + command_args
-        output = Popen(command, stdout=PIPE).communicate()[0].decode("utf-8")
+        with try_run_executable():
+            output = (
+                Popen(command, stdout=PIPE)
+                .communicate()[0]
+                .decode("utf-8")
+            )
 
     rgx = re.compile(r"(?:(?P<inner_dict>.*?):)?(?P<key>.*?)\=(?P<value>.*?)$")
     info = {}
@@ -382,7 +408,8 @@ def cache_codecs(function):
 def get_supported_codecs():
     encoder = get_encoder_name()
     command = [encoder, "-codecs"]
-    res = Popen(command, stdout=PIPE, stderr=PIPE)
+    with try_run_executable():
+        res = Popen(command, stdout=PIPE, stderr=PIPE)
     output = res.communicate()[0].decode("utf-8")
     if res.returncode != 0:
         return []

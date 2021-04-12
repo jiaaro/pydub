@@ -27,6 +27,7 @@ from pydub.exceptions import (
     InvalidDuration,
     CouldntDecodeError,
     MissingAudioParameter,
+    MissingConverter
 )
 from pydub.silence import (
     detect_silence,
@@ -1183,6 +1184,25 @@ class GeneratorTests(unittest.TestCase):
         self.assertAlmostEqual(len(one_sec), 1000)
         self.assertAlmostEqual(len(five_sec), 5000)
         self.assertAlmostEqual(len(half_sec), 500)
+
+
+class NoConverterPromptInstallTests(unittest.TestCase):
+
+    def test_prompt_converter_install(self):
+
+        def get_null_app():
+            return "no-conerter-is-installed"
+
+        filepath = os.path.join(data_dir, 'test1.mp3')
+
+        import pydub.utils
+        restore_function = pydub.utils.get_prober_name
+        pydub.utils.get_prober_name = get_null_app
+        self.assertRaises(
+            MissingConverter,
+            partial(mediainfo, filepath)
+        )
+        pydub.utils.get_prober_name = restore_function
 
 
 class NoConverterTests(unittest.TestCase):
