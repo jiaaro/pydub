@@ -503,7 +503,7 @@ class AudioSegment(object):
         )
 
     @classmethod
-    def from_file_using_temporary_files(cls, file, format=None, codec=None, parameters=None, **kwargs):
+    def from_file_using_temporary_files(cls, file, format=None, codec=None, parameters=None, start_second=None, duration=None, **kwargs):
         orig_file = file
         file, close_file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
@@ -526,7 +526,14 @@ class AudioSegment(object):
                 obj = cls._from_safe_wav(file)
                 if close_file:
                     file.close()
-                return obj
+                if start_second is None and duration is None:
+                    return obj
+                elif start_second is not None and duration is None:
+                    return obj[start_second*1000:]
+                elif start_second is None and duration is not None:
+                    return obj[:duration*1000]
+                else:
+                    return obj[start_second*1000:(start_second+duration)*1000]
             except:
                 file.seek(0)
         elif is_format("raw") or is_format("pcm"):
@@ -542,7 +549,14 @@ class AudioSegment(object):
             obj = cls(data=file.read(), metadata=metadata)
             if close_file:
                 file.close()
-            return obj
+            if start_second is None and duration is None:
+                return obj
+            elif start_second is not None and duration is None:
+                return obj[start_second * 1000:]
+            elif start_second is None and duration is not None:
+                return obj[:duration * 1000]
+            else:
+                return obj[start_second * 1000:(start_second + duration) * 1000]
 
         input_file = NamedTemporaryFile(mode='wb', delete=False)
         try:
@@ -581,9 +595,16 @@ class AudioSegment(object):
         conversion_command += [
             "-i", input_file.name,  # input_file options (filename last)
             "-vn",  # Drop any video streams if there are any
-            "-f", "wav",  # output options (filename last)
-            output.name
+            "-f", "wav"  # output options (filename last)
         ]
+
+        if start_second is not None:
+            conversion_command += ["-ss", str(start_second)]
+
+        if duration is not None:
+            conversion_command += ["-t", str(duration)]
+
+        conversion_command += [output.name]
 
         if parameters is not None:
             # extend arguments with arbitrary set
@@ -610,10 +631,18 @@ class AudioSegment(object):
             os.unlink(input_file.name)
             os.unlink(output.name)
 
-        return obj
+        if start_second is None and duration is None:
+            return obj
+        elif start_second is not None and duration is None:
+            return obj[0:]
+        elif start_second is None and duration is not None:
+            return obj[:duration * 1000]
+        else:
+            return obj[0:duration * 1000]
+
 
     @classmethod
-    def from_file(cls, file, format=None, codec=None, parameters=None, **kwargs):
+    def from_file(cls, file, format=None, codec=None, parameters=None, start_second=None, duration=None, **kwargs):
         orig_file = file
         try:
             filename = fsdecode(file)
@@ -637,7 +666,14 @@ class AudioSegment(object):
 
         if is_format("wav"):
             try:
-                return cls._from_safe_wav(file)
+                if start_second is None and duration is None:
+                    return cls._from_safe_wav(file)
+                elif start_second is not None and duration is None:
+                    return cls._from_safe_wav(file)[start_second*1000:]
+                elif start_second is None and duration is not None:
+                    return cls._from_safe_wav(file)[:duration*1000]
+                else:
+                    return cls._from_safe_wav(file)[start_second*1000:(start_second+duration)*1000]
             except:
                 file.seek(0)
         elif is_format("raw") or is_format("pcm"):
@@ -650,7 +686,14 @@ class AudioSegment(object):
                 'channels': channels,
                 'frame_width': channels * sample_width
             }
-            return cls(data=file.read(), metadata=metadata)
+            if start_second is None and duration is None:
+                return cls(data=file.read(), metadata=metadata)
+            elif start_second is not None and duration is None:
+                return cls(data=file.read(), metadata=metadata)[start_second*1000:]
+            elif start_second is None and duration is not None:
+                return cls(data=file.read(), metadata=metadata)[:duration*1000]
+            else:
+                return cls(data=file.read(), metadata=metadata)[start_second*1000:(start_second+duration)*1000]
 
         conversion_command = [cls.converter,
                               '-y',  # always overwrite existing files
@@ -703,9 +746,16 @@ class AudioSegment(object):
 
         conversion_command += [
             "-vn",  # Drop any video streams if there are any
-            "-f", "wav",  # output options (filename last)
-            "-"
+            "-f", "wav"  # output options (filename last)
         ]
+
+        if start_second is not None:
+            conversion_command += ["-ss", str(start_second)]
+
+        if duration is not None:
+            conversion_command += ["-t", str(duration)]
+
+        conversion_command += ["-"]
 
         if parameters is not None:
             # extend arguments with arbitrary set
@@ -726,12 +776,20 @@ class AudioSegment(object):
 
         p_out = bytearray(p_out)
         fix_wav_headers(p_out)
-        obj = cls._from_safe_wav(BytesIO(p_out))
+        p_out = bytes(p_out)
+        obj = cls(p_out)
 
         if close_file:
             file.close()
 
-        return obj
+        if start_second is None and duration is None:
+            return obj
+        elif start_second is not None and duration is None:
+            return obj[0:]
+        elif start_second is None and duration is not None:
+            return obj[:duration * 1000]
+        else:
+            return obj[0:duration * 1000]
 
     @classmethod
     def from_mp3(cls, file, parameters=None):
@@ -839,6 +897,7 @@ class AudioSegment(object):
 
         # for easy wav files, we're done (wav data is written directly to out_f)
         if easy_wav:
+            out_f.seek(0)
             return out_f
 
         output = NamedTemporaryFile(mode="w+b", delete=False)
