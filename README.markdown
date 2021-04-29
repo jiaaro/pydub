@@ -210,12 +210,12 @@ Mac (using [homebrew](http://brew.sh)):
 
 ```bash
 # libav
-brew install libav --with-libvorbis --with-sdl --with-theora
+brew install libav
 
 ####    OR    #####
 
 # ffmpeg
-brew install ffmpeg --with-libvorbis --with-sdl2 --with-theora
+brew install ffmpeg
 ```
 
 Linux (using aptitude):
