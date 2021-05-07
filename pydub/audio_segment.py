@@ -582,6 +582,10 @@ class AudioSegment(object):
         conversion_command = [cls.converter,
                               '-y',  # always overwrite existing files
                               ]
+        if cls.converter == 'ffmpeg':
+            conversion_command += ["-nostdin"]
+        else:
+            pass
 
         # If format is not defined
         # ffmpeg/avconv will detect it automatically
@@ -955,6 +959,11 @@ class AudioSegment(object):
 
         if sys.platform == 'darwin' and codec == 'mp3':
             conversion_command.extend(["-write_xing", "0"])
+
+        if self.converter == 'ffmpeg':
+            conversion_command += ["-nostdin"]
+        else:
+            pass
 
         conversion_command.extend([
             "-f", format, output.name,  # output options (filename last)
