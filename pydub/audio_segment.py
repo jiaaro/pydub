@@ -582,7 +582,7 @@ class AudioSegment(object):
         conversion_command = [cls.converter,
                               '-y',  # always overwrite existing files
                               ]
-        if cls.converter == 'ffmpeg':
+        if cls.converter.endswith('ffmpeg'):
             conversion_command += ["-nostdin"]
         else:
             pass
@@ -717,12 +717,12 @@ class AudioSegment(object):
             conversion_command += ["-i", filename]
             stdin_parameter = None
             stdin_data = None
-            if cls.converter == 'ffmpeg':
+            if cls.converter.endswith('ffmpeg'):
                 conversion_command += ["-nostdin"]
             else:
                 pass
         else:
-            if cls.converter == 'ffmpeg':
+            if cls.converter.endswith('ffmpeg'):
                 conversion_command += ["-read_ahead_limit", str(read_ahead_limit),
                                        "-i", "cache:pipe:0"]
             else:
@@ -960,7 +960,7 @@ class AudioSegment(object):
         if sys.platform == 'darwin' and codec == 'mp3':
             conversion_command.extend(["-write_xing", "0"])
 
-        if self.converter == 'ffmpeg':
+        if self.converter.endswith('ffmpeg'):
             conversion_command += ["-nostdin"]
         else:
             pass
