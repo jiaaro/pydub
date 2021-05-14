@@ -210,12 +210,12 @@ Mac (using [homebrew](http://brew.sh)):
 
 ```bash
 # libav
-brew install libav --with-libvorbis --with-sdl --with-theora
+brew install libav
 
 ####    OR    #####
 
 # ffmpeg
-brew install ffmpeg --with-libvorbis --with-sdl2 --with-theora
+brew install ffmpeg
 ```
 
 Linux (using aptitude):
@@ -249,7 +249,7 @@ some of a number of potential codecs (see page 3 of the rfc) that can be used fo
 encapsulated data.
 
 When no codec is specified exporting to `ogg` will _default_ to using `vorbis`
-as a convinence. That is:
+as a convenience. That is:
 
 ```python
 from pydub import AudioSegment

@@ -8,7 +8,7 @@ from setuptools import setup
 
 setup(
     name='pydub',
-    version='0.24.1',
+    version='0.25.1',
     author='James Robert',
     author_email='jiaaro@gmail.com',
     description='Manipulate audio with an simple and easy high level interface',
@@ -17,9 +17,6 @@ setup(
     url='http://pydub.com',
     packages=['pydub'],
     long_description=__doc__,
-    package_data={
-        '': ['LICENSE'],
-    },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: MIT License',

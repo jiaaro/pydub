@@ -297,8 +297,8 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
             stream[prop] = value
 
     for token in extra_info[stream['index']]:
-        m = re.match('([su]([0-9]{1,2})p?) \(([0-9]{1,2}) bit\)$', token)
-        m2 = re.match('([su]([0-9]{1,2})p?)( \(default\))?$', token)
+        m = re.match(r'([su]([0-9]{1,2})p?) \(([0-9]{1,2}) bit\)$', token)
+        m2 = re.match(r'([su]([0-9]{1,2})p?)( \(default\))?$', token)
         if m:
             set_property(stream, 'sample_fmt', m.group(1))
             set_property(stream, 'bits_per_sample', int(m.group(2)))
@@ -307,11 +307,11 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
             set_property(stream, 'sample_fmt', m2.group(1))
             set_property(stream, 'bits_per_sample', int(m2.group(2)))
             set_property(stream, 'bits_per_raw_sample', int(m2.group(2)))
-        elif re.match('(flt)p?( \(default\))?$', token):
+        elif re.match(r'(flt)p?( \(default\))?$', token):
             set_property(stream, 'sample_fmt', token)
             set_property(stream, 'bits_per_sample', 32)
             set_property(stream, 'bits_per_raw_sample', 32)
-        elif re.match('(dbl)p?( \(default\))?$', token):
+        elif re.match(r'(dbl)p?( \(default\))?$', token):
             set_property(stream, 'sample_fmt', token)
             set_property(stream, 'bits_per_sample', 64)
             set_property(stream, 'bits_per_raw_sample', 64)
@@ -415,3 +415,20 @@ def get_supported_decoders():
 
 def get_supported_encoders():
     return get_supported_codecs()[1]
+
+def stereo_to_ms(audio_segment):
+	'''
+	Left-Right -> Mid-Side
+	'''
+	channel = audio_segment.split_to_mono()
+	channel = [channel[0].overlay(channel[1]), channel[0].overlay(channel[1].invert_phase())]
+	return AudioSegment.from_mono_audiosegments(channel[0], channel[1])
+
+def ms_to_stereo(audio_segment):
+	'''
+	Mid-Side -> Left-Right
+	'''
+	channel = audio_segment.split_to_mono()
+	channel = [channel[0].overlay(channel[1]) - 3, channel[0].overlay(channel[1].invert_phase()) - 3]
+	return AudioSegment.from_mono_audiosegments(channel[0], channel[1])
+
