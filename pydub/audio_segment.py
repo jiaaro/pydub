@@ -338,7 +338,7 @@ class AudioSegment(object):
         """
         Get a section of the audio segment by sample index.
 
-        NOTE: Negative indices do *not* address samples backword
+        NOTE: Negative indices do *not* address samples backward
         from the end of the audio segment like a python list.
         This is intentional.
         """
