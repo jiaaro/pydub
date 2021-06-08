@@ -564,7 +564,7 @@ from pydub import AudioSegment
 
 sound = AudioSegment.from_file("sound1.wav")
 sound = sound.set_frame_rate(16000)
-channel_sounds = seg.split_to_mono()
+channel_sounds = sound.split_to_mono()
 samples = [s.get_array_of_samples() for s in channel_sounds]
 
 fp_arr = np.array(samples).T.astype(np.float32)
