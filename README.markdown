@@ -230,8 +230,12 @@ apt-get install libav-tools libavcodec-extra
 apt-get install ffmpeg libavcodec-extra
 ```
 
-Windows:
+Windows (using [Chocolatey](https://chocolatey.org/))
+```
+choco install ffmpeg
 
+### OR ###
+```
 1. Download and extract libav from [Windows binaries provided here](http://builds.libav.org/windows/).
 2. Add the libav `/bin` folder to your PATH envvar
 3. `pip install pydub`
