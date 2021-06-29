@@ -431,7 +431,7 @@ fade_quieter_beteen_2_and_3_seconds = sound1.fade(to_gain=-3.5, start=2000, end=
 
 # easy way is to use the .fade_in() convenience method. note: -120dB is basically silent.
 fade_in_the_hard_way = sound1.fade(from_gain=-120.0, start=0, duration=5000)
-fade_out_the_hard_way = sound1.fade(to_gain=-120.0, end=0, duration=5000)
+fade_out_the_hard_way = sound1.fade(to_gain=-120.0, end=len(sound1), duration=5000)
 ```
 
 **Supported keyword arguments**:
@@ -440,11 +440,11 @@ fade_out_the_hard_way = sound1.fade(to_gain=-120.0, end=0, duration=5000)
   Resulting change at the end of the fade. `-6.0` means fade will be be from 0dB (no change) to -6dB, and everything after the fade will be -6dB.
 - `from_gain` | example: `-3.0` | default: `0` (0dB, no change)
   Change at the beginning of the fade. `-6.0` means fade (and all audio before it) will be be at -6dB will fade up to 0dB – the rest of the audio after the fade will be at 0dB (i.e., unchanged).
-- `start` | example: `7500` | NO DEFAULT
+- `start` | example: `5500` | NO DEFAULT
   Position to begin fading (in milliseconds). `5500` means fade will begin after 5.5 seconds.
-- `end` | example: `4` | NO DEFAULT
-  The overlaid `AudioSegment` will repeat X times (starting at `position`) but will still be truncated to the length of this `AudioSegment`
-- `duration` | example: `4` | NO DEFAULT
+- `end` | example: `6500` | NO DEFAULT
+    Position to end fading (in milliseconds). `6500` means fade will end at 6.5 seconds.
+- `duration` | example: `1000` | NO DEFAULT
   You can use `start` or `end` with duration, instead of specifying both - provided as a convenience.
 
 ### AudioSegment(…).fade_out()
