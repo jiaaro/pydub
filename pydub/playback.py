@@ -22,7 +22,7 @@ def _play_with_pyaudio(seg, device_index = None):
     stream = p.open(format=p.get_format_from_width(seg.sample_width),
                     channels=seg.channels,
                     rate=seg.frame_rate,
-                    output_device_index = int(device_index),
+                    output_device_index = device_index,
                     output=True)
 
     # Just in case there were any exceptions/interrupts, we release the resource
