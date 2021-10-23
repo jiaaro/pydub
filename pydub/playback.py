@@ -6,14 +6,21 @@ OSX 10.10): https://gist.github.com/jiaaro/9767512210a1d80a8a0d
 """
 
 import subprocess
+import os
 from tempfile import NamedTemporaryFile
 from .utils import get_player_name, make_chunks
+from .logging_utils import log_subprocess_output
 
 def _play_with_ffplay(seg):
     PLAYER = get_player_name()
     with NamedTemporaryFile("w+b", suffix=".wav") as f:
         seg.export(f.name, "wav")
-        subprocess.call([PLAYER, "-nodisp", "-autoexit", "-hide_banner", f.name])
+
+        p = subprocess.Popen([PLAYER, "-nodisp", "-autoexit", "-hide_banner", f.name], \
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p_out, p_err = p.communicate()
+        log_subprocess_output(p_out)
+        log_subprocess_output(p_err)
 
 
 def _play_with_pyaudio(seg):
