@@ -6,7 +6,6 @@ OSX 10.10): https://gist.github.com/jiaaro/9767512210a1d80a8a0d
 """
 
 import subprocess
-import os
 from tempfile import NamedTemporaryFile
 from .utils import get_player_name, make_chunks
 from .logging_utils import log_subprocess_output
