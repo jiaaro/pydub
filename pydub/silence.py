@@ -83,7 +83,7 @@ def detect_nonsilent(audio_segment, min_silence_len=1000, silence_thresh=-16, se
     silence_thresh - the upper bound for how quiet is silent in dFBS
     seek_step - step size for interating over the segment in ms
     """
-    silent_ranges = detect_silence(audio_segment, min_silence_len, silence_thresh, seek_step)
+    silent_ranges = detect_silent(audio_segment, min_silence_len, silence_thresh, seek_step)
     len_seg = len(audio_segment)
 
     # if there is no silence, the whole thing is nonsilent
