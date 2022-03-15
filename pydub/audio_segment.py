@@ -42,13 +42,12 @@ from .exceptions import (
     MissingAudioParameter,
 )
 
-match os.environ['PYDUB_NO_WINDOW']:
-    case '0':
-        NO_WINDOW = False
-    case '1':
-        NO_WINDOW = True
-    case _:
-        NO_WINDOW = False
+if os.environ['PYDUB_NO_WINDOW'] == '0':
+    NO_WINDOW = False
+elif os.environ['PYDUB_NO_WINDOW'] == '1':
+    NO_WINDOW = True
+else:
+    NO_WINDOW = False
 
 if sys.version_info >= (3, 0):
     basestring = str
