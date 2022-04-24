@@ -277,7 +277,7 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
     stderr = stderr.decode("utf-8", 'ignore')
 
     try:
-	info = json.loads(output)
+        info = json.loads(output)
     except  json.decoder.JSONDecodeError:
         # If ffprobe didn't give any information, just return it
         # (for example, because the file doesn't exist)
