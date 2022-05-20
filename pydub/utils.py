@@ -131,12 +131,24 @@ def register_pydub_effect(fn, name=None):
 
 def make_chunks(audio_segment, chunk_length):
     """
+    Breaks an AudioSegment into chunks each with <chunk_length> samples.
+    if chunk_length is 50 then you'll get a list of 50 samples until the end of the
+    audio file is reached.
+    segments back (except the last one, which can be shorter)
+    """
+    number_of_chunks = ceil(len(audio_segment) / float(chunk_length))
+    return [audio_segment[i * chunk_length:(i + 1) * chunk_length]
+            for i in range(int(number_of_chunks))]
+
+def make_time_chunks(audio_segment, chunk_length, sr=16000):
+    """
     Breaks an AudioSegment into chunks that are <chunk_length> milliseconds
     long.
     if chunk_length is 50 then you'll get a list of 50 millisecond long audio
     segments back (except the last one, which can be shorter)
     """
-    number_of_chunks = ceil(len(audio_segment) / float(chunk_length))
+    points_per_chunk = (float(chunk_length)/1000)*sr
+    number_of_chunks = ceil(len(audio_segment) / points_per_chunk)
     return [audio_segment[i * chunk_length:(i + 1) * chunk_length]
             for i in range(int(number_of_chunks))]
 

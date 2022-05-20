@@ -1,6 +1,7 @@
 from functools import partial
 import os
 import sys
+from math import ceil
 import unittest
 from tempfile import (
     NamedTemporaryFile,
@@ -16,6 +17,7 @@ from pydub.utils import (
     db_to_float,
     ratio_to_db,
     make_chunks,
+    make_time_chunks,
     mediainfo,
     get_encoder_name,
     get_supported_decoders,
@@ -942,6 +944,12 @@ class AudioSegmentTests(unittest.TestCase):
         for chunk in chunks[1:]:
             seg2 += chunk
         self.assertEqual(len(seg), len(seg2))
+
+    def test_make_time_chunks(self):
+        seg1_chunks = make_time_chunks(self.seg1, 100, sr=self.seg1.frame_rate)
+        points_per_chunk = (float(100)/1000)*self.seg1.frame_rate
+        n_chunks = ceil(len(self.seg1) / points_per_chunk)
+        self.assertEqual(n_chunks, len(seg1_chunks))
 
     def test_empty(self):
         self.assertEqual(len(self.seg1), len(self.seg1 + AudioSegment.empty()))
