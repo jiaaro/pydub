@@ -967,6 +967,12 @@ class AudioSegment(object):
         log_subprocess_output(p_err)
 
         if p.returncode != 0:
+            data.close()
+            output.close()
+
+            os.unlink(data.name)
+            os.unlink(output.name)
+
             raise CouldntEncodeError(
                 "Encoding failed. ffmpeg/avlib returned error code: {0}\n\nCommand:{1}\n\nOutput from ffmpeg/avlib:\n\n{2}".format(
                     p.returncode, conversion_command, p_err.decode(errors='ignore') ))
