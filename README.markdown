@@ -151,7 +151,7 @@ subprocess.call(['ffmpeg', '-y', '-i', '/var/folders/71/42k8g72x4pq09tfp920d033r
 ```
 
 Don't worry about the temporary files used in the conversion. They're cleaned up 
-automatically.
+automatically. Outputs from ffmpeg/libav playbacks are written to the logger at DEBUG level.
 
 ## Bugs & Questions
 
