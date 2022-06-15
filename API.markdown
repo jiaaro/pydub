@@ -686,7 +686,7 @@ print(silence.detect_leading_silence(AudioSegment.silent(2000)))
 
 **Supported keyword arguments**:
 
-- `silence_thresh` | example: `-20` | default: -50
+- `silence_thresh` | example: `-20` | default: -16
   The upper bound for how quiet is silent in dBFS.
 
 - `chunk_size` | example: `5` | default: 10
