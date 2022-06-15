@@ -680,7 +680,7 @@ Returns the millisecond/index that the leading silence ends. If there is no end 
 ```python
 from pydub import AudioSegment, silence
 
-print(silence.detect_silence(AudioSegment.silent(2000)))
+print(silence.detect_leading_silence(AudioSegment.silent(2000)))
 # 2000
 ```
 

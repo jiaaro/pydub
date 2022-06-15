@@ -29,6 +29,7 @@ from pydub.exceptions import (
     MissingAudioParameter,
 )
 from pydub.silence import (
+    detect_leading_silence,
     detect_silence,
     split_on_silence,
 )
@@ -1144,6 +1145,15 @@ class SilenceTests(unittest.TestCase):
         silent_ranges = detect_silence(self.seg1, min_silence_len=500, silence_thresh=-20,
                                        seek_step=10)
         self.assertEqual(silent_ranges, [[0, 770], [3150, 4030], [5520, 6050]])
+
+    def test_detect_leading_silence_completely_silent_segment(self):
+        seg = AudioSegment.silent(5000)
+        silence_ending = detect_leading_silence(seg, silence_thresh=-20)
+        self.assertEqual(silence_ending, 5000)
+
+    def test_detect_leading_silence_seg1(self):
+        silence_ending = detect_leading_silence(self.seg1, silence_thresh=-20)
+        self.assertEqual(silence_ending, 380)
 
     def test_realistic_audio(self):
         silent_ranges = detect_silence(self.seg4, min_silence_len=1000, silence_thresh=self.seg4.dBFS)
