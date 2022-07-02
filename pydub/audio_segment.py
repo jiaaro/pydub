@@ -338,7 +338,7 @@ class AudioSegment(object):
         """
         Get a section of the audio segment by sample index.
 
-        NOTE: Negative indices do *not* address samples backword
+        NOTE: Negative indices do *not* address samples backward
         from the end of the audio segment like a python list.
         This is intentional.
         """
@@ -1174,7 +1174,7 @@ class AudioSegment(object):
     def overlay(self, seg, position=0, loop=False, times=None, gain_during_overlay=None):
         """
         Overlay the provided segment on to this segment starting at the
-        specificed position and using the specfied looping beahvior.
+        specified position and using the specfied looping beahvior.
 
         seg (AudioSegment):
             The audio segment to overlay on to this one.

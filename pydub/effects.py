@@ -120,7 +120,7 @@ def compress_dynamic_range(seg, threshold=-20.0, ratio=4.0, attack=5.0, release=
         threshold - default: -20.0
             Threshold in dBFS. default of -20.0 means -20dB relative to the
             maximum possible volume. 0dBFS is the maximum possible value so
-            all values for this argument sould be negative.
+            all values for this argument should be negative.
 
         ratio - default: 4.0
             Compression ratio. Audio louder than the threshold will be 
