@@ -640,7 +640,7 @@ print(silence.detect_silence(AudioSegment.silent(2000)))
 
 ### silence.detect_nonsilent()
 
-Returns a list of all silent sections [start, end] in milliseconds of audio_segment. Inverse of detect_silence() and has all the same arguments. Can be very slow since it has to iterate over the whole segment.
+Returns a list of all non silent sections [start, end] in milliseconds of audio_segment. Inverse of detect_silence() and has all the same arguments. Can be very slow since it has to iterate over the whole segment.
 
 **Supported keyword arguments**:
 
@@ -680,7 +680,7 @@ Returns the millisecond/index that the leading silence ends. If there is no end 
 ```python
 from pydub import AudioSegment, silence
 
-print(silence.detect_silence(AudioSegment.silent(2000)))
+print(silence.detect_leading_silence(AudioSegment.silent(2000)))
 # 2000
 ```
 
