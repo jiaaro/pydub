@@ -642,7 +642,7 @@ class AudioSegment(object):
 
 
     @classmethod
-    def from_file(cls, file, format=None, codec=None, parameters=None, start_second=None, duration=None, **kwargs):
+    def from_file(cls, file, format=None, codec=None, parameters=None, start_second=None, duration=None, **kwargs) -> AudioSegment:
         orig_file = file
         try:
             filename = fsdecode(file)
