@@ -3,7 +3,7 @@ from __future__ import division
 import array
 import os
 import subprocess
-from tempfile import TemporaryFile, NamedTemporaryFile
+from tempfile import NamedTemporaryFile
 import wave
 import sys
 import struct
@@ -1264,7 +1264,7 @@ class AudioSegment(object):
         xf = seg1[-crossfade:].fade(to_gain=-120, start=0, end=float('inf'))
         xf *= seg2[:crossfade].fade(from_gain=-120, start=0, end=float('inf'))
 
-        output = TemporaryFile()
+        output = BytesIO()
 
         output.write(seg1[:-crossfade]._data)
         output.write(xf._data)
