@@ -318,7 +318,7 @@ raw_audio_data = sound.raw_data
 
 ### AudioSegment(…).frame_count()
 
-Returns the number of frames in the `AudioSegment`. Optionally you may pass in a `ms` keywork argument to retrieve the number of frames in that number of milliseconds of audio in the `AudioSegment` (useful for slicing, etc).
+Returns the number of frames in the `AudioSegment`. Optionally you may pass in a `ms` keyword argument to retrieve the number of frames in that number of milliseconds of audio in the `AudioSegment` (useful for slicing, etc).
 
 ```python
 from pydub import AudioSegment
@@ -374,7 +374,7 @@ from pydub import AudioSegment
 sound1 = AudioSegment.from_file("sound1.wav")
 sound2 = AudioSegment.from_file("sound2.wav")
 
-played_togther = sound1.overlay(sound2)
+played_together = sound1.overlay(sound2)
 
 sound2_starts_after_delay = sound1.overlay(sound2, position=5000)
 
@@ -427,7 +427,7 @@ sound1 = AudioSegment.from_file("sound1.wav")
 
 fade_louder_for_3_seconds_in_middle = sound1.fade(to_gain=+6.0, start=7500, duration=3000)
 
-fade_quieter_beteen_2_and_3_seconds = sound1.fade(to_gain=-3.5, start=2000, end=3000)
+fade_quieter_between_2_and_3_seconds = sound1.fade(to_gain=-3.5, start=2000, end=3000)
 
 # easy way is to use the .fade_in() convenience method. note: -120dB is basically silent.
 fade_in_the_hard_way = sound1.fade(from_gain=-120.0, start=0, duration=5000)
@@ -479,7 +479,7 @@ Creates an equivalent version of this `AudioSegment` with the specified frame ra
 
 ### AudioSegment(…).set_channels()
 
-Creates an equivalent version of this `AudioSegment` with the specified number of channels (1 is Mono, 2 is Stereo). Converting from mono to stereo does not cause any audible change. Converting from stereo to mono may result in loss of quality (but only if the left and right chanels differ).
+Creates an equivalent version of this `AudioSegment` with the specified number of channels (1 is Mono, 2 is Stereo). Converting from mono to stereo does not cause any audible change. Converting from stereo to mono may result in loss of quality (but only if the left and right channels differ).
 
 ### AudioSegment(…).split_to_mono()
 
@@ -491,7 +491,7 @@ Splits a stereo `AudioSegment` into two, one for each channel (Left/Right). Retu
 from pydub import AudioSegment
 sound1 = AudioSegment.from_file("sound1.wav")
 
-# make left channel 6dB quieter and right channe 2dB louder
+# make left channel 6dB quieter and right channel 2dB louder
 stereo_balance_adjusted = sound1.apply_gain_stereo(-6, +2)
 ```
 Apply gain to the left and right channel of a stereo `AudioSegment`. If the `AudioSegment` is mono, it will be converted to stereo before applying the gain.
