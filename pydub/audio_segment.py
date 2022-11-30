@@ -598,6 +598,10 @@ class AudioSegment(object):
             "-f", "wav"  # output options (filename last)
         ]
 
+        if parameters is not None:
+            # extend arguments with arbitrary set
+            conversion_command.extend(parameters)
+
         if start_second is not None:
             conversion_command += ["-ss", str(start_second)]
 
@@ -605,10 +609,6 @@ class AudioSegment(object):
             conversion_command += ["-t", str(duration)]
 
         conversion_command += [output.name]
-
-        if parameters is not None:
-            # extend arguments with arbitrary set
-            conversion_command.extend(parameters)
 
         log_conversion(conversion_command)
 
@@ -722,6 +722,10 @@ class AudioSegment(object):
             stdin_parameter = subprocess.PIPE
             stdin_data = file.read()
 
+        if parameters is not None:
+            # extend arguments with arbitrary set
+            conversion_command.extend(parameters)
+
         if codec:
             info = None
         else:
@@ -756,10 +760,6 @@ class AudioSegment(object):
             conversion_command += ["-t", str(duration)]
 
         conversion_command += ["-"]
-
-        if parameters is not None:
-            # extend arguments with arbitrary set
-            conversion_command.extend(parameters)
 
         log_conversion(conversion_command)
 
