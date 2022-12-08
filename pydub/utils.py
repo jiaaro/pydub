@@ -1,4 +1,5 @@
 from __future__ import division
+from io import BufferedReader
 
 import json
 import os
@@ -58,6 +59,9 @@ def _fd_or_path_or_tempfile(fd, mode='w+b', tempfile=True):
 
     if isinstance(fd, basestring):
         fd = open(fd, mode=mode)
+        close_fd = True
+
+    if isinstance(fd, BufferedReader):
         close_fd = True
 
     try:
