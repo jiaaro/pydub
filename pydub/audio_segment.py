@@ -733,7 +733,7 @@ class AudioSegment(object):
             # that mp3/mp4/aac/webm/ogg files contain fltp samples
             audio_codec = audio_streams[0].get('codec_name')
             if (audio_streams[0].get('sample_fmt') == 'fltp' and
-                    audio_codec in ['mp3', 'mp4', 'aac', 'webm', 'ogg']):
+                    audio_codec in ['mp3', 'mp4', 'aac', 'webm', 'ogg', 'vorbis']):
                 bits_per_sample = 16
             else:
                 bits_per_sample = audio_streams[0]['bits_per_sample']
