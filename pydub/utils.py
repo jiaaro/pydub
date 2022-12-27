@@ -163,7 +163,7 @@ def which(program):
 
 def get_encoder_name():
     """
-    Return enconder default application for system, either avconv or ffmpeg
+    Return encoder default application for system, either avconv or ffmpeg
     """
     if which("avconv"):
         return "avconv"
@@ -177,7 +177,7 @@ def get_encoder_name():
 
 def get_player_name():
     """
-    Return enconder default application for system, either avconv or ffmpeg
+    Return encoder default application for system, either avconv or ffmpeg
     """
     if which("avplay"):
         return "avplay"

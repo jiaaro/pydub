@@ -154,7 +154,7 @@ class AudioSegment(object):
     AudioSegments are *immutable* objects representing segments of audio
     that can be manipulated using python code.
 
-    AudioSegments are slicable using milliseconds.
+    AudioSegments are sliceable using milliseconds.
     for example:
         a = AudioSegment.from_mp3(mp3file)
         first_second = a[:1000] # get the first second of an mp3
@@ -338,7 +338,7 @@ class AudioSegment(object):
         """
         Get a section of the audio segment by sample index.
 
-        NOTE: Negative indices do *not* address samples backword
+        NOTE: Negative indices do *not* address samples backward
         from the end of the audio segment like a python list.
         This is intentional.
         """
@@ -844,7 +844,7 @@ class AudioSegment(object):
             -a:b).
 
         parameters (list of strings)
-            Aditional ffmpeg/avconv parameters
+            Additional ffmpeg/avconv parameters
 
         tags (dict)
             Set metadata information to destination files
@@ -1175,7 +1175,7 @@ class AudioSegment(object):
     def overlay(self, seg, position=0, loop=False, times=None, gain_during_overlay=None):
         """
         Overlay the provided segment on to this segment starting at the
-        specificed position and using the specfied looping beahvior.
+        specified position and using the specified looping behavior.
 
         seg (AudioSegment):
             The audio segment to overlay on to this one.
@@ -1199,7 +1199,7 @@ class AudioSegment(object):
         """
 
         if loop:
-            # match loop=True's behavior with new times (count) mechinism.
+            # match loop=True's behavior with new times (count) mechanism.
             times = -1
         elif times is None:
             # no times specified, just once through
