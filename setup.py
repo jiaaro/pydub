@@ -15,6 +15,9 @@ setup(
     license='MIT',
     keywords='audio sound high-level',
     url='http://pydub.com',
+    project_urls={
+        'Source': 'https://github.com/jiaaro/pydub',
+    },
     packages=['pydub'],
     long_description=__doc__,
     classifiers=[
