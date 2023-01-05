@@ -144,8 +144,14 @@ def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, ke
     if isinstance(keep_silence, bool):
         keep_silence = len(audio_segment) if keep_silence else 0
 
+    keep_silence_start = keep_silence
+    keep_silence_end = keep_silence
+
+    if isinstance(keep_silence, tuple):
+        keep_silence_start, keep_silence_end = keep_silence
+
     output_ranges = [
-        [ start - keep_silence, end + keep_silence ]
+        [ start - keep_silence_start, end + keep_silence_end ]
         for (start,end)
             in detect_nonsilent(audio_segment, min_silence_len, silence_thresh, seek_step)
     ]
