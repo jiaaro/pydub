@@ -830,9 +830,10 @@ class AudioSegment(object):
             Path to destination audio file. Also accepts os.PathLike objects on
             python >= 3.6
 
-        format (string)
-            Format for destination audio file.
-            ('mp3', 'wav', 'raw', 'ogg' or other ffmpeg/avconv supported files)
+        format (string/None)
+            Format for destination audio file. Defaults to 'mp3'.
+            ('mp3', 'wav', 'raw', 'ogg' or other ffmpeg/avconv supported files).
+            Setting this value to None will skip the '-f' ffmpeg option entirely.
 
         codec (string)
             Codec used to encode the destination file.
@@ -863,6 +864,13 @@ class AudioSegment(object):
                     'Can not invoke ffmpeg when export format is "raw"; '
                     'specify an ffmpeg raw format like format="s16le" instead '
                     'or call export(format="raw") with no codec or parameters')
+        # Determine the wanted output_extension
+        # Check is required as out_f argument can also be anything
+        # with .write and .seek methods, not just str / os.PathLike.
+        if isinstance(out_f, basestring) or (sys.version_info >= (3, 6) and isinstance(out_f, os.PathLike)):
+            _, output_ext = os.path.splitext(out_f) if out_f else ("", "")
+        else:
+            output_ext = ""
 
         out_f, _ = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
@@ -900,7 +908,7 @@ class AudioSegment(object):
             out_f.seek(0)
             return out_f
 
-        output = NamedTemporaryFile(mode="w+b", delete=False)
+        output = NamedTemporaryFile(mode="w+b", delete=False, suffix=output_ext)
 
         # build converter command to export
         conversion_command = [
@@ -952,9 +960,11 @@ class AudioSegment(object):
         if sys.platform == 'darwin' and codec == 'mp3':
             conversion_command.extend(["-write_xing", "0"])
 
-        conversion_command.extend([
-            "-f", format, output.name,  # output options (filename last)
-        ])
+        if format is not None:
+            conversion_command.extend(["-f", format])
+
+        # filename should be the last conversion command arg
+        conversion_command.append(output.name)
 
         log_conversion(conversion_command)
 
