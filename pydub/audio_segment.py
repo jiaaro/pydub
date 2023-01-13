@@ -722,6 +722,8 @@ class AudioSegment(object):
             stdin_parameter = subprocess.PIPE
             stdin_data = file.read()
 
+        conversion_command += ["-async", "1"]
+
         if codec:
             info = None
         else:
