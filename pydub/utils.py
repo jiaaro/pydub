@@ -397,7 +397,7 @@ def get_supported_codecs():
         output = output.replace("\r", "")
 
 
-    rgx = re.compile(r"^([D.][E.][AVS.][I.][L.][S.]) (\w*) +(.*)")
+    rgx = re.compile(r"^ ?([D.][E.][AVS.][I.][L.][S.]) (\w*) +(.*)")
     decoders = set()
     encoders = set()
     for line in output.split('\n'):
