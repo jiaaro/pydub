@@ -729,6 +729,10 @@ class AudioSegment(object):
         if info:
             audio_streams = [x for x in info['streams']
                              if x['codec_type'] == 'audio']
+            if not audio_streams:
+                raise CouldntDecodeError(
+                    "File does not include an audio stream.")
+
             # This is a workaround for some ffprobe versions that always say
             # that mp3/mp4/aac/webm/ogg files contain fltp samples
             audio_codec = audio_streams[0].get('codec_name')

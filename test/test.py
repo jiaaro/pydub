@@ -1093,6 +1093,10 @@ class AudioSegmentTests(unittest.TestCase):
 
         tempfile.tempdir = orig_tmpdir
         os.rmdir(new_tmpdir)
+    
+    def test_from_file_image_clean_fail(self):
+        with self.assertRaises(CouldntDecodeError):
+            AudioSegment.from_file(os.path.join(data_dir, 'image.png'))
 
 
 class SilenceTests(unittest.TestCase):
