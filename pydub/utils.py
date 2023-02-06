@@ -11,6 +11,13 @@ from tempfile import TemporaryFile
 from warnings import warn
 from functools import wraps
 
+if os.environ['PYDUB_NO_WINDOW'] == '0':
+    NO_WINDOW = False
+elif os.environ['PYDUB_NO_WINDOW'] == '1':
+    NO_WINDOW = True
+else:
+    NO_WINDOW = False
+
 try:
     import audioop
 except ImportError:
@@ -275,7 +282,10 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
             file.close()
 
     command = [prober, '-of', 'json'] + command_args
-    res = Popen(command, stdin=stdin_parameter, stdout=PIPE, stderr=PIPE)
+    if NO_WINDOW:
+        res = Popen(command, stdin=stdin_parameter, stdout=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW)
+    else:
+        res = Popen(command, stdin=stdin_parameter, stdout=PIPE, stderr=PIPE)
     output, stderr = res.communicate(input=stdin_data)
     output = output.decode("utf-8", 'ignore')
     stderr = stderr.decode("utf-8", 'ignore')

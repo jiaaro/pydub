@@ -42,6 +42,13 @@ from .exceptions import (
     MissingAudioParameter,
 )
 
+if os.environ['PYDUB_NO_WINDOW'] == '0':
+    NO_WINDOW = False
+elif os.environ['PYDUB_NO_WINDOW'] == '1':
+    NO_WINDOW = True
+else:
+    NO_WINDOW = False
+
 if sys.version_info >= (3, 0):
     basestring = str
     xrange = range
@@ -613,7 +620,10 @@ class AudioSegment(object):
         log_conversion(conversion_command)
 
         with open(os.devnull, 'rb') as devnull:
-            p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if NO_WINDOW:
+                p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=subprocess.CREATE_NO_WINDOW)
+            else:
+                p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         p_out, p_err = p.communicate()
 
         log_subprocess_output(p_out)
@@ -763,8 +773,14 @@ class AudioSegment(object):
 
         log_conversion(conversion_command)
 
-        p = subprocess.Popen(conversion_command, stdin=stdin_parameter,
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if NO_WINDOW:
+            p = subprocess.Popen(conversion_command, stdin=stdin_parameter,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                 creationflags=subprocess.CREATE_NO_WINDOW)
+        else:
+            p = subprocess.Popen(conversion_command, stdin=stdin_parameter,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            
         p_out, p_err = p.communicate(input=stdin_data)
 
         if p.returncode != 0 or len(p_out) == 0:
@@ -960,7 +976,11 @@ class AudioSegment(object):
 
         # read stdin / write stdout
         with open(os.devnull, 'rb') as devnull:
-            p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if NO_WINDOW:
+                p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=subprocess.CREATE_NO_WINDOW)
+            else:
+                p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                
         p_out, p_err = p.communicate()
 
         log_subprocess_output(p_out)
