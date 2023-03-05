@@ -4,16 +4,23 @@ otherwise will fallback to ffplay. Pyaudio is a *much* nicer solution, but
 is tricky to install. See my notes on installing pyaudio in a virtualenv (on
 OSX 10.10): https://gist.github.com/jiaaro/9767512210a1d80a8a0d
 """
-
+import os
 import subprocess
 from tempfile import NamedTemporaryFile
 from .utils import get_player_name, make_chunks
 
-def _play_with_ffplay(seg):
+
+def _play_with_ffplay(seg, display_diagnostic):
     PLAYER = get_player_name()
     with NamedTemporaryFile("w+b", suffix=".wav") as f:
         seg.export(f.name, "wav")
-        subprocess.call([PLAYER, "-nodisp", "-autoexit", "-hide_banner", f.name])
+        if display_diagnostic:
+            subprocess.call([PLAYER, "-nodisp", "-autoexit",
+                             "-hide_banner", f.name])
+        else:
+            fp = open(os.devnull, 'w+b')
+            subprocess.call([PLAYER, "-nodisp", "-autoexit",
+                             "-hide_banner", f.name], stdout=fp, stderr=fp)
 
 
 def _play_with_pyaudio(seg):
@@ -48,7 +55,7 @@ def _play_with_simpleaudio(seg):
     )
 
 
-def play(audio_segment):
+def play(audio_segment, display_diagnostic=False):
     try:
         playback = _play_with_simpleaudio(audio_segment)
         try:
@@ -68,4 +75,4 @@ def play(audio_segment):
     else:
         return
 
-    _play_with_ffplay(audio_segment)
+    _play_with_ffplay(audio_segment, display_diagnostic)
