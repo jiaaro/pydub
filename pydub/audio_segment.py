@@ -503,7 +503,7 @@ class AudioSegment(object):
         )
 
     @classmethod
-    def from_file_using_temporary_files(cls, file, format=None, codec=None, parameters=None, start_second=None, duration=None, **kwargs):
+    def from_file_using_temporary_files(cls, file, format=None, codec=None, parameters=None, start_second=None, duration=None, force_conversion=False, **kwargs):
         orig_file = file
         file, close_file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
 
@@ -521,7 +521,7 @@ class AudioSegment(object):
                 return orig_file.lower().endswith((".{0}".format(f)).encode('utf8'))
             return False
 
-        if is_format("wav"):
+        if is_format("wav") and not force_conversion:
             try:
                 obj = cls._from_safe_wav(file)
                 if close_file:
@@ -642,7 +642,7 @@ class AudioSegment(object):
 
 
     @classmethod
-    def from_file(cls, file, format=None, codec=None, parameters=None, start_second=None, duration=None, **kwargs):
+    def from_file(cls, file, format=None, codec=None, parameters=None, start_second=None, duration=None, force_conversion=False, **kwargs):
         orig_file = file
         try:
             filename = fsdecode(file)
@@ -664,7 +664,7 @@ class AudioSegment(object):
 
             return False
 
-        if is_format("wav"):
+        if is_format("wav") and not force_conversion:
             try:
                 if start_second is None and duration is None:
                     return cls._from_safe_wav(file)
