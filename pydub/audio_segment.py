@@ -3,7 +3,7 @@ from __future__ import division
 import array
 import os
 import subprocess
-from tempfile import TemporaryFile, NamedTemporaryFile
+from tempfile import NamedTemporaryFile
 import wave
 import sys
 import struct
@@ -966,19 +966,20 @@ class AudioSegment(object):
         log_subprocess_output(p_out)
         log_subprocess_output(p_err)
 
-        if p.returncode != 0:
-            raise CouldntEncodeError(
-                "Encoding failed. ffmpeg/avlib returned error code: {0}\n\nCommand:{1}\n\nOutput from ffmpeg/avlib:\n\n{2}".format(
-                    p.returncode, conversion_command, p_err.decode(errors='ignore') ))
+        try:
+            if p.returncode != 0:
+                raise CouldntEncodeError(
+                    "Encoding failed. ffmpeg/avlib returned error code: {0}\n\nCommand:{1}\n\nOutput from ffmpeg/avlib:\n\n{2}".format(
+                        p.returncode, conversion_command, p_err.decode(errors='ignore') ))
 
-        output.seek(0)
-        out_f.write(output.read())
+            output.seek(0)
+            out_f.write(output.read())
 
-        data.close()
-        output.close()
-
-        os.unlink(data.name)
-        os.unlink(output.name)
+        finally:
+            data.close()
+            output.close()
+            os.unlink(data.name)
+            os.unlink(output.name)
 
         out_f.seek(0)
         return out_f
@@ -1264,7 +1265,7 @@ class AudioSegment(object):
         xf = seg1[-crossfade:].fade(to_gain=-120, start=0, end=float('inf'))
         xf *= seg2[:crossfade].fade(from_gain=-120, start=0, end=float('inf'))
 
-        output = TemporaryFile()
+        output = BytesIO()
 
         output.write(seg1[:-crossfade]._data)
         output.write(xf._data)

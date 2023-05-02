@@ -1,4 +1,5 @@
 from __future__ import division
+from io import BufferedReader
 
 import json
 import os
@@ -58,6 +59,9 @@ def _fd_or_path_or_tempfile(fd, mode='w+b', tempfile=True):
 
     if isinstance(fd, basestring):
         fd = open(fd, mode=mode)
+        close_fd = True
+
+    if isinstance(fd, BufferedReader):
         close_fd = True
 
     try:
@@ -276,11 +280,13 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
     output = output.decode("utf-8", 'ignore')
     stderr = stderr.decode("utf-8", 'ignore')
 
-    info = json.loads(output)
-
-    if not info:
+    try:
+        info = json.loads(output)
+    except  json.decoder.JSONDecodeError:
         # If ffprobe didn't give any information, just return it
         # (for example, because the file doesn't exist)
+        return None
+    if not info:
         return info
 
     extra_info = get_extra_info(stderr)
