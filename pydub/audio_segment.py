@@ -592,17 +592,17 @@ class AudioSegment(object):
             # force audio decoder
             conversion_command += ["-acodec", codec]
 
-        conversion_command += [
-            "-i", input_file.name,  # input_file options (filename last)
-            "-vn",  # Drop any video streams if there are any
-            "-f", "wav"  # output options (filename last)
-        ]
-
         if start_second is not None:
             conversion_command += ["-ss", str(start_second)]
 
         if duration is not None:
             conversion_command += ["-t", str(duration)]
+
+        conversion_command += [
+            "-i", input_file.name,  # input_file options (filename last)
+            "-vn",  # Drop any video streams if there are any
+            "-f", "wav"  # output options (filename last)
+        ]
 
         conversion_command += [output.name]
 
@@ -708,6 +708,12 @@ class AudioSegment(object):
             # force audio decoder
             conversion_command += ["-acodec", codec]
 
+        if start_second is not None:
+            conversion_command += ["-ss", str(start_second)]
+
+        if duration is not None:
+            conversion_command += ["-t", str(duration)]
+
         read_ahead_limit = kwargs.get('read_ahead_limit', -1)
         if filename:
             conversion_command += ["-i", filename]
@@ -748,12 +754,6 @@ class AudioSegment(object):
             "-vn",  # Drop any video streams if there are any
             "-f", "wav"  # output options (filename last)
         ]
-
-        if start_second is not None:
-            conversion_command += ["-ss", str(start_second)]
-
-        if duration is not None:
-            conversion_command += ["-t", str(duration)]
 
         conversion_command += ["-"]
 
