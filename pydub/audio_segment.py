@@ -770,13 +770,13 @@ class AudioSegment(object):
 
             conversion_command += ["-acodec", acodec]
 
-        if start_second is not None:
-            conversion_command += ["-ss", str(start_offset)]
-
         conversion_command += [
             "-vn",  # Drop any video streams if there are any
             "-f", "wav"  # output options (filename last)
         ]
+
+        if start_second is not None:
+            conversion_command += ["-ss", str(start_offset)]
 
         conversion_command += ["-"]
 
