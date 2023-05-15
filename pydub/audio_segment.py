@@ -708,6 +708,32 @@ class AudioSegment(object):
             # force audio decoder
             conversion_command += ["-acodec", codec]
 
+        # With MP3 files, accurate input seeking is not possible, therefore we add some margin to the input seeking
+        # The input seeking always ends with complete frames. Nevertheless, ffmpeg "completes" the time with some
+        # maybe interpolated (?) data. But since we are again seeking when encoding, we get accurate data.
+        #
+        # Layer II and III files have 1152 bits per frame
+        # Layer I files only have 384 bits per frame
+        # We take the maximum of both
+        max_number_of_bits_per_frame = 1152 
+        # The minimum possible sampling rate gives the maximum possible frame duration
+        min_sampling_rate = 16000
+        max_frame_duration_seconds = max_number_of_bits_per_frame / min_sampling_rate
+        # Now we add some margin, to be 100% sure
+        # save_max_frame_duration_seconds ~= 144 ms
+        save_max_frame_duration_seconds = 2 * max_frame_duration_seconds
+        
+        start_offset = 0.0
+
+        if start_second is not None:
+            start_second_save = max(start_second - save_max_frame_duration_seconds, 0.0)
+            start_offset = start_second - start_second_save
+            conversion_command += ["-ss", str(start_second_save)]
+
+        if duration is not None:
+            duration_save = duration + 2 * save_max_frame_duration_seconds
+            conversion_command += ["-t", str(duration_save)]
+
         read_ahead_limit = kwargs.get('read_ahead_limit', -1)
         if filename:
             conversion_command += ["-i", filename]
@@ -750,10 +776,7 @@ class AudioSegment(object):
         ]
 
         if start_second is not None:
-            conversion_command += ["-ss", str(start_second)]
-
-        if duration is not None:
-            conversion_command += ["-t", str(duration)]
+            conversion_command += ["-ss", str(start_offset)]
 
         conversion_command += ["-"]
 
