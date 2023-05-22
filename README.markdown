@@ -1,6 +1,7 @@
 # Pydub [![Build Status](https://travis-ci.org/jiaaro/pydub.svg?branch=master)](https://travis-ci.org/jiaaro/pydub) [![Build status](https://ci.appveyor.com/api/projects/status/gy1ucp9o5khq7fqi/branch/master?svg=true)](https://ci.appveyor.com/project/jiaaro/pydub/branch/master)
 
-Pydub lets you do stuff to audio in a way that isn't stupid.
+Pydub lets you do stuff to audio in a way that isn't stupid."\
+
 
 **Stuff you might be looking for**:
  - [Installing Pydub](https://github.com/jiaaro/pydub#installation)
@@ -35,7 +36,7 @@ flv_version = AudioSegment.from_flv("never_gonna_give_you_up.flv")
 
 mp4_version = AudioSegment.from_file("never_gonna_give_you_up.mp4", "mp4")
 wma_version = AudioSegment.from_file("never_gonna_give_you_up.wma", "wma")
-aac_version = AudioSegment.from_file("never_gonna_give_you_up.aiff", "aac")
+aac_version = AudioSegment.from_file("never_gonna_give_you_up.aiff", "aiff")
 ```
 
 Slice audio:
