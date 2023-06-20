@@ -1094,6 +1094,13 @@ class AudioSegmentTests(unittest.TestCase):
         tempfile.tempdir = orig_tmpdir
         os.rmdir(new_tmpdir)
 
+    def test_audio_segment_export_bigger_than_4gb(self):
+        original_path = os.path.join(data_dir,'test1.wav')
+        original_segment = AudioSegment.from_file(original_path)
+        while len(original_segment.raw_data) < 2**32:
+            original_segment += original_segment
+        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_file:
+            original_segment.export(tmp_file,format='mp3')
 
 class SilenceTests(unittest.TestCase):
 
@@ -1394,7 +1401,6 @@ class PartialAudioSegmentLoadTests(unittest.TestCase):
         partial_seg2 = AudioSegment.from_file(self.raw_path_str, format="raw", sample_width=2, frame_rate=32000, channels=2, start_second=1., duration=1.)
         self.assertEqual(len(partial_seg1), len(partial_seg2))
         self.assertEqual(partial_seg1._data, partial_seg2._data)
-
 
 if __name__ == "__main__":
     import sys
