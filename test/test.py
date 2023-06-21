@@ -1095,12 +1095,21 @@ class AudioSegmentTests(unittest.TestCase):
         os.rmdir(new_tmpdir)
 
     def test_audio_segment_export_bigger_than_4gb(self):
+        # Note: This is a very long running test, it takes about 26 seconds. But it is
+        # required to ensure that a segment > 4 gb can still be correctly exported
+        # to an MP3
         original_path = os.path.join(data_dir,'test1.wav')
         original_segment = AudioSegment.from_file(original_path)
         while len(original_segment.raw_data) < 2**32:
             original_segment += original_segment
         with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_file:
-            original_segment.export(tmp_file,format='mp3')
+            # In order to make the test run faster, we define
+            # - a very low quality with the qscale:a parameter
+            # - that as an output filter, after the wave files have been written we only export
+            #   10 ms with ffmpeg. This is ok, since ffmpeg already works well with > 4gb
+            #   only the temporary wave files saving with the python wave library
+            #   cannot cope with > 4gb.
+            original_segment.export(tmp_file,format='mp3', parameters=['-qscale:a', '20', '-t', '0.01'])
 
 class SilenceTests(unittest.TestCase):
 
