@@ -902,7 +902,12 @@ class AudioSegment(object):
             # For some reason packing the wave header struct with
             # a float in python 2 doesn't throw an exception
             # => we convert to int for setnframes
-            if len(pcm_for_wav) - array_position > max_size:
+
+            # For WAV files we still try to write the whole file at once, although
+            # it's clear, that it will fail for > 4gb, since the WAV file specification
+            # doesn't even foresee it, for any compressed format, we split into 
+            # WAV files < 4 GB and combine again with FFMPEG
+            if not easy_wav and len(pcm_for_wav) - array_position > max_size:
                 wave_data.setnframes(int(max_size/4))
                 wave_data.writeframesraw(pcm_for_wav[array_position:array_position+max_size])
                 array_position+=max_size
