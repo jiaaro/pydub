@@ -875,25 +875,47 @@ class AudioSegment(object):
         # wav with no ffmpeg parameters can just be written directly to out_f
         easy_wav = format == "wav" and codec is None and parameters is None
 
-        if easy_wav:
-            data = out_f
-        else:
-            data = NamedTemporaryFile(mode="wb", delete=False)
-
         pcm_for_wav = self._data
         if self.sample_width == 1:
             # convert to unsigned integers for wav
             pcm_for_wav = audioop.bias(self._data, 1, 128)
 
-        wave_data = wave.open(data, 'wb')
-        wave_data.setnchannels(self.channels)
-        wave_data.setsampwidth(self.sample_width)
-        wave_data.setframerate(self.frame_rate)
-        # For some reason packing the wave header struct with
-        # a float in python 2 doesn't throw an exception
-        wave_data.setnframes(int(self.frame_count()))
-        wave_data.writeframesraw(pcm_for_wav)
-        wave_data.close()
+        header_length = 40
+        max_size = 2**32 - header_length
+
+        file_completed = False
+        array_position = 0
+
+        data_files = []
+
+        while not file_completed:
+            if easy_wav:
+                data = out_f
+            else:
+                data = NamedTemporaryFile(mode="wb", delete=False)
+                data_files.append(data)
+
+            wave_data = wave.open(data, 'wb')
+            wave_data.setnchannels(self.channels)
+            wave_data.setsampwidth(self.sample_width)
+            wave_data.setframerate(self.frame_rate)
+            # For some reason packing the wave header struct with
+            # a float in python 2 doesn't throw an exception
+            # => we convert to int for setnframes
+
+            # For WAV files we still try to write the whole file at once, although
+            # it's clear, that it will fail for > 4gb, since the WAV file specification
+            # doesn't even foresee it, for any compressed format, we split into 
+            # WAV files < 4 GB and combine again with FFMPEG
+            if not easy_wav and len(pcm_for_wav) - array_position > max_size:
+                wave_data.setnframes(int(max_size/4))
+                wave_data.writeframesraw(pcm_for_wav[array_position:array_position+max_size])
+                array_position+=max_size
+            else:
+                wave_data.setnframes(int(len(pcm_for_wav[array_position:])/4))
+                wave_data.writeframesraw(pcm_for_wav[array_position:])
+                file_completed = True
+            wave_data.close()
 
         # for easy wav files, we're done (wav data is written directly to out_f)
         if easy_wav:
@@ -906,8 +928,10 @@ class AudioSegment(object):
         conversion_command = [
             self.converter,
             '-y',  # always overwrite existing files
-            "-f", "wav", "-i", data.name,  # input options (filename last)
+            "-f", "wav",  # input options (filename last)
         ]
+
+        conversion_command.extend(item for sublist in [["-i", data.name] for data in data_files] for item in sublist)
 
         if codec is None:
             codec = self.DEFAULT_CODECS.get(format, None)
@@ -976,9 +1000,10 @@ class AudioSegment(object):
             out_f.write(output.read())
 
         finally:
-            data.close()
+            for data in data_files:
+                data.close()
+                os.unlink(data.name)
             output.close()
-            os.unlink(data.name)
             os.unlink(output.name)
 
         out_f.seek(0)

@@ -1094,6 +1094,33 @@ class AudioSegmentTests(unittest.TestCase):
         tempfile.tempdir = orig_tmpdir
         os.rmdir(new_tmpdir)
 
+    # This test is disabled, since on the infrastructure, it throws an error:
+    # ERROR: test_audio_segment_export_bigger_than_4gb (main.AudioSegmentTests)
+    # Traceback (most recent call last):
+    # File "test/test.py", line 1104, in test_audio_segment_export_bigger_than_4gb
+    # original_segment += original_segment
+    # File "c:\projects\pydub\pydub\audio_segment.py", line 364, in add
+    # return self.append(arg, crossfade=0)
+    # File "c:\projects\pydub\pydub\audio_segment.py", line 1280, in append
+    # return seg1._spawn(seg1._data + seg2._data)
+    # MemoryError
+    def disabled_test_audio_segment_export_bigger_than_4gb(self):
+        # Note: This is a very long running test, it takes about 26 seconds. But it is
+        # required to ensure that a segment > 4 gb can still be correctly exported
+        # to an MP3
+        assert(False)
+        original_path = os.path.join(data_dir,'test1.wav')
+        original_segment = AudioSegment.from_file(original_path)
+        while len(original_segment.raw_data) < 2**32:
+            original_segment += original_segment
+        with NamedTemporaryFile('w+b', suffix='.mp3') as tmp_file:
+            # In order to make the test run faster, we define
+            # - a very low quality with the qscale:a parameter
+            # - that as an output filter, after the wave files have been written we only export
+            #   10 ms with ffmpeg. This is ok, since ffmpeg already works well with > 4gb
+            #   only the temporary wave files saving with the python wave library
+            #   cannot cope with > 4gb.
+            original_segment.export(tmp_file,format='mp3', parameters=['-qscale:a', '20', '-t', '0.01'])
 
 class SilenceTests(unittest.TestCase):
 
@@ -1394,7 +1421,6 @@ class PartialAudioSegmentLoadTests(unittest.TestCase):
         partial_seg2 = AudioSegment.from_file(self.raw_path_str, format="raw", sample_width=2, frame_rate=32000, channels=2, start_second=1., duration=1.)
         self.assertEqual(len(partial_seg1), len(partial_seg2))
         self.assertEqual(partial_seg1._data, partial_seg2._data)
-
 
 if __name__ == "__main__":
     import sys
