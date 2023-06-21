@@ -1094,10 +1094,21 @@ class AudioSegmentTests(unittest.TestCase):
         tempfile.tempdir = orig_tmpdir
         os.rmdir(new_tmpdir)
 
-    def test_audio_segment_export_bigger_than_4gb(self):
+    # This test is disabled, since on the infrastructure, it throws an error:
+    # ERROR: test_audio_segment_export_bigger_than_4gb (main.AudioSegmentTests)
+    # Traceback (most recent call last):
+    # File "test/test.py", line 1104, in test_audio_segment_export_bigger_than_4gb
+    # original_segment += original_segment
+    # File "c:\projects\pydub\pydub\audio_segment.py", line 364, in add
+    # return self.append(arg, crossfade=0)
+    # File "c:\projects\pydub\pydub\audio_segment.py", line 1280, in append
+    # return seg1._spawn(seg1._data + seg2._data)
+    # MemoryError
+    def disabled_test_audio_segment_export_bigger_than_4gb(self):
         # Note: This is a very long running test, it takes about 26 seconds. But it is
         # required to ensure that a segment > 4 gb can still be correctly exported
         # to an MP3
+        assert(False)
         original_path = os.path.join(data_dir,'test1.wav')
         original_segment = AudioSegment.from_file(original_path)
         while len(original_segment.raw_data) < 2**32:
