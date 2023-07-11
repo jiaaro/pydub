@@ -24,9 +24,8 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        # apt-get install -y ffmpeg libopus-dev python-scipy python3-scipy
+        apt-get install -y ffmpeg # libopus-dev python-scipy python3-scipy
         python -m pip install --upgrade pip
-        #python -m pip install flake8 pytest
         python -m pip install pylama
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint
