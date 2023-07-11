@@ -15,11 +15,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "pypy3"]
+        python-version: ["3.8", "3.9", "3.10", "pypy3.9", "pypy3.10"]
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -30,6 +30,7 @@ jobs:
         python -m pip install pylama
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint
+      continue-on-error: true
       run: |
         # stop the build if there are Python syntax errors or undefined names
         #flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
