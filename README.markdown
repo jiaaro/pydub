@@ -1,4 +1,4 @@
-# Pydub [![Build Status](https://travis-ci.org/jiaaro/pydub.svg?branch=master)](https://travis-ci.org/jiaaro/pydub) [![Build status](https://ci.appveyor.com/api/projects/status/gy1ucp9o5khq7fqi/branch/master?svg=true)](https://ci.appveyor.com/project/jiaaro/pydub/branch/master)
+# Pydub [![GitHub Actions](https://github.com/abitrolly/pydub/actions/workflows/python-package.yml/badge.svg)](https://github.com/abitrolly/pydub/actions/workflows/python-package.yml) [![Build status](https://ci.appveyor.com/api/projects/status/gy1ucp9o5khq7fqi/branch/master?svg=true)](https://ci.appveyor.com/project/jiaaro/pydub/branch/master)
 
 Pydub lets you do stuff to audio in a way that isn't stupid.
 
