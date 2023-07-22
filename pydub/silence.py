@@ -2,73 +2,162 @@
 Various functions for finding/manipulating silence in AudioSegments
 """
 import itertools
+import numpy as np
 
 from .utils import db_to_float
 
 
-def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek_step=1):
+def _convert_to_numpy(audio_segment):
+    """
+    Returns a numpy array view of the raw samples of an AudioSegment,
+    with shape (number of frames, channels).
+    
+    Does not allocate any additional memory.
+    
+    audio_segment - the segment to convert into a numpy array
+    """
+    dtype = {
+        1: np.int8,
+        2: np.int16,
+        4: np.int32
+    }[audio_segment.sample_width]
+    x = np.frombuffer(audio_segment.raw_data, dtype=dtype).reshape(-1, audio_segment.channels)
+    return x
+
+
+def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek_step=1, max_buffer_size_kb=100*1024):
     """
     Returns a list of all silent sections [start, end] in milliseconds of audio_segment.
-    Inverse of detect_nonsilent()
+    Inverse of detect_nonsilent().
 
     audio_segment - the segment to find silence in
     min_silence_len - the minimum length for any silent section
     silence_thresh - the upper bound for how quiet is silent in dFBS
     seek_step - step size for interating over the segment in ms
+    max_buffer_size_kb - the maximum size of internally allocated buffers in KiB
     """
-    seg_len = len(audio_segment)
-
+    raw_data = _convert_to_numpy(audio_segment)
+    min_silence_ms = min_silence_len
+    silence_threshold_db = silence_thresh
+    seek_step_ms = seek_step
+    
+    seg_len_ms = len(audio_segment)
+    frames_per_ms = audio_segment.frame_rate / 1000
+    
+    assert raw_data.shape[0] == audio_segment.frame_count()
+    assert raw_data.shape[1] == audio_segment.channels
+    
+    max_frames_in_slice = int(np.ceil(min_silence_ms * frames_per_ms))
+    
+    # determine number of frames in computation window buffer
+    if max_buffer_size_kb >= 0:
+        bytes_per_frame = 8
+        frames_per_kb = 1024 // bytes_per_frame
+        buffer_len = max_buffer_size_kb * frames_per_kb
+        # empirical testing shows that we need approximately 4 times as much memory
+        # as buffer_len would suggest, probably because numpy allocates additional buffers
+        # in the background during computations; we correct for this by adjusting buffer_len accordingly
+        correction_constant = 4
+        buffer_len //= correction_constant
+        if buffer_len < max_frames_in_slice:
+            min_buffer_size = int(np.ceil(max_frames_in_slice * bytes_per_frame / 1024)) * correction_constant
+            raise ValueError("Buffer is too small, must be at least {} for the given {}" % min_buffer_size, min_silence_ms)
+    else:
+        buffer_len = len(raw_data)  # no restrictions!
+        
+    
     # you can't have a silent portion of a sound that is longer than the sound
-    if seg_len < min_silence_len:
+    if seg_len_ms < min_silence_ms:
         return []
-
+    
     # convert silence threshold to a float value (so we can compare it to rms)
-    silence_thresh = db_to_float(silence_thresh) * audio_segment.max_possible_amplitude
+    normalization_const = float(audio_segment.max_possible_amplitude)
+    # normalization_const = 1.
+    silence_thresh = db_to_float(silence_threshold_db) * audio_segment.max_possible_amplitude / normalization_const
 
     # check successive (1 sec by default) chunk of sound for silence
     # try a chunk at every "seek step" (or every chunk for a seek step == 1)
-    last_slice_start = seg_len - min_silence_len
-    slice_starts = range(0, last_slice_start + 1, seek_step)
+    last_slice_start = seg_len_ms - min_silence_ms
+    slice_starts = range(0, last_slice_start + 1, seek_step_ms)
 
     # guarantee last_slice_start is included in the range
     # to make sure the last portion of the audio is searched
-    if last_slice_start % seek_step:
+    if last_slice_start % seek_step_ms:
         slice_starts = itertools.chain(slice_starts, [last_slice_start])
 
     # list of all continuous regions of silence (start ms - end ms)
     silent_ranges = []
     
-    prev_silent_i = None
+    prev_silent_ms = None
     current_range_start = None
 
-    # loop over audio to detect slices of silence
-    for i in slice_starts:
-        audio_slice = audio_segment[i:i + min_silence_len]
-        if audio_slice.rms <= silence_thresh:
+    # load first window into buffer
+    # the cumsq_per_frame buffer holds the cumulative sum of means of squares over channels for each frame,
+    # normalized by max_possible_amplitude (i.e., all possible values x are 0 <= x <= 1) - this is
+    # to prevent cumulative sums of square from exceeding representable values
+    cumsq_per_frame = np.concatenate((
+        [0.],
+        np.cumsum(
+            np.mean((raw_data[0:buffer_len].astype(np.float64))**2, axis=-1)
+            / (normalization_const**2)
+        )
+    ))
+    # keep track of the frames currently in the buffer
+    buffer_offset = 0
+    buffer_end = buffer_len
+    
+    for slice_start_ms in slice_starts:
+        slice_start = int(slice_start_ms * frames_per_ms)
+        slice_end = min(int((slice_start_ms + min_silence_ms) * frames_per_ms), len(raw_data))
+        assert slice_end <= len(raw_data)
+        # if the frame_rate is not divisible by min_silence_ms, we may have frames with slightly varying lengths
+        # so we compute the actual length of the concrete slice here
+        frames_in_slice = slice_end - slice_start
+        
+        if slice_end > buffer_end: # we ran out of buffer; load next window into buffer           
+            cumsq_per_frame = np.concatenate((
+                [0.],
+                np.cumsum(
+                    np.mean(
+                        (raw_data[slice_start:slice_start + buffer_len].astype(np.float64))**2,
+                        axis=-1
+                    ) / (normalization_const**2)
+                )
+                
+            ))
+            buffer_offset = slice_start
+            buffer_end = buffer_offset + buffer_len
+            
+        # compute the RMS for the current slice from the cumulative sums of squares in the buffer
+        slice_msq = cumsq_per_frame[slice_end - buffer_offset] - cumsq_per_frame[slice_start - buffer_offset]
+        rms = np.sqrt(slice_msq / frames_in_slice)
+
+        if rms <= silence_thresh:
+            # silence_starts.append(slice_start_ms) 
             # current slice is silent; combine with preceeding silent slice if no nonsilent gap
             if current_range_start is None:
-                current_range_start = i
+                current_range_start = slice_start_ms
             else:
-                continuous = (i == prev_silent_i + seek_step)
+                continuous = (slice_start_ms == prev_silent_ms + seek_step)
                 
                 # sometimes two small blips are enough for one particular slice to be
                 # non-silent, despite the silence all running together. Just combine
                 # the two overlapping silent ranges.
-                silence_has_gap = i > (prev_silent_i + min_silence_len)
+                silence_has_gap = slice_start_ms > (prev_silent_ms + min_silence_len)
 
                 if not continuous and silence_has_gap:
                     silent_ranges.append([
                         current_range_start,
-                        prev_silent_i + min_silence_len
+                        prev_silent_ms + min_silence_len
                     ])
-                    current_range_start = i
+                    current_range_start = slice_start_ms
                     
-            prev_silent_i = i
+            prev_silent_ms = slice_start_ms
             
     if current_range_start is not None:
-        assert prev_silent_i is not None
+        assert prev_silent_ms is not None
         silent_ranges.append([current_range_start,
-                            prev_silent_i + min_silence_len])
+                              prev_silent_ms + min_silence_len])
 
     return silent_ranges
 
