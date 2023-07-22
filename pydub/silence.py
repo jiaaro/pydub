@@ -25,9 +25,6 @@ def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek
     # convert silence threshold to a float value (so we can compare it to rms)
     silence_thresh = db_to_float(silence_thresh) * audio_segment.max_possible_amplitude
 
-    # find silence and add start and end indicies to the to_cut list
-    silence_starts = []
-
     # check successive (1 sec by default) chunk of sound for silence
     # try a chunk at every "seek step" (or every chunk for a seek step == 1)
     last_slice_start = seg_len - min_silence_len
@@ -38,37 +35,40 @@ def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek
     if last_slice_start % seek_step:
         slice_starts = itertools.chain(slice_starts, [last_slice_start])
 
+    # list of all continuous regions of silence (start ms - end ms)
+    silent_ranges = []
+    
+    prev_silent_i = None
+    current_range_start = None
+
+    # loop over audio to detect slices of silence
     for i in slice_starts:
         audio_slice = audio_segment[i:i + min_silence_len]
         if audio_slice.rms <= silence_thresh:
-            silence_starts.append(i)
+            # current slice is silent; combine with preceeding silent slice if no nonsilent gap
+            if current_range_start is None:
+                current_range_start = i
+            else:
+                continuous = (i == prev_silent_i + seek_step)
+                
+                # sometimes two small blips are enough for one particular slice to be
+                # non-silent, despite the silence all running together. Just combine
+                # the two overlapping silent ranges.
+                silence_has_gap = i > (prev_silent_i + min_silence_len)
 
-    # short circuit when there is no silence
-    if not silence_starts:
-        return []
-
-    # combine the silence we detected into ranges (start ms - end ms)
-    silent_ranges = []
-
-    prev_i = silence_starts.pop(0)
-    current_range_start = prev_i
-
-    for silence_start_i in silence_starts:
-        continuous = (silence_start_i == prev_i + seek_step)
-
-        # sometimes two small blips are enough for one particular slice to be
-        # non-silent, despite the silence all running together. Just combine
-        # the two overlapping silent ranges.
-        silence_has_gap = silence_start_i > (prev_i + min_silence_len)
-
-        if not continuous and silence_has_gap:
-            silent_ranges.append([current_range_start,
-                                  prev_i + min_silence_len])
-            current_range_start = silence_start_i
-        prev_i = silence_start_i
-
-    silent_ranges.append([current_range_start,
-                          prev_i + min_silence_len])
+                if not continuous and silence_has_gap:
+                    silent_ranges.append([
+                        current_range_start,
+                        prev_silent_i + min_silence_len
+                    ])
+                    current_range_start = i
+                    
+            prev_silent_i = i
+            
+    if current_range_start is not None:
+        assert prev_silent_i is not None
+        silent_ranges.append([current_range_start,
+                            prev_silent_i + min_silence_len])
 
     return silent_ranges
 
