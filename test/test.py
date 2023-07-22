@@ -640,6 +640,8 @@ class AudioSegmentTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             seg.export(format='raw', parameters=['-ar', '16000', '-ac', '1'])
 
+    @unittest.skipUnless('libvorbis' in get_supported_encoders(),
+                         "Unsupported codecs")
     def test_export_as_ogg(self):
         seg = self.seg1
         exported_ogg = seg.export(format='ogg')
@@ -649,6 +651,8 @@ class AudioSegmentTests(unittest.TestCase):
                                    len(seg),
                                    percentage=0.01)
 
+    @unittest.skipUnless('libvorbis' in get_supported_encoders(),
+                         "Unsupported codecs")
     def test_export_forced_codec(self):
         seg = self.seg1 + self.seg2
 
@@ -779,6 +783,8 @@ class AudioSegmentTests(unittest.TestCase):
             AudioSegment.from_file(self.ogg_file_path).export(tmp_mp3_file,
                                                               format="mp3")
 
+    @unittest.skipUnless('libvorbis' in get_supported_encoders(),
+                         "Unsupported codecs")
     def test_export_mp3_as_ogg(self):
         with NamedTemporaryFile('w+b', suffix='.ogg') as tmp_ogg_file:
             AudioSegment.from_file(self.mp3_file_path).export(tmp_ogg_file,
@@ -796,7 +802,7 @@ class AudioSegmentTests(unittest.TestCase):
             AudioSegment.from_file(self.mp3_file_path).export(tmp_webm_file,
                                                               format="webm")
 
-    @unittest.skipUnless('aac' in get_supported_decoders(),
+    @unittest.skipUnless('aac' in get_supported_decoders() and 'libvorbis' in get_supported_encoders(),
                          "Unsupported codecs")
     def test_export_mp4_as_ogg(self):
         with NamedTemporaryFile('w+b', suffix='.ogg') as tmp_ogg_file:
@@ -973,7 +979,7 @@ class AudioSegmentTests(unittest.TestCase):
         # average volume should be reduced
         self.assertTrue(compressed.rms < self.seg1.rms)
 
-    @unittest.skipUnless('aac' in get_supported_decoders(),
+    @unittest.skipUnless('aac' in get_supported_decoders() and 'libvorbis' in get_supported_encoders(),
                          "Unsupported codecs")
     def test_exporting_to_ogg_uses_default_codec_when_codec_param_is_none(self):
         delete = sys.platform != 'win32'
