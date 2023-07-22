@@ -151,8 +151,9 @@ if sys.version_info >= (3, 6):
             seg1 = AudioSegment.from_file(self.mp3_path_str)
             from pathlib import Path
             path = Path(tempfile.gettempdir()) / 'pydub-test-export-8ajds.mp3'
+            out_f = None
             try:
-                seg1.export(path, format='mp3')
+                out_f = seg1.export(path, format='mp3')
                 seg2 = AudioSegment.from_file(path, format='mp3')
 
                 self.assertTrue(len(seg1) > 0)
@@ -160,6 +161,8 @@ if sys.version_info >= (3, 6):
                                            len(seg2),
                                            percentage=0.01)
             finally:
+                if out_f:
+                    out_f.close()
                 os.unlink(path)
 
 
@@ -280,7 +283,8 @@ class AudioSegmentTests(unittest.TestCase):
         path = os.path.join(data_dir, base_file)
         base = AudioSegment.from_file(path)
 
-        headers = extract_wav_headers(open(path, 'rb').read())
+        with open(path, 'rb') as f:
+            headers = extract_wav_headers(f.read())
         data16_size = headers[-1].size
         self.assertEqual(len(base.raw_data), data16_size)
         self.assertEqual(base.frame_rate, 192000)
@@ -489,7 +493,8 @@ class AudioSegmentTests(unittest.TestCase):
             if sys.platform == 'win32':
                 tmp_file.close()
 
-            mono.export(tmp_file.name, 'mp3')
+            out_f = mono.export(tmp_file.name, 'mp3')
+            out_f.close()
             monomp3 = AudioSegment.from_mp3(tmp_file.name)
 
             self.assertWithinTolerance(
@@ -1282,7 +1287,9 @@ class NoConverterTests(unittest.TestCase):
 
     def test_exporting(self):
         seg = AudioSegment.from_wav(self.wave_file)
-        exported = AudioSegment.from_wav(seg.export(format="wav"))
+        out_f = seg.export(format="wav")
+        exported = AudioSegment.from_wav(out_f)
+        out_f.close()
 
         self.assertEqual(len(exported), len(seg))
 
