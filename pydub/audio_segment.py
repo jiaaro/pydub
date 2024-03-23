@@ -821,7 +821,8 @@ class AudioSegment(object):
             file.close()
         return obj
 
-    def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None, id3v2_version='4',
+    def export(self, out_f:str=None, format:str='mp3', codec:str=None, bitrate:str=None,
+               parameters=None, tags=None, id3v2_version:str='4',
                cover=None):
         """
         Export an AudioSegment to a file with given options
