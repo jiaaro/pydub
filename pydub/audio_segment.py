@@ -924,7 +924,7 @@ class AudioSegment(object):
             conversion_command.extend(["-acodec", codec])
 
         if bitrate is not None:
-            conversion_command.extend(["-b:a", bitrate])
+            conversion_command.extend(["-b:a", str(bitrate) if type(bitrate)==int else bitrate])
 
         if parameters is not None:
             # extend arguments with arbitrary set
