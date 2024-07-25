@@ -11,8 +11,12 @@ Currently Undocumented:
 - Signal generators (Sine, Square, Sawtooth, Whitenoise, etc - `pydub.generators`)
 - Effect registration system (basically the `pydub.utils.register_pydub_effect` decorator)
 
-
-## AudioSegment()
+<details>
+    <summary>
+       <h2>
+            AudioSegment()           
+       </h2> 
+    </summary>
 
 `AudioSegment` objects are immutable, and support a number of operators.
 
@@ -60,8 +64,12 @@ sound = AudioSegment(
 ```
 
 Any operations that combine multiple `AudioSegment` objects in *any* way will first ensure that they have the same number of channels, frame rate, sample rate, bit depth, etc. When these things do not match, the lower quality sound is modified to match the quality of the higher quality sound so that quality is not lost: mono is converted to stereo, bit depth and frame rate/sample rate are increased as needed. If you do not want this behavior, you may explicitly reduce the number of channels, bits, etc using the appropriate `AudioSegment` methods.
+</details>
 
-### AudioSegment(…).from_file()
+___
+
+<details>
+<summary>  <h3> AudioSegment(…).from_file() </h3> </summary>
 
 Open an audio file as an `AudioSegment` instance and return it. there are also a number of wrappers provided for convenience, but you should probably just use this directly.
 
@@ -102,9 +110,14 @@ The first argument is the path (as a string) of the file to read, **or** a file 
   Offset (in seconds) to start loading the audio file. If `None`, the audio will start loading from the beginning.
 - `duration` | example: `2.5` | default: `None`
   Number of seconds to be loaded. If `None`, full audio will be loaded.
+</details>
 
-
-### AudioSegment(…).export()
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).export()
+        </h3>
+    </summary>
 
 Write the `AudioSegment` object to a file – returns a file handle of the output file (you don't have to do anything with it, though).
 
@@ -148,7 +161,15 @@ The first argument is the location (as a string) to write the output, **or** a f
   Allows you to supply a cover image (path to the image file). Currently, only MP3 files allow this keyword argument. Cover image must be a jpeg, png, bmp, or tiff file.
 
 
-### AudioSegment.empty()
+</details>
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment.empty()
+        </h3>
+    </summary>
 
 Creates a zero-duration `AudioSegment`.
 
@@ -173,8 +194,15 @@ playlist = AudioSegment.empty()
 for sound in sounds:
   playlist += sound
 ```
+</details>
 
-### AudioSegment.silent()
+<details>
+    <summary>
+        <h3>
+            AudioSegment.silent()
+        </h3>
+    </summary>
+
 
 Creates a silent audiosegment, which can be used as a placeholder, spacer, or as a canvas to overlay other sounds on top of.
 
@@ -190,8 +218,16 @@ ten_second_silence = AudioSegment.silent(duration=10000)
   Length of the silent `AudioSegment`, in milliseconds
 - `frame_rate` | example `44100` | default: `11025` (11.025 kHz)
   Frame rate (i.e., sample rate) of the silent `AudioSegment` in Hz
+</details>
 
-### AudioSegment.from_mono_audiosegments()
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment.from_mono_audiosegments()
+        </h3>
+    </summary>
 
 Creates a multi-channel audiosegment out of multiple mono audiosegments (two or more). Each mono audiosegment passed in should be exactly the same length, down to the frame count.
 
@@ -203,8 +239,16 @@ right_channel = AudioSegment.from_wav("sound1.wav")
 
 stereo_sound = AudioSegment.from_mono_audiosegments(left_channel, right_channel)
 ```
+</details>
 
-### AudioSegment(…).dBFS
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).dBFS
+        </h3>
+    </summary>
 
 Returns the loudness of the `AudioSegment` in dBFS (db relative to the maximum possible loudness). A Square wave at maximum amplitude will be roughly 0 dBFS (maximum loudness), whereas a Sine Wave at maximum amplitude will be roughly -3 dBFS.
 
@@ -214,8 +258,16 @@ sound = AudioSegment.from_file("sound1.wav")
 
 loudness = sound.dBFS
 ```
+</details>
 
-### AudioSegment(…).channels
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).channels
+        </h3>
+    </summary>
 
 Number of channels in this audio segment (1 means mono, 2 means stereo)
 
@@ -225,8 +277,17 @@ sound = AudioSegment.from_file("sound1.wav")
 
 channel_count = sound.channels
 ```
+</details>
 
-### AudioSegment(…).sample_width
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).sample_width
+        </h3>
+    </summary>
+
 
 Number of bytes in each sample (1 means 8 bit, 2 means 16 bit, etc). CD Audio is 16 bit, (sample width of 2 bytes).
 
@@ -236,8 +297,16 @@ sound = AudioSegment.from_file("sound1.wav")
 
 bytes_per_sample = sound.sample_width
 ```
+</details>
 
-### AudioSegment(…).frame_rate
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).frame_rate
+        </h3>
+    </summary>
 
 CD Audio has a 44.1kHz sample rate, which means `frame_rate` will be `44100` (same as sample rate, see `frame_width`). Common values are `44100` (CD), `48000` (DVD), `22050`, `24000`, `12000` and `11025`.
 
@@ -247,8 +316,16 @@ sound = AudioSegment.from_file("sound1.wav")
 
 frames_per_second = sound.frame_rate
 ```
+</details>
 
-### AudioSegment(…).frame_width
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).frame_width
+        </h3>
+    </summary>
 
 Number of bytes for each "frame". A frame contains a sample for each channel (so for stereo you have 2 samples per frame, which are played simultaneously). `frame_width` is equal to `channels * sample_width`. For CD Audio it'll be `4` (2 channels times 2 bytes per sample).
 
@@ -258,8 +335,16 @@ sound = AudioSegment.from_file("sound1.wav")
 
 bytes_per_frame = sound.frame_width
 ```
+</details>
 
-### AudioSegment(…).rms
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).rms
+        </h3>
+    </summary>
 
 A measure of loudness. Used to compute dBFS, which is what you should use in most cases. Loudness is logarithmic (rms is not), which makes dB a much more natural scale.
 
@@ -269,8 +354,17 @@ sound = AudioSegment.from_file("sound1.wav")
 
 loudness = sound.rms
 ```
+</details>
 
-### AudioSegment(…).max
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).max
+        </h3>
+    </summary>
+
 
 The highest amplitude of any sample in the `AudioSegment`. Useful for things like normalization (which is provided in `pydub.effects.normalize`).
 
@@ -280,8 +374,17 @@ sound = AudioSegment.from_file("sound1.wav")
 
 peak_amplitude = sound.max
 ```
+</details>
 
-### AudioSegment(…).max_dBFS
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).max_dBFS
+        </h3>
+    </summary>
+
 
 The highest amplitude of any sample in the `AudioSegment`, in dBFS (relative to the highest possible amplitude value). Useful for things like normalization (which is provided in `pydub.effects.normalize`).
 
@@ -291,8 +394,16 @@ sound = AudioSegment.from_file("sound1.wav")
 
 normalized_sound = sound.apply_gain(-sound.max_dBFS)
 ```
+</details>
 
-### AudioSegment(…).duration_seconds
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).duration_seconds
+        </h3>
+    </summary>
 
 Returns the duration of the `AudioSegment` in seconds (`len(sound)` returns milliseconds). This is provided for convenience; it calls `len()` internally.
 
@@ -302,8 +413,17 @@ sound = AudioSegment.from_file("sound1.wav")
 
 assert sound.duration_seconds == (len(sound) / 1000.0)
 ```
+</details>
 
-### AudioSegment(…).raw_data
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).raw_data
+        </h3>
+    </summary>
+
 
 The raw audio data of the AudioSegment. Useful for interacting with other audio libraries or weird APIs that want audio data in the form of a bytestring. Also comes in handy if you’re implementing effects or other direct signal processing.
 
@@ -315,8 +435,17 @@ sound = AudioSegment.from_file("sound1.wav")
 
 raw_audio_data = sound.raw_data
 ```
+</details>
 
-### AudioSegment(…).frame_count()
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).frame_count()
+        </h3>
+    </summary>
+
 
 Returns the number of frames in the `AudioSegment`. Optionally you may pass in a `ms` keywork argument to retrieve the number of frames in that number of milliseconds of audio in the `AudioSegment` (useful for slicing, etc).
 
@@ -333,8 +462,16 @@ number_of_frames_in_200ms_of_sound = sound.frame_count(ms=200)
 
 - `ms` | example: `3000` | default: `None` (entire duration of `AudioSegment`)
   When specified, method returns number of frames in X milliseconds of the `AudioSegment`
+</details>
 
-### AudioSegment(…).append()
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).append()
+        </h3>
+    </summary>
 
 Returns a new `AudioSegment`, created by appending another `AudioSegment` to this one (i.e., adding it to the end), Optionally using a crossfade. `AudioSegment(…).append()` is used internally when adding `AudioSegment` objects together with the `+` operator.
 
@@ -362,8 +499,17 @@ no_crossfade2 = sound1 + sound2
 
 - `crossfade` | example: `3000` | default: `100` (entire duration of `AudioSegment`)
   When specified, method returns number of frames in X milliseconds of the `AudioSegment`
+</details>
 
-### AudioSegment(…).overlay()
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).overlay()
+        </h3>
+    </summary>
+
 
 Overlays an `AudioSegment` onto this one. In the resulting `AudioSegment` they will play simultaneously. If the overlaid `AudioSegment` is longer than this one, the result will be truncated (so the end of the overlaid sound will be cut off). The result is always the same length as this `AudioSegment` even when using the `loop`, and `times` keyword arguments.
 
@@ -399,8 +545,17 @@ len(sound1) == len(sound2_plays_a_lot)
   The overlaid `AudioSegment` will repeat X times (starting at `position`) but will still be truncated to the length of this `AudioSegment`
 - `gain_during_overlay` | example: `-6.0` | default: `0` (no change in volume during overlay)
   Change the original audio by this many dB while overlaying audio. This can be used to make the original audio quieter while the overlaid audio plays.
+</details>
+    
 
-### AudioSegment(…).apply_gain(`gain`)
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).apply_gain(`gain`)
+        </h3>
+    </summary>
+
 
 Change the amplitude (generally, loudness) of the `AudioSegment`. Gain is specified in dB. This method is used internally by the `+` operator.
 
@@ -416,8 +571,17 @@ louder_via_operator = sound1 + 3.5
 quieter_via_method = sound1.apply_gain(-5.7)
 quieter_via_operator = sound1 - 5.7
 ```
+</details>
 
-### AudioSegment(…).fade()
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).fade()
+        </h3>
+    </summary>
+
 
 A more general (more flexible) fade method. You may specify `start` and `end`, or one of the two along with duration (e.g., `start` and `duration`).
 
@@ -446,8 +610,17 @@ fade_out_the_hard_way = sound1.fade(to_gain=-120.0, end=0, duration=5000)
   The overlaid `AudioSegment` will repeat X times (starting at `position`) but will still be truncated to the length of this `AudioSegment`
 - `duration` | example: `4` | NO DEFAULT
   You can use `start` or `end` with duration, instead of specifying both - provided as a convenience.
+</details>
 
-### AudioSegment(…).fade_out()
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).fade_out()
+        </h3>
+    </summary>
+
 
 Fade out (to silent) the end of this `AudioSegment`. Uses `.fade()` internally.
 
@@ -455,8 +628,17 @@ Fade out (to silent) the end of this `AudioSegment`. Uses `.fade()` internally.
 
 - `duration` | example: `5000` | NO DEFAULT
   How long (in milliseconds) the fade should last. Passed directly to `.fade()` internally
+</details>
 
-### AudioSegment(…).fade_in()
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).fade_in()
+        </h3>
+    </summary>
+
 
 Fade in (from silent) the beginning of this `AudioSegment`. Uses `.fade()` internally.
 
@@ -464,28 +646,80 @@ Fade in (from silent) the beginning of this `AudioSegment`. Uses `.fade()` inter
 
 - `duration` | example: `5000` | NO DEFAULT
   How long (in milliseconds) the fade should last. Passed directly to `.fade()` internally
+</details>
 
-### AudioSegment(…).reverse()
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).reverse()
+        </h3>
+    </summary>
+
 
 Make a copy of this `AudioSegment` that plays backwards. Useful for Pink Floyd, screwing around, and some audio processing algorithms.
+</details>
 
-### AudioSegment(…).set_sample_width()
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).set_sample_width()
+        </h3>
+    </summary>
 
 Creates an equivalent version of this `AudioSegment` with the specified sample width (in bytes). Increasing this value does not generally cause a reduction in quality. Reducing it *definitely* does cause a loss in quality. Higher Sample width means more dynamic range.
+</details>
 
-### AudioSegment(…).set_frame_rate()
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).set_frame_rate()
+        </h3>
+    </summary>
+
 
 Creates an equivalent version of this `AudioSegment` with the specified frame rate (in Hz). Increasing this value does not generally cause a reduction in quality. Reducing it *definitely does* cause a loss in quality. Higher frame rate means larger frequency response (higher frequencies can be represented).
+</details>
 
-### AudioSegment(…).set_channels()
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).set_channels()
+        </h3>
+    </summary>
+
 
 Creates an equivalent version of this `AudioSegment` with the specified number of channels (1 is Mono, 2 is Stereo). Converting from mono to stereo does not cause any audible change. Converting from stereo to mono may result in loss of quality (but only if the left and right chanels differ).
+</details>
 
-### AudioSegment(…).split_to_mono()
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).split_to_mono()
+        </h3>
+    </summary>
+
 
 Splits a stereo `AudioSegment` into two, one for each channel (Left/Right). Returns a list with the new `AudioSegment` objects with the left channel at index 0 and the right channel at index 1.
+</details>
 
-### AudioSegment(…).apply_gain_stereo()
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).apply_gain_stereo()
+        </h3>
+    </summary>
 
 ```python
 from pydub import AudioSegment
@@ -497,8 +731,17 @@ stereo_balance_adjusted = sound1.apply_gain_stereo(-6, +2)
 Apply gain to the left and right channel of a stereo `AudioSegment`. If the `AudioSegment` is mono, it will be converted to stereo before applying the gain.
 
 Both gain arguments are specified in dB.
+</details>
 
-### AudioSegment(…).pan()
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).pan()
+        </h3>
+    </summary>
+
 
 ```python
 from pydub import AudioSegment
@@ -519,8 +762,17 @@ Panning does not alter the *perceived* loundness, but since loudness
 is decreasing on one side, the other side needs to get louder to
 compensate. When panned hard left, the left channel will be 3dB louder and
 the right channel will be silent (and vice versa).
+</details>
 
-### AudioSegment(…).get_array_of_samples()
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).get_array_of_samples()
+        </h3>
+    </summary>
+
 
 Returns the raw audio data as an array of (numeric) samples. Note: if the audio has multiple channels, the samples for each channel will be serialized – for example, stereo audio would look like `[sample_1_L, sample_1_R, sample_2_L, sample_2_R, …]`.
 
@@ -582,8 +834,17 @@ scipy.io.wavfile.write(wav_io, 16000, fp_arr)
 wav_io.seek(0)
 sound = pydub.AudioSegment.from_wav(wav_io)
 ```
+</details>
 
-### AudioSegment(…).get_dc_offset()
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).get_dc_offset()
+        </h3>
+    </summary>
+
 
 Returns a value between -1.0 and 1.0 representing the DC offset of a channel. This is calculated using `audioop.avg()` and normalizing the result by samples max value.
 
@@ -591,8 +852,17 @@ Returns a value between -1.0 and 1.0 representing the DC offset of a channel. Th
 
 - `channel` | example: `2` | default: `1`
   Selects left (1) or right (2) channel to calculate DC offset. If segment is mono, this value is ignored.
+</details>
 
-### AudioSegment(…).remove_dc_offset()
+
+
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).remove_dc_offset()
+        </h3>
+    </summary>
+
 
 Removes DC offset from channel(s). This is done by using `audioop.bias()`, so watch out for overflows.
 
@@ -603,20 +873,36 @@ Removes DC offset from channel(s). This is done by using `audioop.bias()`, so wa
 
 - `offset` | example: `-0.1` | default: None
   Offset to be removed from channel(s). Calculates offset if it's None. Offset values must be between -1.0 and 1.0.
+</details>
+
+
 
 ## Effects
 
 Collection of DSP effects that are implemented by `AudioSegment` objects.
 
-### AudioSegment(…).invert_phase()
+<details>
+    <summary>
+        <h3>
+            AudioSegment(…).invert_phase()
+        </h3>
+    </summary>
+
 
 Make a copy of this `AudioSegment` and inverts the phase of the signal. Can generate anti-phase waves for noise suppression or cancellation.
+</details>
+
 
 ## Silence
 
 Various functions for finding/manipulating silence in AudioSegments. For creating silent AudioSegments, see AudioSegment.silent().
 
-### silence.detect_silence()
+<details>
+    <summary>
+        <h3>
+            silence.detect_silence()
+        </h3>
+    </summary>
 
 Returns a list of all silent sections [start, end] in milliseconds of audio_segment. Inverse of detect_nonsilent(). Can be very slow since it has to iterate over the whole segment.
 
@@ -637,8 +923,16 @@ print(silence.detect_silence(AudioSegment.silent(2000)))
 
 - `seek_step` | example: `5` | default: 1
   Size of the step for checking for silence in milliseconds. Smaller is more precise. Must be a positive whole number.
+</details>
 
-### silence.detect_nonsilent()
+
+
+<details>
+    <summary>
+        <h3>
+            silence.detect_nonsilent()
+        </h3>
+    </summary>
 
 Returns a list of all silent sections [start, end] in milliseconds of audio_segment. Inverse of detect_silence() and has all the same arguments. Can be very slow since it has to iterate over the whole segment.
 
@@ -652,8 +946,16 @@ Returns a list of all silent sections [start, end] in milliseconds of audio_segm
 
 - `seek_step` | example: `5` | default: 1
   Size of the step for checking for silence in milliseconds. Smaller is more precise. Must be a positive whole number.
+</details>
 
-### silence.split_on_silence()
+
+
+<details>
+    <summary>
+        <h3>
+            silence.split_on_silence()
+        </h3>
+    </summary>
 
 Returns list of audio segments from splitting audio_segment on silent sections.
 
@@ -672,8 +974,17 @@ Returns list of audio segments from splitting audio_segment on silent sections.
   How much silence to keep in ms or a bool. leave some silence at the beginning and end of the chunks. Keeps the sound from sounding like it is abruptly cut off.
   When the length of the silence is less than the keep_silence duration it is split evenly between the preceding and following non-silent segments.
   If True is specified, all the silence is kept, if False none is kept.
+</details>
 
-### silence.detect_leading_silence()
+
+
+<details>
+    <summary>
+        <h3>
+            silence.detect_leading_silence()
+        </h3>
+    </summary>
+
 
 Returns the millisecond/index that the leading silence ends. If there is no end it will return the length of the audio_segment.
 
@@ -691,3 +1002,5 @@ print(silence.detect_silence(AudioSegment.silent(2000)))
 
 - `chunk_size` | example: `5` | default: 10
   Size of the step for checking for silence in milliseconds. Smaller is more precise. Must be a positive whole number.
+</details>
+
