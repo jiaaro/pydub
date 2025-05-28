@@ -1,0 +1,26 @@
+from pydub.generators import Sine
+from pydub import AudioSegment
+import os
+
+# Настройки бита в стиле JONY — медленный, с басами и атмосферой
+bpm = 90  # темп
+beat_duration_ms = int((60 / bpm) * 1000)  # длительность одного бита
+
+# Генерация простого лупа для демонстрации (басы + аккорд)
+# Низкий бас
+bass = Sine(50).to_audio_segment(duration=beat_duration_ms).apply_gain(-5)
+
+# Аккорд (фон) - имитация пад-синтезатора
+pad = Sine(440).to_audio_segment(duration=beat_duration_ms).apply_gain(-20)
+
+# Простая комбинация
+loop = bass.overlay(pad)
+
+# Создаём 16 тактов (примерно 30 секунд бита)
+track = loop * 16
+
+# Экспорт в MP3
+output_path = "/mnt/data/jony_style_beat_demo.mp3"
+track.export(output_path, format="mp3")
+
+output_path
