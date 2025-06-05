@@ -1,0 +1,23 @@
+from pydub.generators import Sine
+from pydub import AudioSegment
+
+# Duración de cada "acorde"
+chord_duration = 2000  # 2 segundos por acorde
+volume = -10  # volumen en dBFS
+
+def chord(freq):
+    return Sine(freq).to_audio_segment(duration=chord_duration).apply_gain(volume)
+
+# Acordes simbólicos: Am – F – C – G representados por diferentes frecuencias
+progression = [
+    chord(220),    # Am
+    chord(175),    # F
+    chord(261.6),  # C
+    chord(196)     # G
+]
+
+# Repetimos la progresión 4 veces
+instrumental = sum(progression * 4)
+
+# Exportamos a archivo WAV
+instrumental.export("mi_primer_adios_placeholder.wav", format="wav")
