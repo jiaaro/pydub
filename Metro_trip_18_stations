@@ -1,0 +1,36 @@
+from pydub import AudioSegment
+
+# Завантажуємо файли
+door_open = AudioSegment.from_file("door_open.ogg")
+door_close = AudioSegment.from_file("door_close.ogg")
+train_noise = AudioSegment.from_file("zvuk-1-shum-vagonov-metro.mp3")
+
+# Список станцій (всього 18, 17 переходів)
+stations = [
+    "Героїв Дніпра", "Мінська", "Оболонь", "Почайна", "Тараса Шевченка", 
+    "Контрактова Площа", "Поштова Площа", "Майдан Незалежності", 
+    "Площа Українських Героїв", "Олімпійська", "Палац Україна", 
+    "Либідська", "Деміївська", "Голосіївська", "Васильківська", 
+    "Виставковий Центр", "Іподром", "Теремки"
+]
+
+# Приблизна тривалість руху між станціями (в мс)
+travel_time_ms = 20000  # 20 секунд - можна регулювати
+
+# Формуємо дорожню аудіо-доріжку
+result = door_open  # Поїзд стартує зі звуком відкриття дверей
+
+for i in range(len(stations)-1):
+    # Закриваємо двері, починаємо рух
+    result += door_close
+    result += train_noise[:travel_time_ms]  # Рух поїзда
+    # Відкриваємо двері на наступній станції
+    result += door_open
+
+# Поїзд зупиняється, закриваємо двері
+result += door_close
+
+# Зберігаємо готовий файл
+result.export("metro_ride_blue_line.mp3", format="mp3")
+
+print("Аудіо поїздки готове: metro_ride_blue_line.mp3")
