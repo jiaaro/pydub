@@ -1,20 +1,18 @@
-from __future__ import division
-from io import BufferedReader
-
 import json
 import os
 import re
 import sys
-from subprocess import Popen, PIPE
-from math import log, ceil
+from functools import wraps
+from io import BufferedReader
+from math import ceil, log
+from subprocess import PIPE, Popen
 from tempfile import TemporaryFile
 from warnings import warn
-from functools import wraps
 
 try:
     import audioop
 except ImportError:
-    import pyaudioop as audioop
+    pass
 
 if sys.version_info >= (3, 0):
     basestring = str
@@ -30,9 +28,9 @@ ARRAY_TYPES = {
     32: "i",
 }
 ARRAY_RANGES = {
-    8: (-0x80, 0x7f),
-    16: (-0x8000, 0x7fff),
-    32: (-0x80000000, 0x7fffffff),
+    8: (-0x80, 0x7F),
+    16: (-0x8000, 0x7FFF),
+    32: (-0x80000000, 0x7FFFFFFF),
 }
 
 
@@ -51,7 +49,7 @@ def get_min_max_value(bit_depth):
     return ARRAY_RANGES[bit_depth]
 
 
-def _fd_or_path_or_tempfile(fd, mode='w+b', tempfile=True):
+def _fd_or_path_or_tempfile(fd, mode="w+b", tempfile=True):
     close_fd = False
     if fd is None and tempfile:
         fd = TemporaryFile(mode=mode)
@@ -101,7 +99,7 @@ def ratio_to_db(ratio, val2=None, using_amplitude=True):
 
     # special case for multiply-by-zero (convert to silence)
     if ratio == 0:
-        return -float('inf')
+        return -float("inf")
 
     if using_amplitude:
         return 20 * log(ratio, 10)
@@ -129,6 +127,7 @@ def register_pydub_effect(fn, name=None):
         name = fn.__name__
 
     from .audio_segment import AudioSegment
+
     setattr(AudioSegment, name, fn)
     return fn
 
@@ -141,8 +140,10 @@ def make_chunks(audio_segment, chunk_length):
     segments back (except the last one, which can be shorter)
     """
     number_of_chunks = ceil(len(audio_segment) / float(chunk_length))
-    return [audio_segment[i * chunk_length:(i + 1) * chunk_length]
-            for i in range(int(number_of_chunks))]
+    return [
+        audio_segment[i * chunk_length : (i + 1) * chunk_length]
+        for i in range(int(number_of_chunks))
+    ]
 
 
 def which(program):
@@ -171,7 +172,10 @@ def get_encoder_name():
         return "ffmpeg"
     else:
         # should raise exception
-        warn("Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work", RuntimeWarning)
+        warn(
+            "Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work",
+            RuntimeWarning,
+        )
         return "ffmpeg"
 
 
@@ -185,7 +189,10 @@ def get_player_name():
         return "ffplay"
     else:
         # should raise exception
-        warn("Couldn't find ffplay or avplay - defaulting to ffplay, but may not work", RuntimeWarning)
+        warn(
+            "Couldn't find ffplay or avplay - defaulting to ffplay, but may not work",
+            RuntimeWarning,
+        )
         return "ffplay"
 
 
@@ -199,7 +206,10 @@ def get_prober_name():
         return "ffprobe"
     else:
         # should raise exception
-        warn("Couldn't find ffprobe or avprobe - defaulting to ffprobe, but may not work", RuntimeWarning)
+        warn(
+            "Couldn't find ffprobe or avprobe - defaulting to ffprobe, but may not work",
+            RuntimeWarning,
+        )
         return "ffprobe"
 
 
@@ -218,7 +228,7 @@ def fsdecode(filename):
         if isinstance(filename, basestring):
             return filename
 
-    raise TypeError("type {0} not accepted by fsdecode".format(type(filename)))
+    raise TypeError(f"type {type(filename)} not accepted by fsdecode")
 
 
 def get_extra_info(stderr):
@@ -236,24 +246,25 @@ def get_extra_info(stderr):
     """
     extra_info = {}
 
-    re_stream = r'(?P<space_start> +)Stream #0[:\.](?P<stream_id>([0-9]+))(?P<content_0>.+)\n?(?! *Stream)((?P<space_end> +)(?P<content_1>.+))?'
+    re_stream = r"(?P<space_start> +)Stream #0[:\.](?P<stream_id>([0-9]+))(?P<content_0>.+)\n?(?! *Stream)((?P<space_end> +)(?P<content_1>.+))?"
     for i in re.finditer(re_stream, stderr):
-        if i.group('space_end') is not None and len(i.group('space_start')) <= len(
-                i.group('space_end')):
-            content_line = ','.join([i.group('content_0'), i.group('content_1')])
+        if i.group("space_end") is not None and len(i.group("space_start")) <= len(
+            i.group("space_end")
+        ):
+            content_line = ",".join([i.group("content_0"), i.group("content_1")])
         else:
-            content_line = i.group('content_0')
-        tokens = [x.strip() for x in re.split('[:,]', content_line) if x]
-        extra_info[int(i.group('stream_id'))] = tokens
+            content_line = i.group("content_0")
+        tokens = [x.strip() for x in re.split("[:,]", content_line) if x]
+        extra_info[int(i.group("stream_id"))] = tokens
     return extra_info
 
 
 def mediainfo_json(filepath, read_ahead_limit=-1):
-    """Return json dictionary with media info(codec, duration, size, bitrate...) from filepath
-    """
+    """Return json dictionary with media info(codec, duration, size, bitrate...) from filepath"""
     prober = get_prober_name()
     command_args = [
-        "-v", "info",
+        "-v",
+        "info",
         "-show_format",
         "-show_streams",
     ]
@@ -262,27 +273,26 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
         stdin_parameter = None
         stdin_data = None
     except TypeError:
-        if prober == 'ffprobe':
-            command_args += ["-read_ahead_limit", str(read_ahead_limit),
-                             "cache:pipe:0"]
+        if prober == "ffprobe":
+            command_args += ["-read_ahead_limit", str(read_ahead_limit), "cache:pipe:0"]
         else:
             command_args += ["-"]
         stdin_parameter = PIPE
-        file, close_file = _fd_or_path_or_tempfile(filepath, 'rb', tempfile=False)
+        file, close_file = _fd_or_path_or_tempfile(filepath, "rb", tempfile=False)
         file.seek(0)
         stdin_data = file.read()
         if close_file:
             file.close()
 
-    command = [prober, '-of', 'json'] + command_args
+    command = [prober, "-of", "json"] + command_args
     res = Popen(command, stdin=stdin_parameter, stdout=PIPE, stderr=PIPE)
     output, stderr = res.communicate(input=stdin_data)
-    output = output.decode("utf-8", 'ignore')
-    stderr = stderr.decode("utf-8", 'ignore')
+    output = output.decode("utf-8", "ignore")
+    stderr = stderr.decode("utf-8", "ignore")
 
     try:
         info = json.loads(output)
-    except  json.decoder.JSONDecodeError:
+    except json.decoder.JSONDecodeError:
         # If ffprobe didn't give any information, just return it
         # (for example, because the file doesn't exist)
         return None
@@ -291,7 +301,7 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
 
     extra_info = get_extra_info(stderr)
 
-    audio_streams = [x for x in info['streams'] if x['codec_type'] == 'audio']
+    audio_streams = [x for x in info["streams"] if x["codec_type"] == "audio"]
     if len(audio_streams) == 0:
         return info
 
@@ -302,41 +312,35 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
         if prop not in stream or stream[prop] == 0:
             stream[prop] = value
 
-    for token in extra_info[stream['index']]:
-        m = re.match(r'([su]([0-9]{1,2})p?) \(([0-9]{1,2}) bit\)$', token)
-        m2 = re.match(r'([su]([0-9]{1,2})p?)( \(default\))?$', token)
+    for token in extra_info[stream["index"]]:
+        m = re.match(r"([su]([0-9]{1,2})p?) \(([0-9]{1,2}) bit\)$", token)
+        m2 = re.match(r"([su]([0-9]{1,2})p?)( \(default\))?$", token)
         if m:
-            set_property(stream, 'sample_fmt', m.group(1))
-            set_property(stream, 'bits_per_sample', int(m.group(2)))
-            set_property(stream, 'bits_per_raw_sample', int(m.group(3)))
+            set_property(stream, "sample_fmt", m.group(1))
+            set_property(stream, "bits_per_sample", int(m.group(2)))
+            set_property(stream, "bits_per_raw_sample", int(m.group(3)))
         elif m2:
-            set_property(stream, 'sample_fmt', m2.group(1))
-            set_property(stream, 'bits_per_sample', int(m2.group(2)))
-            set_property(stream, 'bits_per_raw_sample', int(m2.group(2)))
-        elif re.match(r'(flt)p?( \(default\))?$', token):
-            set_property(stream, 'sample_fmt', token)
-            set_property(stream, 'bits_per_sample', 32)
-            set_property(stream, 'bits_per_raw_sample', 32)
-        elif re.match(r'(dbl)p?( \(default\))?$', token):
-            set_property(stream, 'sample_fmt', token)
-            set_property(stream, 'bits_per_sample', 64)
-            set_property(stream, 'bits_per_raw_sample', 64)
+            set_property(stream, "sample_fmt", m2.group(1))
+            set_property(stream, "bits_per_sample", int(m2.group(2)))
+            set_property(stream, "bits_per_raw_sample", int(m2.group(2)))
+        elif re.match(r"(flt)p?( \(default\))?$", token):
+            set_property(stream, "sample_fmt", token)
+            set_property(stream, "bits_per_sample", 32)
+            set_property(stream, "bits_per_raw_sample", 32)
+        elif re.match(r"(dbl)p?( \(default\))?$", token):
+            set_property(stream, "sample_fmt", token)
+            set_property(stream, "bits_per_sample", 64)
+            set_property(stream, "bits_per_raw_sample", 64)
     return info
 
 
 def mediainfo(filepath):
-    """Return dictionary with media info(codec, duration, size, bitrate...) from filepath
-    """
+    """Return dictionary with media info(codec, duration, size, bitrate...) from filepath"""
 
     prober = get_prober_name()
-    command_args = [
-        "-v", "quiet",
-        "-show_format",
-        "-show_streams",
-        filepath
-    ]
+    command_args = ["-v", "quiet", "-show_format", "-show_streams", filepath]
 
-    command = [prober, '-of', 'old'] + command_args
+    command = [prober, "-of", "old"] + command_args
     res = Popen(command, stdout=PIPE)
     output = res.communicate()[0].decode("utf-8")
 
@@ -347,7 +351,7 @@ def mediainfo(filepath):
     rgx = re.compile(r"(?:(?P<inner_dict>.*?):)?(?P<key>.*?)\=(?P<value>.*?)$")
     info = {}
 
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         output = output.replace("\r", "")
 
     for line in output.split("\n"):
@@ -393,23 +397,22 @@ def get_supported_codecs():
     if res.returncode != 0:
         return []
 
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         output = output.replace("\r", "")
-
 
     rgx = re.compile(r"^([D.][E.][AVS.][I.][L.][S.]) (\w*) +(.*)")
     decoders = set()
     encoders = set()
-    for line in output.split('\n'):
+    for line in output.split("\n"):
         match = rgx.match(line.strip())
         if not match:
             continue
         flags, codec, name = match.groups()
 
-        if flags[0] == 'D':
+        if flags[0] == "D":
             decoders.add(codec)
 
-        if flags[1] == 'E':
+        if flags[1] == "E":
             encoders.add(codec)
 
     return (decoders, encoders)
@@ -422,19 +425,23 @@ def get_supported_decoders():
 def get_supported_encoders():
     return get_supported_codecs()[1]
 
+
 def stereo_to_ms(audio_segment):
-	'''
-	Left-Right -> Mid-Side
-	'''
-	channel = audio_segment.split_to_mono()
-	channel = [channel[0].overlay(channel[1]), channel[0].overlay(channel[1].invert_phase())]
-	return AudioSegment.from_mono_audiosegments(channel[0], channel[1])
+    """
+    Left-Right -> Mid-Side
+    """
+    channel = audio_segment.split_to_mono()
+    channel = [channel[0].overlay(channel[1]), channel[0].overlay(channel[1].invert_phase())]
+    return AudioSegment.from_mono_audiosegments(channel[0], channel[1])
+
 
 def ms_to_stereo(audio_segment):
-	'''
-	Mid-Side -> Left-Right
-	'''
-	channel = audio_segment.split_to_mono()
-	channel = [channel[0].overlay(channel[1]) - 3, channel[0].overlay(channel[1].invert_phase()) - 3]
-	return AudioSegment.from_mono_audiosegments(channel[0], channel[1])
-
+    """
+    Mid-Side -> Left-Right
+    """
+    channel = audio_segment.split_to_mono()
+    channel = [
+        channel[0].overlay(channel[1]) - 3,
+        channel[0].overlay(channel[1].invert_phase()) - 3,
+    ]
+    return AudioSegment.from_mono_audiosegments(channel[0], channel[1])
