@@ -9,12 +9,22 @@ from subprocess import PIPE, Popen
 from tempfile import TemporaryFile
 from warnings import warn
 
+# ---------------------------------------------------------------------------
+# audioop import strategy
+# - Prefer stdlib/backported 'audioop' (<=3.12 stdlib, 3.13+ via audioop-lts)
+# - Fallback to pydub's pure-Python implementation (pyaudioop)
+# ---------------------------------------------------------------------------
 try:
-    import importlib
-
-    audioop = importlib.import_module("audioop")  # may raise ModuleNotFoundError
+    import audioop as _audioop  # stdlib or backport package
 except Exception:
-    audioop = None  # export a name so `from .utils import audioop` always works
+    try:
+        from . import pyaudioop as _audioop  # pure-Python fallback
+    except Exception:
+        _audioop = None
+
+# Re-export so callers can: from pydub.utils import audioop
+audioop = _audioop
+
 
 if sys.version_info >= (3, 0):
     basestring = str
@@ -69,8 +79,7 @@ def _fd_or_path_or_tempfile(fd, mode="w+b", tempfile=True):
             fd = open(fd, mode=mode)
             close_fd = True
     except AttributeError:
-        # module os has no attribute PathLike, so we're on python < 3.6.
-        # The protocol we're trying to support doesn't exist, so just pass.
+        # python < 3.6, os.PathLike not available
         pass
 
     return fd, close_fd
@@ -78,8 +87,7 @@ def _fd_or_path_or_tempfile(fd, mode="w+b", tempfile=True):
 
 def db_to_float(db, using_amplitude=True):
     """
-    Converts the input db to a float, which represents the equivalent
-    ratio in power.
+    Converts the input db to a float, which represents the equivalent ratio.
     """
     db = float(db)
     if using_amplitude:
@@ -90,16 +98,13 @@ def db_to_float(db, using_amplitude=True):
 
 def ratio_to_db(ratio, val2=None, using_amplitude=True):
     """
-    Converts the input float to db, which represents the equivalent
-    to the ratio in power represented by the multiplier passed in.
+    Converts a ratio (or ratio of two values) to dB.
     """
     ratio = float(ratio)
 
-    # accept 2 values and use the ratio of val1 to val2
     if val2 is not None:
         ratio = ratio / val2
 
-    # special case for multiply-by-zero (convert to silence)
     if ratio == 0:
         return -float("inf")
 
@@ -111,15 +116,7 @@ def ratio_to_db(ratio, val2=None, using_amplitude=True):
 
 def register_pydub_effect(fn, name=None):
     """
-    decorator for adding pydub effects to the AudioSegment objects.
-    example use:
-        @register_pydub_effect
-        def normalize(audio_segment):
-            ...
-    or you can specify a name:
-        @register_pydub_effect("normalize")
-        def normalize_audio_segment(audio_segment):
-            ...
+    Decorator to add pydub effects as methods on AudioSegment.
     """
     if isinstance(fn, basestring):
         name = fn
@@ -136,10 +133,7 @@ def register_pydub_effect(fn, name=None):
 
 def make_chunks(audio_segment, chunk_length):
     """
-    Breaks an AudioSegment into chunks that are <chunk_length> milliseconds
-    long.
-    if chunk_length is 50 then you'll get a list of 50 millisecond long audio
-    segments back (except the last one, which can be shorter)
+    Split an AudioSegment into <chunk_length>-ms chunks.
     """
     number_of_chunks = ceil(len(audio_segment) / float(chunk_length))
     return [
@@ -150,9 +144,9 @@ def make_chunks(audio_segment, chunk_length):
 
 def which(program):
     """
-    Mimics behavior of UNIX which command.
+    Mimic UNIX `which`.
     """
-    # Add .exe program extension for windows support
+    # Add .exe program extension for Windows
     if os.name == "nt" and not program.endswith(".exe"):
         program += ".exe"
 
@@ -166,14 +160,13 @@ def which(program):
 
 def get_encoder_name():
     """
-    Return enconder default application for system, either avconv or ffmpeg
+    Return default encoder app for system, either avconv or ffmpeg.
     """
     if which("avconv"):
         return "avconv"
     elif which("ffmpeg"):
         return "ffmpeg"
     else:
-        # should raise exception
         warn(
             "Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work",
             RuntimeWarning,
@@ -183,14 +176,13 @@ def get_encoder_name():
 
 def get_player_name():
     """
-    Return enconder default application for system, either avconv or ffmpeg
+    Return default player app for system, either avplay or ffplay.
     """
     if which("avplay"):
         return "avplay"
     elif which("ffplay"):
         return "ffplay"
     else:
-        # should raise exception
         warn(
             "Couldn't find ffplay or avplay - defaulting to ffplay, but may not work",
             RuntimeWarning,
@@ -200,14 +192,13 @@ def get_player_name():
 
 def get_prober_name():
     """
-    Return probe application, either avconv or ffmpeg
+    Return probe app, either avprobe or ffprobe.
     """
     if which("avprobe"):
         return "avprobe"
     elif which("ffprobe"):
         return "ffprobe"
     else:
-        # should raise exception
         warn(
             "Couldn't find ffprobe or avprobe - defaulting to ffprobe, but may not work",
             RuntimeWarning,
@@ -216,8 +207,7 @@ def get_prober_name():
 
 
 def fsdecode(filename):
-    """Wrapper for os.fsdecode which was introduced in python 3.2 ."""
-
+    """Wrapper for os.fsdecode (py3.2+)."""
     if sys.version_info >= (3, 2):
         PathLikeTypes = (basestring, bytes)
         if sys.version_info >= (3, 6):
@@ -235,20 +225,14 @@ def fsdecode(filename):
 
 def get_extra_info(stderr):
     """
-    avprobe sometimes gives more information on stderr than
-    on the json output. The information has to be extracted
-    from stderr of the format of:
-    '    Stream #0:0: Audio: flac, 88200 Hz, stereo, s32 (24 bit)'
-    or (macOS version):
-    '    Stream #0:0: Audio: vorbis'
-    '      44100 Hz, stereo, fltp, 320 kb/s'
-
-    :type stderr: str
-    :rtype: list of dict
+    Parse extra stream info from ffprobe/avprobe stderr.
     """
     extra_info = {}
 
-    re_stream = r"(?P<space_start> +)Stream #0[:\.](?P<stream_id>([0-9]+))(?P<content_0>.+)\n?(?! *Stream)((?P<space_end> +)(?P<content_1>.+))?"
+    re_stream = (
+        r"(?P<space_start> +)Stream #0[:\.](?P<stream_id>([0-9]+))(?P<content_0>.+)\n?"
+        r"(?! *Stream)((?P<space_end> +)(?P<content_1>.+))?"
+    )
     for i in re.finditer(re_stream, stderr):
         if i.group("space_end") is not None and len(i.group("space_start")) <= len(
             i.group("space_end")
@@ -262,7 +246,7 @@ def get_extra_info(stderr):
 
 
 def mediainfo_json(filepath, read_ahead_limit=-1):
-    """Return json dictionary with media info(codec, duration, size, bitrate...) from filepath"""
+    """Return JSON dict with media info from filepath."""
     prober = get_prober_name()
     command_args = [
         "-v",
@@ -295,8 +279,6 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
     try:
         info = json.loads(output)
     except json.decoder.JSONDecodeError:
-        # If ffprobe didn't give any information, just return it
-        # (for example, because the file doesn't exist)
         return None
     if not info:
         return info
@@ -307,7 +289,7 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
     if len(audio_streams) == 0:
         return info
 
-    # We just operate on the first audio stream in case there are more
+    # operate on the first audio stream
     stream = audio_streams[0]
 
     def set_property(stream, prop, value):
@@ -337,8 +319,7 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
 
 
 def mediainfo(filepath):
-    """Return dictionary with media info(codec, duration, size, bitrate...) from filepath"""
-
+    """Return dict with media info from filepath (old text format)."""
     prober = get_prober_name()
     command_args = ["-v", "quiet", "-show_format", "-show_streams", filepath]
 
@@ -357,13 +338,9 @@ def mediainfo(filepath):
         output = output.replace("\r", "")
 
     for line in output.split("\n"):
-        # print(line)
         mobj = rgx.match(line)
-
         if mobj:
-            # print(mobj.groups())
             inner_dict, key, value = mobj.groups()
-
             if inner_dict:
                 try:
                     info[inner_dict]
@@ -383,7 +360,7 @@ def cache_codecs(function):
     def wrapper():
         try:
             return cache[0]
-        except:
+        except Exception:
             cache[0] = function()
             return cache[0]
 
@@ -409,7 +386,7 @@ def get_supported_codecs():
         match = rgx.match(line.strip())
         if not match:
             continue
-        flags, codec, name = match.groups()
+        flags, codec, _name = match.groups()
 
         if flags[0] == "D":
             decoders.add(codec)
@@ -433,7 +410,12 @@ def stereo_to_ms(audio_segment):
     Left-Right -> Mid-Side
     """
     channel = audio_segment.split_to_mono()
-    channel = [channel[0].overlay(channel[1]), channel[0].overlay(channel[1].invert_phase())]
+    channel = [
+        channel[0].overlay(channel[1]),
+        channel[0].overlay(channel[1].invert_phase()),
+    ]
+    from .audio_segment import AudioSegment
+
     return AudioSegment.from_mono_audiosegments(channel[0], channel[1])
 
 
@@ -446,4 +428,6 @@ def ms_to_stereo(audio_segment):
         channel[0].overlay(channel[1]) - 3,
         channel[0].overlay(channel[1].invert_phase()) - 3,
     ]
+    from .audio_segment import AudioSegment
+
     return AudioSegment.from_mono_audiosegments(channel[0], channel[1])

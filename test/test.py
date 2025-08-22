@@ -54,7 +54,8 @@ class UtilityTests(unittest.TestCase):
             3, db_to_float(ratio_to_db(3, using_amplitude=False), using_amplitude=False)
         )
         self.assertEqual(
-            12, ratio_to_db(db_to_float(12, using_amplitude=False), using_amplitude=False)
+            12,
+            ratio_to_db(db_to_float(12, using_amplitude=False), using_amplitude=False),
         )
 
 
@@ -131,7 +132,10 @@ if sys.version_info >= (3, 6):
 
         def test_non_existant_path_like_bytes(self):
             path = self.MyPathLike(
-                bytes("this/path/should/not/exist/do/not/make/this/exist", sys.getdefaultencoding())
+                bytes(
+                    "this/path/should/not/exist/do/not/make/this/exist",
+                    sys.getdefaultencoding(),
+                )
             )
             with self.assertRaises(FileNotFoundError):
                 _ = AudioSegment.from_file(path)
@@ -298,7 +302,8 @@ class AudioSegmentTests(unittest.TestCase):
             self.assertEqual(seg.sample_width, bit_depth / 8)
             self.assertEqual(seg.frame_rate, 192000)
             self.assertEqual(
-                len(seg.raw_data), len(base.raw_data) * seg.sample_width / base.sample_width
+                len(seg.raw_data),
+                len(base.raw_data) * seg.sample_width / base.sample_width,
             )
             self.assertEqual(seg.frame_rate, 192000)
 
@@ -812,7 +817,9 @@ class AudioSegmentTests(unittest.TestCase):
             )
 
     @unittest.skipUnless("aac" in get_supported_decoders(), "Unsupported codecs")
-    def test_export_mp4_as_mp3_with_tags_raises_exception_when_tags_are_not_a_dictionary(self):
+    def test_export_mp4_as_mp3_with_tags_raises_exception_when_tags_are_not_a_dictionary(
+        self,
+    ):
         with NamedTemporaryFile("w+b", suffix=".mp3") as tmp_mp3_file:
             json = '{"title": "The Title You Want", "album": "Name of the Album", "artist": "Artist\'s name"}'
             func = partial(
@@ -824,7 +831,9 @@ class AudioSegmentTests(unittest.TestCase):
             self.assertRaises(InvalidTag, func)
 
     @unittest.skipUnless("aac" in get_supported_decoders(), "Unsupported codecs")
-    def test_export_mp4_as_mp3_with_tags_raises_exception_when_id3version_is_wrong(self):
+    def test_export_mp4_as_mp3_with_tags_raises_exception_when_id3version_is_wrong(
+        self,
+    ):
         tags = {"artist": "Artist", "title": "Title"}
         with NamedTemporaryFile("w+b", suffix=".mp3") as tmp_mp3_file:
             func = partial(
@@ -1353,7 +1362,9 @@ class PartialAudioSegmentLoadTests(unittest.TestCase):
         self.assertEqual(len(partial_seg1), len(partial_seg2))
         self.assertEqual(partial_seg1._data, partial_seg2._data)
 
-    def test_partial_load_start_second_and_duration_equals_cropped_mp3_audio_segment(self):
+    def test_partial_load_start_second_and_duration_equals_cropped_mp3_audio_segment(
+        self,
+    ):
         partial_seg1 = AudioSegment.from_file(self.mp3_path_str)[1000:2000]
         partial_seg2 = AudioSegment.from_file(self.mp3_path_str, start_second=1.0, duration=1.0)
         self.assertEqual(len(partial_seg1), len(partial_seg2))
@@ -1371,7 +1382,9 @@ class PartialAudioSegmentLoadTests(unittest.TestCase):
         self.assertEqual(len(partial_seg1), len(partial_seg2))
         self.assertEqual(partial_seg1._data, partial_seg2._data)
 
-    def test_partial_load_start_second_and_duration_equals_cropped_wav_audio_segment(self):
+    def test_partial_load_start_second_and_duration_equals_cropped_wav_audio_segment(
+        self,
+    ):
         partial_seg1 = AudioSegment.from_file(self.wave_path_str)[1000:2000]
         partial_seg2 = AudioSegment.from_file(self.wave_path_str, start_second=1.0, duration=1.0)
         self.assertEqual(len(partial_seg1), len(partial_seg2))
@@ -1379,7 +1392,11 @@ class PartialAudioSegmentLoadTests(unittest.TestCase):
 
     def test_partial_load_duration_equals_cropped_raw_audio_segment(self):
         partial_seg1 = AudioSegment.from_file(
-            self.raw_path_str, format="raw", sample_width=2, frame_rate=32000, channels=2
+            self.raw_path_str,
+            format="raw",
+            sample_width=2,
+            frame_rate=32000,
+            channels=2,
         )[:1000]
         partial_seg2 = AudioSegment.from_file(
             self.raw_path_str,
@@ -1394,7 +1411,11 @@ class PartialAudioSegmentLoadTests(unittest.TestCase):
 
     def test_partial_load_start_second_equals_cropped_raw_audio_segment(self):
         partial_seg1 = AudioSegment.from_file(
-            self.raw_path_str, format="raw", sample_width=2, frame_rate=32000, channels=2
+            self.raw_path_str,
+            format="raw",
+            sample_width=2,
+            frame_rate=32000,
+            channels=2,
         )[1000:]
         partial_seg2 = AudioSegment.from_file(
             self.raw_path_str,
@@ -1407,9 +1428,15 @@ class PartialAudioSegmentLoadTests(unittest.TestCase):
         self.assertEqual(len(partial_seg1), len(partial_seg2))
         self.assertEqual(partial_seg1._data, partial_seg2._data)
 
-    def test_partial_load_start_second_and_duration_equals_cropped_raw_audio_segment(self):
+    def test_partial_load_start_second_and_duration_equals_cropped_raw_audio_segment(
+        self,
+    ):
         partial_seg1 = AudioSegment.from_file(
-            self.raw_path_str, format="raw", sample_width=2, frame_rate=32000, channels=2
+            self.raw_path_str,
+            format="raw",
+            sample_width=2,
+            frame_rate=32000,
+            channels=2,
         )[1000:2000]
         partial_seg2 = AudioSegment.from_file(
             self.raw_path_str,

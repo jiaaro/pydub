@@ -42,7 +42,7 @@ class SignalGenerator:
 
         try:
             data = data.tobytes()
-        except:
+        except Exception:
             data = data.tostring()
 
         return AudioSegment(

@@ -13,14 +13,14 @@ from .utils import fsdecode, mediainfo_json
 
 try:
     from StringIO import StringIO
-except:
+except Exception:
     from io import StringIO
 
 from io import BytesIO
 
 try:
     from itertools import izip
-except:
+except Exception:
     izip = zip
 
 from .exceptions import (
@@ -85,7 +85,8 @@ AUDIO_FILE_EXT_ALIASES = {
 
 WavSubChunk = namedtuple("WavSubChunk", ["id", "position", "size"])
 WavData = namedtuple(
-    "WavData", ["audio_format", "channels", "sample_rate", "bits_per_sample", "raw_data"]
+    "WavData",
+    ["audio_format", "channels", "sample_rate", "bits_per_sample", "raw_data"],
 )
 
 
@@ -128,7 +129,11 @@ def read_wav_audio(data, headers=None):
 
     pos = data_hdr.position + 8
     return WavData(
-        audio_format, channels, sample_rate, bits_per_sample, data[pos : pos + data_hdr.size]
+        audio_format,
+        channels,
+        sample_rate,
+        bits_per_sample,
+        data[pos : pos + data_hdr.size],
     )
 
 
@@ -218,7 +223,7 @@ class AudioSegment:
         if isinstance(data, array.array):
             try:
                 data = data.tobytes()
-            except:
+            except Exception:
                 data = data.tostring()
 
         # prevent partial specification of arguments
@@ -319,7 +324,7 @@ class AudioSegment:
     def __eq__(self, other):
         try:
             return self._data == other._data
-        except:
+        except Exception:
             return False
 
     def __hash__(self):
@@ -445,7 +450,7 @@ class AudioSegment:
         if isinstance(data, array.array):
             try:
                 data = data.tobytes()
-            except:
+            except Exception:
                 data = data.tostring()
 
         # accept file-like objects
@@ -483,7 +488,13 @@ class AudioSegment:
     @classmethod
     def empty(cls):
         return cls(
-            b"", metadata={"channels": 1, "sample_width": 1, "frame_rate": 1, "frame_width": 1}
+            b"",
+            metadata={
+                "channels": 1,
+                "sample_width": 1,
+                "frame_rate": 1,
+                "frame_width": 1,
+            },
         )
 
     @classmethod
@@ -496,7 +507,12 @@ class AudioSegment:
         data = b"\0\0" * frames
         return cls(
             data,
-            metadata={"channels": 1, "sample_width": 2, "frame_rate": frame_rate, "frame_width": 2},
+            metadata={
+                "channels": 1,
+                "sample_width": 2,
+                "frame_rate": frame_rate,
+                "frame_width": 2,
+            },
         )
 
     @classmethod
@@ -569,7 +585,7 @@ class AudioSegment:
                     return obj[: duration * 1000]
                 else:
                     return obj[start_second * 1000 : (start_second + duration) * 1000]
-            except:
+            except Exception:
                 file.seek(0)
         elif is_format("raw") or is_format("pcm"):
             sample_width = kwargs["sample_width"]
@@ -652,7 +668,10 @@ class AudioSegment:
 
         with open(os.devnull, "rb") as devnull:
             p = subprocess.Popen(
-                conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                conversion_command,
+                stdin=devnull,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
             )
         p_out, p_err = p.communicate()
 
@@ -726,7 +745,7 @@ class AudioSegment:
                     return cls._from_safe_wav(file)[
                         start_second * 1000 : (start_second + duration) * 1000
                     ]
-            except:
+            except Exception:
                 file.seek(0)
         elif is_format("raw") or is_format("pcm"):
             sample_width = kwargs["sample_width"]
@@ -1056,7 +1075,10 @@ class AudioSegment:
         # read stdin / write stdout
         with open(os.devnull, "rb") as devnull:
             p = subprocess.Popen(
-                conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                conversion_command,
+                stdin=devnull,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
             )
         p_out, p_err = p.communicate()
 
@@ -1115,7 +1137,12 @@ class AudioSegment:
 
         if self._data:
             converted, _ = audioop.ratecv(
-                self._data, self.sample_width, self.channels, self.frame_rate, frame_rate, None
+                self._data,
+                self.sample_width,
+                self.channels,
+                self.frame_rate,
+                frame_rate,
+                None,
             )
         else:
             converted = self._data
@@ -1174,7 +1201,10 @@ class AudioSegment:
                 mono_data = samples_for_current_channel.tostring()
 
             mono_channels.append(
-                self._spawn(mono_data, overrides={"channels": 1, "frame_width": self.sample_width})
+                self._spawn(
+                    mono_data,
+                    overrides={"channels": 1, "frame_width": self.sample_width},
+                )
             )
 
         return mono_channels
@@ -1331,7 +1361,9 @@ class AudioSegment:
             if gain_during_overlay:
                 seg1_overlaid = seg1[pos : pos + seg2_len]
                 seg1_adjusted_gain = audioop.mul(
-                    seg1_overlaid, self.sample_width, db_to_float(float(gain_during_overlay))
+                    seg1_overlaid,
+                    self.sample_width,
+                    db_to_float(float(gain_during_overlay)),
                 )
                 output.write(audioop.add(seg1_adjusted_gain, seg2, sample_width))
             else:

@@ -1,5 +1,7 @@
 import pytest
+
 from pydub import AudioSegment as _AS
+
 if not hasattr(_AS, "loop"):
     pytest.skip("AudioSegment.loop not available on this branch", allow_module_level=True)
 import unittest
@@ -33,4 +35,3 @@ class LoopFeatureTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
