@@ -175,6 +175,39 @@ class AudioSegment:
 
     DEFAULT_CODECS = {"ogg": "libvorbis"}
 
+    def loop(self, count=2, crossfade=0, trim_to=None, end_padding=0):
+        """
+        Repeat this segment `count` times, with optional `crossfade` (ms) between repeats.
+        If `trim_to` (ms) is given, the final result is truncated to that length.
+        If `end_padding` (ms) > 0, append silence of that duration at the end.
+
+        Returns a new AudioSegment.
+        """
+        if not isinstance(count, int) or count < 1:
+            raise ValueError("count must be a positive integer")
+        if crossfade < 0:
+            raise ValueError("crossfade must be >= 0")
+        if trim_to is not None and trim_to < 0:
+            raise ValueError("trim_to must be >= 0")
+        if end_padding < 0:
+            raise ValueError("end_padding must be >= 0")
+
+        out = self
+        for _ in range(1, count):
+            # append handles format conversion and validates crossfade <= len(self)
+            out = out.append(self, crossfade=crossfade)
+
+        if trim_to is not None:
+            out = out[:trim_to]
+
+        if end_padding:
+            pad = AudioSegment.silent(duration=end_padding, frame_rate=self.frame_rate)
+            # match channels and sample width to avoid implicit conversions
+            pad = pad.set_channels(self.channels).set_sample_width(self.sample_width)
+            out = out.append(pad, crossfade=0)
+
+        return out
+
     def __init__(self, data=None, *args, **kwargs):
         self.sample_width = kwargs.pop("sample_width", None)
         self.frame_rate = kwargs.pop("frame_rate", None)

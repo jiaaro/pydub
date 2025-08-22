@@ -1064,6 +1064,28 @@ class AudioSegmentTests(unittest.TestCase):
         os.rmdir(new_tmpdir)
 
 
+class LoopFeatureTests(unittest.TestCase):
+    def test_loop_repeats_length(self):
+        seg = Sine(440).to_audio_segment(duration=100)  # 100 ms
+        out = seg.loop(count=3, crossfade=0)
+        self.assertEqual(len(out), 300)
+
+    def test_loop_with_crossfade_shortens(self):
+        seg = Sine(440).to_audio_segment(duration=200)
+        out = seg.loop(count=2, crossfade=50)  # 50 ms overlap
+        self.assertEqual(len(out), 200 + 200 - 50)
+
+    def test_loop_trim_to(self):
+        seg = Sine(440).to_audio_segment(duration=200)
+        out = seg.loop(count=10, crossfade=0, trim_to=650)
+        self.assertEqual(len(out), 650)
+
+    def test_loop_end_padding(self):
+        seg = Sine(440).to_audio_segment(duration=200)
+        out = seg.loop(count=1, end_padding=300)
+        self.assertEqual(len(out), 500)
+
+
 class SilenceTests(unittest.TestCase):
 
     def setUp(self):
