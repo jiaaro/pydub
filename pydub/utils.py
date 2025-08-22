@@ -10,9 +10,11 @@ from tempfile import TemporaryFile
 from warnings import warn
 
 try:
-    import audioop  # noqa: F401
-except ImportError:
-    pass
+    import importlib
+
+    audioop = importlib.import_module("audioop")  # may raise ModuleNotFoundError
+except Exception:
+    audioop = None  # export a name so `from .utils import audioop` always works
 
 if sys.version_info >= (3, 0):
     basestring = str
