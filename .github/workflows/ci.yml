@@ -48,3 +48,6 @@ jobs:
                 subprocess.check_call([sys.executable, "-m", "pip", "install", "audioop-lts"])
             PY
                 pip install -e .
+      - name: Run tests
+        run: |
+            pytest -q --cov=pydub --cov-report=term-missing --cov-fail-under=25
