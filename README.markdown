@@ -308,6 +308,14 @@ with open("%s_minute_playlist.mp3" % playlist_length, 'wb') as out_f:
     playlist.export(out_f, format='mp3')
 ```
 
+```
+from pydub import AudioSegment
+from pydub.generators import Sine
+
+seg = Sine(440).to_audio_segment(duration=200)
+looped = seg.loop(count=3, crossfade=50, trim_to=500, end_padding=100)
+```
+
 ## License ([MIT License](http://opensource.org/licenses/mit-license.php))
 
 Copyright © 2011 James Robert, http://jiaaro.com
