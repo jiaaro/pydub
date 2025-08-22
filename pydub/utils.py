@@ -10,7 +10,7 @@ from tempfile import TemporaryFile
 from warnings import warn
 
 try:
-    import audioop
+    import audioop  # noqa: F401
 except ImportError:
     pass
 
