@@ -7,7 +7,6 @@ See Wikipedia's "waveform" page for info on some of the generators included
 here: http://en.wikipedia.org/wiki/Waveform
 """
 
-
 import array
 import itertools
 import math
