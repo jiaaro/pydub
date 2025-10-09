@@ -173,7 +173,7 @@ def detect_binary(env_var, candidates, fallback, role):
         if which(binary):
             return binary
 
-    warn(f"Couldn't find any of {', '.join(candidates)} - defaulting to {fallback} for {role}, but may not work", RuntimeWarning)
+    warn("Couldn't find any of {} - defaulting to {} for {}, but may not work".format(', '.join(candidates), fallback, role), RuntimeWarning)
     return fallback
 
 
