@@ -158,7 +158,7 @@ def which(program, path=None):
             return program_path
 
 
-def detect_binary(env_var: str, candidates: list[str], fallback: str, role: str) -> str:
+def detect_binary(env_var, candidates, fallback, role):
     """
     Detect the appropriate binary to use, in order:
     1. Environment variable override
@@ -177,15 +177,15 @@ def detect_binary(env_var: str, candidates: list[str], fallback: str, role: str)
     return fallback
 
 
-def get_encoder_name() -> str:
+def get_encoder_name():
     return detect_binary("AUDIO_ENCODER", ["avconv", "ffmpeg"], "ffmpeg", "encoding")
 
 
-def get_player_name() -> str:
+def get_player_name():
     return detect_binary("AUDIO_PLAYER", ["avplay", "ffplay"], "ffplay", "playback")
 
 
-def get_prober_name() -> str:
+def get_prober_name():
     return detect_binary("AUDIO_PROBER", ["avprobe", "ffprobe"], "ffprobe", "probing")
 
 
