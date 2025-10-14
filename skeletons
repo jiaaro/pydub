@@ -1,0 +1,63 @@
+from pydub import AudioSegment
+from pydub.generators import Sine, Square
+import numpy as np
+
+# Basic parameters
+bpm = 140
+beat_duration = 60 / bpm  # seconds per beat
+sample_rate = 44100
+beat_samples = int(sample_rate * beat_duration)
+
+def make_drum_kick(duration_sec):
+    """Generate a simple kick drum sound."""
+    t = np.linspace(0, duration_sec, int(sample_rate * duration_sec), False)
+    freq = 60  # kick drum frequency
+    envelope = np.exp(-10 * t)
+    wave = np.sin(2 * np.pi * freq * t) * envelope
+    audio = (wave * 32767).astype(np.int16)
+    return AudioSegment(audio.tobytes(), frame_rate=sample_rate, sample_width=2, channels=1)
+
+def make_drum_snare(duration_sec):
+    """Generate a simple snare drum noise burst."""
+    noise = (np.random.randn(int(sample_rate * duration_sec)) * 32767 * np.exp(-20 * np.linspace(0, duration_sec, int(sample_rate * duration_sec)))).astype(np.int16)
+    return AudioSegment(noise.tobytes(), frame_rate=sample_rate, sample_width=2, channels=1)
+
+def make_guitar_chord(frequencies, duration_sec):
+    """Generate a distorted guitar chord using square waves."""
+    t = np.linspace(0, duration_sec, int(sample_rate * duration_sec), False)
+    wave = np.zeros_like(t)
+    for freq in frequencies:
+        wave += 0.3 * np.sign(np.sin(2 * np.pi * freq * t))
+    wave = wave / np.max(np.abs(wave))
+    audio = (wave * 32767).astype(np.int16)
+    distorted = AudioSegment(audio.tobytes(), frame_rate=sample_rate, sample_width=2, channels=1)
+    distorted = distorted.apply_gain(10)
+    return distorted
+
+# Make a basic 4/4 drum beat (kick on 1 and 3, snare on 2 and 4)
+beat_length = beat_duration
+kick = make_drum_kick(beat_length * 0.5)
+snare = make_drum_snare(beat_length * 0.5)
+
+drum_pattern = AudioSegment.silent(duration=int(beat_duration * 1000 * 4))
+drum_pattern = drum_pattern.overlay(kick, position=0)
+drum_pattern = drum_pattern.overlay(kick, position=int(beat_duration * 1000 * 2))
+drum_pattern = drum_pattern.overlay(snare, position=int(beat_duration * 1000 * 1))
+drum_pattern = drum_pattern.overlay(snare, position=int(beat_duration * 1000 * 3))
+
+# Power chords: E5 and A5
+E5 = [82.41, 123.47]
+A5 = [110.00, 164.81]
+
+riff = AudioSegment.silent(duration=int(beat_duration * 1000 * 4))
+riff = riff.overlay(make_guitar_chord(E5, beat_duration * 2), position=0)
+riff = riff.overlay(make_guitar_chord(A5, beat_duration * 2), position=int(beat_duration * 1000 * 2))
+
+# Combine drums and riff
+loop = riff.overlay(drum_pattern)
+
+# Repeat loop 5 times (~20 sec)
+music = loop * 5
+
+# Export as mp3
+music.export("skeletons_rock_loop.mp3", format="mp3")
