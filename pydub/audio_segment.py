@@ -755,11 +755,11 @@ class AudioSegment(object):
         if duration is not None:
             conversion_command += ["-t", str(duration)]
 
-        conversion_command += ["-"]
-
         if parameters is not None:
             # extend arguments with arbitrary set
             conversion_command.extend(parameters)
+
+        conversion_command += ["-"]
 
         log_conversion(conversion_command)
 
