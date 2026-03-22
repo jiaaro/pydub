@@ -17,6 +17,7 @@ setup(
     url='http://pydub.com',
     packages=['pydub'],
     long_description=__doc__,
+    install_requires=['audioop-lts>=0.2.1; python_version>="3.13"'],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: MIT License',
