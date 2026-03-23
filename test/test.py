@@ -1,5 +1,6 @@
 from functools import partial
 import os
+import subprocess
 import sys
 import unittest
 from tempfile import (
@@ -57,6 +58,22 @@ class UtilityTests(unittest.TestCase):
         self.assertEqual(12, ratio_to_db(db_to_float(12)))
         self.assertEqual(3, db_to_float(ratio_to_db(3, using_amplitude=False), using_amplitude=False))
         self.assertEqual(12, ratio_to_db(db_to_float(12, using_amplitude=False), using_amplitude=False))
+
+    def test_utils_module_has_no_invalid_escape_syntax_warnings(self):
+        project_root = os.path.dirname(os.path.dirname(__file__))
+        utils_path = os.path.join(project_root, "pydub", "utils.py")
+
+        proc = subprocess.Popen(
+            [sys.executable, "-W", "error::SyntaxWarning", "-m", "py_compile", utils_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        _, stderr = proc.communicate()
+        self.assertEqual(
+            proc.returncode,
+            0,
+            stderr.decode("utf-8", errors="ignore"),
+        )
 
 
 if sys.version_info >= (3, 6):
