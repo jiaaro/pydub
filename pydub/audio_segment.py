@@ -821,7 +821,7 @@ class AudioSegment(object):
             file.close()
         return obj
 
-    def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None, id3v2_version='4',
+    def export(self, out_f=None, format=None, codec=None, bitrate=None, parameters=None, tags=None, id3v2_version='4',
                cover=None):
         """
         Export an AudioSegment to a file with given options
@@ -832,7 +832,9 @@ class AudioSegment(object):
 
         format (string)
             Format for destination audio file.
-            ('mp3', 'wav', 'raw', 'ogg' or other ffmpeg/avconv supported files)
+            By default, ffmpeg will guess format from output file extension.
+            See 'ffmpeg -muxers' for a list of supported output formats.
+            ('mp3', 'wav', 'raw', 'ogg', 'ipod', 'matroska', ...)
 
         codec (string)
             Codec used to encode the destination file.
@@ -863,6 +865,8 @@ class AudioSegment(object):
                     'Can not invoke ffmpeg when export format is "raw"; '
                     'specify an ffmpeg raw format like format="s16le" instead '
                     'or call export(format="raw") with no codec or parameters')
+
+        output_suffix = os.path.splitext(str(out_f))[1]
 
         out_f, _ = _fd_or_path_or_tempfile(out_f, 'wb+')
         out_f.seek(0)
@@ -900,7 +904,7 @@ class AudioSegment(object):
             out_f.seek(0)
             return out_f
 
-        output = NamedTemporaryFile(mode="w+b", delete=False)
+        output = NamedTemporaryFile(mode="w+b", delete=False, suffix=output_suffix)
 
         # build converter command to export
         conversion_command = [
@@ -952,8 +956,13 @@ class AudioSegment(object):
         if sys.platform == 'darwin' and codec == 'mp3':
             conversion_command.extend(["-write_xing", "0"])
 
+        # output options (filename last)
+        if format:
+            conversion_command.extend([
+                "-f", format
+            ])
         conversion_command.extend([
-            "-f", format, output.name,  # output options (filename last)
+            output.name
         ])
 
         log_conversion(conversion_command)
