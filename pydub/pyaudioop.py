@@ -29,7 +29,7 @@ def _check_params(length, size):
 
 
 def _sample_count(cp, size):
-    return len(cp) / size
+    return len(cp) // size
 
 
 def _get_samples(cp, size, signed=True):
@@ -106,7 +106,7 @@ def _overflow(val, size, signed=True):
 
 def getsample(cp, size, i):
     _check_params(len(cp), size)
-    if not (0 <= i < len(cp) / size):
+    if not (0 <= i < len(cp) // size):
         raise error("Index out of range")
     return _get_sample(cp, size, i)
 
@@ -136,7 +136,7 @@ def avg(cp, size):
     sample_count = _sample_count(cp, size)
     if sample_count == 0:
         return 0
-    return sum(_get_samples(cp, size)) / sample_count
+    return sum(_get_samples(cp, size)) // sample_count
 
 
 def rms(cp, size):
@@ -147,7 +147,7 @@ def rms(cp, size):
         return 0
 
     sum_squares = sum(sample**2 for sample in _get_samples(cp, size))
-    return int(math.sqrt(sum_squares / sample_count))
+    return int(math.sqrt(sum_squares // sample_count))
 
 
 def _sum2(cp1, cp2, length):
@@ -174,7 +174,7 @@ def findfit(cp1, cp2):
     sum_aij_2 = _sum2(cp1, cp1, len2)
     sum_aij_ri = _sum2(cp1, cp2, len2)
 
-    result = (sum_ri_2 * sum_aij_2 - sum_aij_ri * sum_aij_ri) / sum_aij_2
+    result = (sum_ri_2 * sum_aij_2 - sum_aij_ri * sum_aij_ri) // sum_aij_2
 
     best_result = result
     best_i = 0
@@ -186,13 +186,13 @@ def findfit(cp1, cp2):
         sum_aij_2 += aj_lm1**2 - aj_m1**2
         sum_aij_ri = _sum2(buffer(cp1)[i*size:], cp2, len2)
 
-        result = (sum_ri_2 * sum_aij_2 - sum_aij_ri * sum_aij_ri) / sum_aij_2
+        result = (sum_ri_2 * sum_aij_2 - sum_aij_ri * sum_aij_ri) // sum_aij_2
 
         if result < best_result:
             best_result = result
             best_i = i
 
-    factor = _sum2(buffer(cp1)[best_i*size:], cp2, len2) / sum_ri_2
+    factor = _sum2(buffer(cp1)[best_i*size:], cp2, len2) // sum_ri_2
 
     return best_i, factor
 
@@ -211,7 +211,7 @@ def findfactor(cp1, cp2):
     sum_ri_2 = _sum2(cp2, cp2, sample_count)
     sum_aij_ri = _sum2(cp1, cp2, sample_count)
 
-    return sum_aij_ri / sum_ri_2
+    return sum_aij_ri // sum_ri_2
 
 
 def findmax(cp, len2):
@@ -278,7 +278,7 @@ def avgpp(cp, size):
     if nextreme == 0:
         return 0
 
-    return avg / nextreme
+    return avg // nextreme
 
 
 def maxpp(cp, size):
@@ -345,7 +345,7 @@ def tomono(cp, size, fac1, fac2):
 
     sample_count = _sample_count(cp, size)
 
-    result = create_string_buffer(len(cp) / 2)
+    result = create_string_buffer(len(cp) // 2)
 
     for i in range(0, sample_count, 2):
         l_sample = getsample(cp, size, i)
@@ -354,7 +354,7 @@ def tomono(cp, size, fac1, fac2):
         sample = (l_sample * fac1) + (r_sample * fac2)
         sample = clip(sample)
 
-        _put_sample(result, size, i / 2, sample)
+        _put_sample(result, size, i // 2, sample)
 
     return result.raw
 
@@ -430,16 +430,16 @@ def lin2lin(cp, size, size2):
     if size == size2:
         return cp
 
-    new_len = (len(cp) / size) * size2
+    new_len = (len(cp) // size) * size2
 
     result = create_string_buffer(new_len)
 
     for i in range(_sample_count(cp, size)):
         sample = _get_sample(cp, size, i)
         if size < size2:
-            sample = sample << (4 * size2 / size)
+            sample = sample << (4 * size2 // size)
         elif size > size2:
-            sample = sample >> (4 * size / size2)
+            sample = sample >> (4 * size // size2)
 
         sample = _overflow(sample, size2)
 
@@ -454,9 +454,9 @@ def ratecv(cp, size, nchannels, inrate, outrate, state, weightA=1, weightB=0):
         raise error("# of channels should be >= 1")
 
     bytes_per_frame = size * nchannels
-    frame_count = len(cp) / bytes_per_frame
+    frame_count = len(cp) // bytes_per_frame
 
-    if bytes_per_frame / nchannels != size:
+    if bytes_per_frame // nchannels != size:
         raise OverflowError("width * nchannels too big for a C int")
 
     if weightA < 1 or weightB < 0:
@@ -469,8 +469,8 @@ def ratecv(cp, size, nchannels, inrate, outrate, state, weightA=1, weightB=0):
         raise error("sampling rate not > 0")
 
     d = gcd(inrate, outrate)
-    inrate /= d
-    outrate /= d
+    inrate //= d
+    outrate //= d
 
     prev_i = [0] * nchannels
     cur_i = [0] * nchannels
@@ -486,7 +486,7 @@ def ratecv(cp, size, nchannels, inrate, outrate, state, weightA=1, weightB=0):
         prev_i, cur_i = zip(*samps)
         prev_i, cur_i = list(prev_i), list(cur_i)
 
-    q = frame_count / inrate
+    q = frame_count // inrate
     ceiling = (q + 1) * outrate
     nbytes = ceiling * bytes_per_frame
 
@@ -512,7 +512,7 @@ def ratecv(cp, size, nchannels, inrate, outrate, state, weightA=1, weightB=0):
 
                 cur_i[chan] = (
                     (weightA * cur_i[chan] + weightB * prev_i[chan])
-                    / (weightA + weightB)
+                    // (weightA + weightB)
                 )
 
             frame_count -= 1
@@ -522,7 +522,7 @@ def ratecv(cp, size, nchannels, inrate, outrate, state, weightA=1, weightB=0):
             for chan in range(nchannels):
                 cur_o = (
                     (prev_i[chan] * d + cur_i[chan] * (outrate - d))
-                    / outrate
+                    // outrate
                 )
                 _put_sample(result, size, out_i, _overflow(cur_o, size))
                 out_i += 1
