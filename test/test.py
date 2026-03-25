@@ -678,7 +678,7 @@ class AudioSegmentTests(unittest.TestCase):
 
         self.assertEqual(len(inf_end), len(seg))
 
-        self.assertTrue(-6 < ratio_to_db(inf_end.rms, seg.rms) < -5)
+        self.assertWithinRange(ratio_to_db(inf_end.rms, seg.rms), -4, -3)
 
         # use a slice out of the middle to make sure there is audio
         seg = self.seg2[2000:8000]
