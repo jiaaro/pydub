@@ -1,0 +1,58 @@
+import os
+from elevenlabs import ElevenLabs
+from pydub import AudioSegment
+import requests
+# Configuración de la API de ElevenLabs
+api_key = "TU_API_KEY"
+client = ElevenLabs(api_key=api_key)
+# Texto del locutor
+texto = """
+¡Atención, pedaleadores de primaria de la Región del Cono Sur y de toda Bolivia! 🚴‍♂️
+La Unidad Educativa Eufronio Viscarra lanza una invitación especial… ¡para ti! Llega el Gran Encuentro Deportivo de Ciclismo Escolar 2025.
+Un evento único, cargado de energía pura, sana convivencia y el auténtico espíritu deportivo. ¡Es el momento para que nuestras promesas del ciclismo demuestren su talento y pasión sobre dos ruedas!
+¡Toma nota! La cita es el:
+26 de Noviembre de 2025
+A las 9 de la mañana en punto
+En la vibrante Plaza del Estudiante de Mizque
+Y estas son las categorías en competencia:
+Categoría 1: Damas y Varones de 6 a 9 años
+Categoría 2: Damas y Varones de 10 a 12 años
+Recuerda, para participar debes llevar:
+Tu bici, en perfecto estado.
+Tu casco de seguridad, ¡obligatorio!
+Y la autorización firmada por tus padres o tutor.
+¡Porque cada pedaleada cuenta! Juntos, construimos salud, forjamos unidad y vivimos el verdadero compañerismo. El deporte nos une y nos hace grandes… ¡desde pequeños!
+Este gran evento es organizado por la Comisión Organizadora de la Unidad Educativa Eufronio Viscarra, liderada por el profesor Ariel Ferrufino Veizaga.
+¡No te lo puedes perder! Te esperamos para vivir una jornada inolvidable.
+"""
+
+# Generar el audio del locutor
+voz = client.get_voices_by_name("Adam")[0]  # Selecciona la voz masculina
+audio_locutor = client.text_to_speech.convert(
+    text=texto,
+    voice_id=voz.id,
+    output_format="mp3_44100_128"
+)
+
+# Guardar el audio del locutor
+with open("locutor.mp3", "wb") as f:
+    f.write(audio_locutor)
+
+# Cargar música de fondo y efectos de sonido
+musica_fondo = AudioSegment.from_file("musica_epic_sport.mp3")
+viento_pedaleo = AudioSegment.from_file("efecto_viento_pedaleo.mp3")
+timbre_bici = AudioSegment.from_file("efecto_timbre.mp3")
+locutor_audio = AudioSegment.from_file("locutor.mp3")
+
+# Ajustar volúmenes
+musica_fondo = musica_fondo - 15  # Música a bajo volumen
+viento_pedaleo = viento_pedaleo - 5
+timbre_bici = timbre_bici - 5
+
+# Combinar audio
+audio_final = musica_fondo.overlay(locutor_audio)
+audio_final = audio_final.overlay(viento_pedaleo, position=5000)  # Efecto a los 5 segundos
+audio_final = audio_final.overlay(timbre_bici, position=len(audio_final) - 4000)  # Efecto al final
+
+# Exportar el audio final
+audio_final.export("spot_ciclismo_completo.mp3", format="mp3")
