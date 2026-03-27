@@ -13,7 +13,7 @@ def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek
 
     audio_segment - the segment to find silence in
     min_silence_len - the minimum length for any silent section
-    silence_thresh - the upper bound for how quiet is silent in dFBS
+    silence_thresh - the upper bound for how quiet is silent in dBFS
     seek_step - step size for interating over the segment in ms
     """
     seg_len = len(audio_segment)
@@ -80,7 +80,7 @@ def detect_nonsilent(audio_segment, min_silence_len=1000, silence_thresh=-16, se
 
     audio_segment - the segment to find silence in
     min_silence_len - the minimum length for any silent section
-    silence_thresh - the upper bound for how quiet is silent in dFBS
+    silence_thresh - the upper bound for how quiet is silent in dBFS
     seek_step - step size for interating over the segment in ms
     """
     silent_ranges = detect_silence(audio_segment, min_silence_len, silence_thresh, seek_step)
@@ -168,7 +168,7 @@ def detect_leading_silence(sound, silence_threshold=-50.0, chunk_size=10):
     Returns the millisecond/index that the leading silence ends.
 
     audio_segment - the segment to find silence in
-    silence_threshold - the upper bound for how quiet is silent in dFBS
+    silence_threshold - the upper bound for how quiet is silent in dBFS
     chunk_size - chunk size for interating over the segment in ms
     """
     trim_ms = 0 # ms
