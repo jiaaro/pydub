@@ -1,5 +1,4 @@
 from __future__ import division
-from io import BufferedReader
 
 import json
 import os
@@ -59,9 +58,6 @@ def _fd_or_path_or_tempfile(fd, mode='w+b', tempfile=True):
 
     if isinstance(fd, basestring):
         fd = open(fd, mode=mode)
-        close_fd = True
-
-    if isinstance(fd, BufferedReader):
         close_fd = True
 
     try:
@@ -145,7 +141,7 @@ def make_chunks(audio_segment, chunk_length):
             for i in range(int(number_of_chunks))]
 
 
-def which(program):
+def which(program, path=None):
     """
     Mimics behavior of UNIX which command.
     """
@@ -154,53 +150,43 @@ def which(program):
         program += ".exe"
 
     envdir_list = [os.curdir] + os.environ["PATH"].split(os.pathsep)
-
+    if path:
+        envdir_list.append(path)
     for envdir in envdir_list:
         program_path = os.path.join(envdir, program)
         if os.path.isfile(program_path) and os.access(program_path, os.X_OK):
             return program_path
 
 
+def detect_binary(env_var, candidates, fallback, role):
+    """
+    Detect the appropriate binary to use, in order:
+    1. Environment variable override
+    2. First available candidate binary
+    3. Fallback with warning
+    """
+    user_defined = os.environ.get(env_var)
+    if user_defined:
+        return user_defined
+
+    for binary in candidates:
+        if which(binary):
+            return binary
+
+    warn("Couldn't find any of {} - defaulting to {} for {}, but may not work".format(', '.join(candidates), fallback, role), RuntimeWarning)
+    return fallback
+
+
 def get_encoder_name():
-    """
-    Return enconder default application for system, either avconv or ffmpeg
-    """
-    if which("avconv"):
-        return "avconv"
-    elif which("ffmpeg"):
-        return "ffmpeg"
-    else:
-        # should raise exception
-        warn("Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work", RuntimeWarning)
-        return "ffmpeg"
+    return detect_binary("AUDIO_ENCODER", ["avconv", "ffmpeg"], "ffmpeg", "encoding")
 
 
 def get_player_name():
-    """
-    Return enconder default application for system, either avconv or ffmpeg
-    """
-    if which("avplay"):
-        return "avplay"
-    elif which("ffplay"):
-        return "ffplay"
-    else:
-        # should raise exception
-        warn("Couldn't find ffplay or avplay - defaulting to ffplay, but may not work", RuntimeWarning)
-        return "ffplay"
+    return detect_binary("AUDIO_PLAYER", ["avplay", "ffplay"], "ffplay", "playback")
 
 
 def get_prober_name():
-    """
-    Return probe application, either avconv or ffmpeg
-    """
-    if which("avprobe"):
-        return "avprobe"
-    elif which("ffprobe"):
-        return "ffprobe"
-    else:
-        # should raise exception
-        warn("Couldn't find ffprobe or avprobe - defaulting to ffprobe, but may not work", RuntimeWarning)
-        return "ffprobe"
+    return detect_binary("AUDIO_PROBER", ["avprobe", "ffprobe"], "ffprobe", "probing")
 
 
 def fsdecode(filename):
@@ -275,18 +261,17 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
             file.close()
 
     command = [prober, '-of', 'json'] + command_args
+
     res = Popen(command, stdin=stdin_parameter, stdout=PIPE, stderr=PIPE)
     output, stderr = res.communicate(input=stdin_data)
     output = output.decode("utf-8", 'ignore')
     stderr = stderr.decode("utf-8", 'ignore')
 
-    try:
-        info = json.loads(output)
-    except  json.decoder.JSONDecodeError:
+    info = json.loads(output)
+
+    if not info:
         # If ffprobe didn't give any information, just return it
         # (for example, because the file doesn't exist)
-        return None
-    if not info:
         return info
 
     extra_info = get_extra_info(stderr)
@@ -303,8 +288,8 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
             stream[prop] = value
 
     for token in extra_info[stream['index']]:
-        m = re.match(r'([su]([0-9]{1,2})p?) \(([0-9]{1,2}) bit\)$', token)
-        m2 = re.match(r'([su]([0-9]{1,2})p?)( \(default\))?$', token)
+        m = re.match('([su]([0-9]{1,2})p?) \(([0-9]{1,2}) bit\)$', token)
+        m2 = re.match('([su]([0-9]{1,2})p?)( \(default\))?$', token)
         if m:
             set_property(stream, 'sample_fmt', m.group(1))
             set_property(stream, 'bits_per_sample', int(m.group(2)))
@@ -313,11 +298,11 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
             set_property(stream, 'sample_fmt', m2.group(1))
             set_property(stream, 'bits_per_sample', int(m2.group(2)))
             set_property(stream, 'bits_per_raw_sample', int(m2.group(2)))
-        elif re.match(r'(flt)p?( \(default\))?$', token):
+        elif re.match('(flt)p?( \(default\))?$', token):
             set_property(stream, 'sample_fmt', token)
             set_property(stream, 'bits_per_sample', 32)
             set_property(stream, 'bits_per_raw_sample', 32)
-        elif re.match(r'(dbl)p?( \(default\))?$', token):
+        elif re.match('(dbl)p?( \(default\))?$', token):
             set_property(stream, 'sample_fmt', token)
             set_property(stream, 'bits_per_sample', 64)
             set_property(stream, 'bits_per_raw_sample', 64)
@@ -437,4 +422,6 @@ def ms_to_stereo(audio_segment):
 	channel = audio_segment.split_to_mono()
 	channel = [channel[0].overlay(channel[1]) - 3, channel[0].overlay(channel[1].invert_phase()) - 3]
 	return AudioSegment.from_mono_audiosegments(channel[0], channel[1])
+
+
 
