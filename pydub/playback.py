@@ -16,11 +16,18 @@ def _play_with_ffplay(seg):
         subprocess.call([PLAYER, "-nodisp", "-autoexit", "-hide_banner", f.name])
 
 
-def _play_with_pyaudio(seg):
+def _play_with_pyaudio(seg, output_device=None):
     import pyaudio
-
     p = pyaudio.PyAudio()
-    stream = p.open(format=p.get_format_from_width(seg.sample_width),
+
+    if output_device is None:
+        output_device = p.get_default_output_device_info()["index"]
+
+    elif not isinstance(output_device, int):
+        raise TypeError("Output_device must be an integer.")
+
+    stream = p.open(output_device_index=output_device,
+                    format=p.get_format_from_width(seg.sample_width),
                     channels=seg.channels,
                     rate=seg.frame_rate,
                     output=True)
@@ -48,9 +55,24 @@ def _play_with_simpleaudio(seg):
     )
 
 
-def play(audio_segment):
+def play(audio_segment, output_device=None):
+    """
+    Plays the given AudioSegment. Installing pyaudio is highly recommended, as simpleaudio is deprecated. If neither
+    are available, ffplay will be used as a last resort.
+    :param audio_segment: pydub.AudioSegment
+    :param output_device: Only works with pyaudio. If None, the default device will be used. Needs to be an pyaudio
+        device index (integer).
+    :return: None
+    """
+    try:
+        _play_with_pyaudio(audio_segment, output_device)
+    except ImportError:
+        pass
+    else:
+        return
     try:
         playback = _play_with_simpleaudio(audio_segment)
+        return
         try:
             playback.wait_done()
         except KeyboardInterrupt:
@@ -59,13 +81,5 @@ def play(audio_segment):
         pass
     else:
         return
-
-    try:
-        _play_with_pyaudio(audio_segment)
-        return
-    except ImportError:
-        pass
-    else:
-        return
-
+    print("No suitable audio playback module available. Consider installing pyaudio.")
     _play_with_ffplay(audio_segment)
