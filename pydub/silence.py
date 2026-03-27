@@ -2,8 +2,26 @@
 Various functions for finding/manipulating silence in AudioSegments
 """
 import itertools
-
+from functools import partial
+import multiprocessing
+from contextlib import contextmanager
 from .utils import db_to_float
+
+# yields a pool from the multiprocessing library, used with "with", hence context manager decorator used
+
+
+@contextmanager
+def poolcontext():
+    pool = multiprocessing.Pool()
+    yield pool
+    pool.terminate()
+
+# checks for the silnce condition
+
+
+def _check_silence(audio_slice, silence_thres, min_silence, slice_start):
+    if audio_slice[slice_start:slice_start + min_silence].rms <= silence_thres:
+        return slice_start
 
 
 def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek_step=1):
@@ -38,11 +56,15 @@ def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek
     if last_slice_start % seek_step:
         slice_starts = itertools.chain(slice_starts, [last_slice_start])
 
-    for i in slice_starts:
-        audio_slice = audio_segment[i:i + min_silence_len]
-        if audio_slice.rms <= silence_thresh:
-            silence_starts.append(i)
+    # creates a partial function to check for silence
+    check_silence = partial(_check_silence, audio_segment, silence_thresh, min_silence_len)
 
+    # run on pool of multiprocessor to search for silnce in the audio_segement in chunks
+    with poolcontext() as pool:
+        silence_starts = pool.map(check_silence, slice_starts)
+
+    # removes any None occurence from the results
+    silence_starts = [i for i in silence_starts if i is not None]
     # short circuit when there is no silence
     if not silence_starts:
         return []
@@ -145,9 +167,9 @@ def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, ke
         keep_silence = len(audio_segment) if keep_silence else 0
 
     output_ranges = [
-        [ start - keep_silence, end + keep_silence ]
-        for (start,end)
-            in detect_nonsilent(audio_segment, min_silence_len, silence_thresh, seek_step)
+        [start - keep_silence, end + keep_silence]
+        for (start, end)
+        in detect_nonsilent(audio_segment, min_silence_len, silence_thresh, seek_step)
     ]
 
     for range_i, range_ii in pairwise(output_ranges):
@@ -158,8 +180,8 @@ def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, ke
             range_ii[0] = range_i[1]
 
     return [
-        audio_segment[ max(start,0) : min(end,len(audio_segment)) ]
-        for start,end in output_ranges
+        audio_segment[max(start, 0): min(end, len(audio_segment))]
+        for start, end in output_ranges
     ]
 
 
@@ -171,12 +193,10 @@ def detect_leading_silence(sound, silence_threshold=-50.0, chunk_size=10):
     silence_threshold - the upper bound for how quiet is silent in dFBS
     chunk_size - chunk size for interating over the segment in ms
     """
-    trim_ms = 0 # ms
-    assert chunk_size > 0 # to avoid infinite loop
+    trim_ms = 0  # ms
+    assert chunk_size > 0  # to avoid infinite loop
     while sound[trim_ms:trim_ms+chunk_size].dBFS < silence_threshold and trim_ms < len(sound):
         trim_ms += chunk_size
 
     # if there is no end it should return the length of the segment
     return min(trim_ms, len(sound))
-
-
