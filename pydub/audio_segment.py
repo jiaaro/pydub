@@ -521,7 +521,7 @@ class AudioSegment(object):
                 return orig_file.lower().endswith((".{0}".format(f)).encode('utf8'))
             return False
 
-        if is_format("wav"):
+        if is_format("wav") and parameters is None:
             try:
                 obj = cls._from_safe_wav(file)
                 if close_file:
@@ -582,6 +582,13 @@ class AudioSegment(object):
         conversion_command = [cls.converter,
                               '-y',  # always overwrite existing files
                               ]
+ 
+        if start_second is not None:
+            conversion_command += ["-ss", str(start_second)]
+
+        if duration is not None:
+            end_second = start_second + duration
+            conversion_command += ["-to", str(end_second)]
 
         # If format is not defined
         # ffmpeg/avconv will detect it automatically
@@ -598,17 +605,11 @@ class AudioSegment(object):
             "-f", "wav"  # output options (filename last)
         ]
 
-        if start_second is not None:
-            conversion_command += ["-ss", str(start_second)]
-
-        if duration is not None:
-            conversion_command += ["-t", str(duration)]
-
-        conversion_command += [output.name]
-
         if parameters is not None:
             # extend arguments with arbitrary set
             conversion_command.extend(parameters)
+
+        conversion_command += [output.name]
 
         log_conversion(conversion_command)
 
@@ -631,14 +632,7 @@ class AudioSegment(object):
             os.unlink(input_file.name)
             os.unlink(output.name)
 
-        if start_second is None and duration is None:
-            return obj
-        elif start_second is not None and duration is None:
-            return obj[0:]
-        elif start_second is None and duration is not None:
-            return obj[:duration * 1000]
-        else:
-            return obj[0:duration * 1000]
+        return obj
 
 
     @classmethod
@@ -664,7 +658,7 @@ class AudioSegment(object):
 
             return False
 
-        if is_format("wav"):
+        if is_format("wav") and parameters is None:
             try:
                 if start_second is None and duration is None:
                     return cls._from_safe_wav(file)
@@ -699,6 +693,13 @@ class AudioSegment(object):
                               '-y',  # always overwrite existing files
                               ]
 
+        if start_second is not None:
+            conversion_command += ["-ss", str(start_second)]
+
+        if duration is not None:
+            end_second = start_second + duration
+            conversion_command += ["-to", str(end_second)]
+
         # If format is not defined
         # ffmpeg/avconv will detect it automatically
         if format:
@@ -721,6 +722,10 @@ class AudioSegment(object):
                 conversion_command += ["-i", "-"]
             stdin_parameter = subprocess.PIPE
             stdin_data = file.read()
+
+        if parameters is not None:
+            # extend arguments with arbitrary set
+            conversion_command.extend(parameters)
 
         if codec:
             info = None
@@ -749,17 +754,7 @@ class AudioSegment(object):
             "-f", "wav"  # output options (filename last)
         ]
 
-        if start_second is not None:
-            conversion_command += ["-ss", str(start_second)]
-
-        if duration is not None:
-            conversion_command += ["-t", str(duration)]
-
         conversion_command += ["-"]
-
-        if parameters is not None:
-            # extend arguments with arbitrary set
-            conversion_command.extend(parameters)
 
         log_conversion(conversion_command)
 
@@ -782,14 +777,8 @@ class AudioSegment(object):
         if close_file:
             file.close()
 
-        if start_second is None and duration is None:
-            return obj
-        elif start_second is not None and duration is None:
-            return obj[0:]
-        elif start_second is None and duration is not None:
-            return obj[:duration * 1000]
-        else:
-            return obj[0:duration * 1000]
+        return obj
+
 
     @classmethod
     def from_mp3(cls, file, parameters=None):
