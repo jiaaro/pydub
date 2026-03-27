@@ -204,6 +204,14 @@ right_channel = AudioSegment.from_wav("sound1.wav")
 stereo_sound = AudioSegment.from_mono_audiosegments(left_channel, right_channel)
 ```
 
+
+**Supported keyword arguments**:
+
+- `fill_up` | example: `end`| default: `None`
+  Append (`end`) or prepend (`start`) silence to all segments with non-maximal duration. An error is thrown in 
+  the default case (`None`), if the segments have different durations. 
+
+
 ### AudioSegment(…).dBFS
 
 Returns the loudness of the `AudioSegment` in dBFS (db relative to the maximum possible loudness). A Square wave at maximum amplitude will be roughly 0 dBFS (maximum loudness), whereas a Sine Wave at maximum amplitude will be roughly -3 dBFS.

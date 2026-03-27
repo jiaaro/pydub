@@ -472,19 +472,39 @@ class AudioSegment(object):
                                    "frame_width": 2})
 
     @classmethod
-    def from_mono_audiosegments(cls, *mono_segments):
+    def from_mono_audiosegments(cls, *mono_segments, **kwargs):
+        fill_up = kwargs.get("fill_up", None)
+        if fill_up not in [None, "start", "end"]:
+            raise ValueError("AudioSegment.from_mono_audiosegments unexpected value {fill_up}. Expected 'None', "
+                             "'start' or 'end".format(fill_up=fill_up))
+
         if not len(mono_segments):
             raise ValueError("At least one AudioSegment instance is required")
 
         segs = cls._sync(*mono_segments)
 
-        if segs[0].channels != 1:
-            raise ValueError(
-                "AudioSegment.from_mono_audiosegments requires all arguments are mono AudioSegment instances")
+        if not fill_up:
+            if len(set([seg.duration_seconds for seg in segs])) != 1:
+                raise ValueError("AudioSegment.from_mono_audiosegments segments have variable length. "
+                                 "Use 'fill_up', if you wish to fill up the shorter segments")
 
         channels = len(segs)
         sample_width = segs[0].sample_width
         frame_rate = segs[0].frame_rate
+        duration_seconds = max([seg.duration_seconds for seg in segs])
+
+        for seg in segs:
+            if seg.channels != 1:
+                raise ValueError(
+                    "AudioSegment.from_mono_audiosegments requires all arguments are mono AudioSegment instances")
+
+            if seg.sample_width != sample_width:
+                raise ValueError(
+                    "AudioSegment.from_mono_audiosegments requires identical sample width for all segments")
+
+            if seg.frame_rate != frame_rate:
+                raise ValueError(
+                    "AudioSegment.from_mono_audiosegments requires identical frame rate for all segments")
 
         frame_count = max(int(seg.frame_count()) for seg in segs)
         data = array.array(
@@ -493,7 +513,16 @@ class AudioSegment(object):
         )
 
         for i, seg in enumerate(segs):
-            data[i::channels] = seg.get_array_of_samples()
+            if fill_up == "start":
+                extended_seg = AudioSegment.silent(duration=(duration_seconds-seg.duration_seconds)*1000,
+                                                   frame_rate=frame_rate) + seg
+                data[i::channels] = extended_seg.get_array_of_samples()
+            elif fill_up == "end":
+                extended_seg = seg + AudioSegment.silent(duration=(duration_seconds-seg.duration_seconds)*1000,
+                                                         frame_rate=frame_rate)
+                data[i::channels] = extended_seg.get_array_of_samples()
+            else:
+                data[i::channels] = seg.get_array_of_samples()
 
         return cls(
             data,
