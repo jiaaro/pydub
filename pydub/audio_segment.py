@@ -180,6 +180,7 @@ class AudioSegment(object):
         self.sample_width = kwargs.pop("sample_width", None)
         self.frame_rate = kwargs.pop("frame_rate", None)
         self.channels = kwargs.pop("channels", None)
+        self.start_time = kwargs.pop("start_time", None)
 
         audio_params = (self.sample_width, self.frame_rate, self.channels)
 
