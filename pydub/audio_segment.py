@@ -1248,7 +1248,7 @@ class AudioSegment(object):
 
         return spawn(data=output)
 
-    def append(self, seg, crossfade=100):
+    def append(self, seg, crossfade=100, step_fun=lambda x: x):
         seg1, seg2 = AudioSegment._sync(self, seg)
 
         if not crossfade:
@@ -1262,8 +1262,8 @@ class AudioSegment(object):
                 crossfade, len(seg)
             ))
 
-        xf = seg1[-crossfade:].fade(to_gain=-120, start=0, end=float('inf'))
-        xf *= seg2[:crossfade].fade(from_gain=-120, start=0, end=float('inf'))
+        xf = seg1[-crossfade:].fade(to_gain=-120, start=0, end=float('inf'), step_fun=lambda x: 1 - step_fun(x))
+        xf *= seg2[:crossfade].fade(from_gain=-120, start=0, end=float('inf'), step_fun=step_fun)
 
         output = BytesIO()
 
@@ -1277,7 +1277,7 @@ class AudioSegment(object):
         return obj
 
     def fade(self, to_gain=0, from_gain=0, start=None, end=None,
-             duration=None):
+             duration=None, step_fun=lambda x: x):
         """
         Fade the volume of this audio segment.
 
@@ -1295,6 +1295,10 @@ class AudioSegment(object):
         duration (int):
             default = until the end of the audio segment
             the duration of the fade
+
+        step_fun (float -> float):
+            allow the user to control the fade curve (linear by default);
+            a function from [0..1] to [0..1]
         """
         if None not in [duration, end, start]:
             raise TypeError('Only two of the three arguments, "start", '
@@ -1341,10 +1345,11 @@ class AudioSegment(object):
         # shorter fades will have audible clicks so they use precise fading
         # (one gain step per sample)
         if duration > 100:
-            scale_step = gain_delta / duration
+            scale_step = 1.0 / duration
 
             for i in range(duration):
-                volume_change = from_power + (scale_step * i)
+                volume_change = from_power + \
+                    gain_delta * step_fun(i * scale_step)
                 chunk = self[start + i]
                 chunk = audioop.mul(chunk._data,
                                     self.sample_width,
@@ -1355,10 +1360,11 @@ class AudioSegment(object):
             start_frame = self.frame_count(ms=start)
             end_frame = self.frame_count(ms=end)
             fade_frames = end_frame - start_frame
-            scale_step = gain_delta / fade_frames
+            scale_step = 1.0 / fade_frames
 
             for i in range(int(fade_frames)):
-                volume_change = from_power + (scale_step * i)
+                volume_change = from_power + \
+                    gain_delta * step_fun(i * scale_step)
                 sample = self.get_frame(int(start_frame + i))
                 sample = audioop.mul(sample, self.sample_width, volume_change)
 
@@ -1374,11 +1380,11 @@ class AudioSegment(object):
 
         return self._spawn(data=output)
 
-    def fade_out(self, duration):
-        return self.fade(to_gain=-120, duration=duration, end=float('inf'))
+    def fade_out(self, duration, step_fun=lambda x: x):
+        return self.fade(to_gain=-120, duration=duration, end=float('inf'), step_fun=step_fun)
 
-    def fade_in(self, duration):
-        return self.fade(from_gain=-120, duration=duration, start=0)
+    def fade_in(self, duration, step_fun=lambda x: x):
+        return self.fade(from_gain=-120, duration=duration, start=0, step_fun=step_fun)
 
     def reverse(self):
         return self._spawn(

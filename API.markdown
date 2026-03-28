@@ -362,6 +362,8 @@ no_crossfade2 = sound1 + sound2
 
 - `crossfade` | example: `3000` | default: `100` (entire duration of `AudioSegment`)
   When specified, method returns number of frames in X milliseconds of the `AudioSegment`
+- `step_fun` | example: `lambda x: x*x` | default: `lambda x: x`
+  Fade curve on the fading-in sound, default is linear (see `.fade()`); the fading-out sound will use `1-step_fun(x)`
 
 ### AudioSegment(…).overlay()
 
@@ -432,6 +434,17 @@ fade_quieter_beteen_2_and_3_seconds = sound1.fade(to_gain=-3.5, start=2000, end=
 # easy way is to use the .fade_in() convenience method. note: -120dB is basically silent.
 fade_in_the_hard_way = sound1.fade(from_gain=-120.0, start=0, duration=5000)
 fade_out_the_hard_way = sound1.fade(to_gain=-120.0, end=0, duration=5000)
+
+# controlling the fade curve
+def ease_in(x):
+  return x * x   # a number between 0 and 1 squared, curved up instead of linear;
+                 # the same function will work for fading up (+gain) or down (-gain)
+import math
+def ease_out(x):
+  return math.sqrt(x)   # curve down: apply the change faster
+                        # at the beginning of the fade and slower at the end
+
+fade_louder_abruptly = sound1.fade(to_gain=+6.0, start=7500, duration=3000, step_fun=ease_in)
 ```
 
 **Supported keyword arguments**:
@@ -446,6 +459,8 @@ fade_out_the_hard_way = sound1.fade(to_gain=-120.0, end=0, duration=5000)
   The overlaid `AudioSegment` will repeat X times (starting at `position`) but will still be truncated to the length of this `AudioSegment`
 - `duration` | example: `4` | NO DEFAULT
   You can use `start` or `end` with duration, instead of specifying both - provided as a convenience.
+- `step_fun` | example: `lambda x: x*x` | default: `lambda x: x`
+  Function from `[0..1]` to `[0..1]`: gives control over the curve of the fade; the default is a linear movement. For examples, see http://easings.net
 
 ### AudioSegment(…).fade_out()
 
@@ -455,6 +470,8 @@ Fade out (to silent) the end of this `AudioSegment`. Uses `.fade()` internally.
 
 - `duration` | example: `5000` | NO DEFAULT
   How long (in milliseconds) the fade should last. Passed directly to `.fade()` internally
+- `step_fun` | example: `lambda x: x*x` | default: `lambda x: x`
+  Fade curve, default is linear; as in `.fade()`
 
 ### AudioSegment(…).fade_in()
 
@@ -464,6 +481,8 @@ Fade in (from silent) the beginning of this `AudioSegment`. Uses `.fade()` inter
 
 - `duration` | example: `5000` | NO DEFAULT
   How long (in milliseconds) the fade should last. Passed directly to `.fade()` internally
+- `step_fun` | example: `lambda x: x*x` | default: `lambda x: x`
+  Fade curve, default is linear; as in `.fade()`
 
 ### AudioSegment(…).reverse()
 
