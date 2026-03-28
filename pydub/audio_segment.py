@@ -711,7 +711,8 @@ class AudioSegment(object):
         read_ahead_limit = kwargs.get('read_ahead_limit', -1)
         if filename:
             conversion_command += ["-i", filename]
-            stdin_parameter = None
+            # stdin is not required in this mode, can discard it
+            stdin_parameter = subprocess.DEVNULL
             stdin_data = None
         else:
             if cls.converter == 'ffmpeg':
