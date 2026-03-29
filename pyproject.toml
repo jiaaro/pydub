@@ -1,0 +1,21 @@
+[tool.black]
+line-length = 100
+target-version = ["py38"]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I"]
+ignore = ["E501", "E722"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pydub"]
+combine-as-imports = true
+
+[tool.ruff.lint.per-file-ignores]
+"test/**" = ["E741", "F841"]
+"pydub/pyaudioop.py" = ["F821"]
+"pydub/scipy_effects.py" = ["F821"]
+"pydub/utils.py" = ["F821"]

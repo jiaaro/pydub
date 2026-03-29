@@ -1,12 +1,2 @@
-*.pyc
-/.project
-/.pydevproject
-/dist/
-/pydub.egg-info/
-.DS_Store
-env
-*.swp
-.idea
-
-/build/
-.remote-sync.json
+# Created by venv; see https://docs.python.org/3/library/venv.html
+*

@@ -1,1 +1,1 @@
-from .audio_segment import AudioSegment
+from .audio_segment import AudioSegment as AudioSegment

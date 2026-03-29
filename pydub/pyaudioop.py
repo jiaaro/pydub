@@ -1,13 +1,22 @@
+# Py3 compatibility: 'buffer' builtin removed; alias for bytes
 try:
-    from __builtin__ import max as builtin_max
-    from __builtin__ import min as builtin_min
+    buffer  # type: ignore[name-defined]
+except NameError:  # pragma: no cover
+
+    def buffer(b):  # type: ignore[func-returns-value]
+        return b
+
+
+try:
+    from __builtin__ import max as builtin_max, min as builtin_min  # type: ignore
 except ImportError:
-    from builtins import max as builtin_max
-    from builtins import min as builtin_min
+    from builtins import max as builtin_max, min as builtin_min
+
 import math
 import struct
+
 try:
-    from fractions import gcd
+    from fractions import gcd  # type: ignore
 except ImportError:  # Python 3.9+
     from math import gcd
 from ctypes import create_string_buffer
@@ -17,80 +26,74 @@ class error(Exception):
     pass
 
 
-def _check_size(size):
-    if size != 1 and size != 2 and size != 4:
+def _check_size(size: int) -> None:
+    if size not in (1, 2, 4):
         raise error("Size should be 1, 2 or 4")
 
 
-def _check_params(length, size):
+def _check_params(length: int, size: int) -> None:
     _check_size(size)
     if length % size != 0:
         raise error("not a whole number of frames")
 
 
-def _sample_count(cp, size):
-    return len(cp) / size
+def _sample_count(cp: bytes, size: int) -> int:
+    # Python 3: ensure integer division
+    return len(cp) // int(size)
 
 
-def _get_samples(cp, size, signed=True):
-    for i in range(_sample_count(cp, size)):
-        yield _get_sample(cp, size, i, signed)
-
-
-def _struct_format(size, signed):
+def _struct_format(size: int, signed: bool) -> str:
+    # Native-endian, standard sizes (matches typical audioop behavior on little-endian)
     if size == 1:
         return "b" if signed else "B"
-    elif size == 2:
+    if size == 2:
         return "h" if signed else "H"
-    elif size == 4:
+    if size == 4:
         return "i" if signed else "I"
+    raise error("Size should be 1, 2 or 4")
 
 
-def _get_sample(cp, size, i, signed=True):
+def _get_sample(cp: bytes, size: int, i: int, signed: bool = True) -> int:
     fmt = _struct_format(size, signed)
     start = i * size
     end = start + size
     return struct.unpack_from(fmt, buffer(cp)[start:end])[0]
 
 
-def _put_sample(cp, size, i, val, signed=True):
+def _put_sample(cp, size: int, i: int, val: int, signed: bool = True) -> None:
     fmt = _struct_format(size, signed)
     struct.pack_into(fmt, cp, i * size, val)
 
 
-def _get_maxval(size, signed=True):
-    if signed and size == 1:
-        return 0x7f
-    elif size == 1:
-        return 0xff
-    elif signed and size == 2:
-        return 0x7fff
-    elif size == 2:
-        return 0xffff
-    elif signed and size == 4:
-        return 0x7fffffff
-    elif size == 4:
-        return 0xffffffff
+def _get_maxval(size: int, signed: bool = True) -> int:
+    if size == 1:
+        return 0x7F if signed else 0xFF
+    if size == 2:
+        return 0x7FFF if signed else 0xFFFF
+    if size == 4:
+        return 0x7FFFFFFF if signed else 0xFFFFFFFF
+    raise error("Size should be 1, 2 or 4")
 
 
-def _get_minval(size, signed=True):
+def _get_minval(size: int, signed: bool = True) -> int:
     if not signed:
         return 0
-    elif size == 1:
+    if size == 1:
         return -0x80
-    elif size == 2:
+    if size == 2:
         return -0x8000
-    elif size == 4:
+    if size == 4:
         return -0x80000000
+    raise error("Size should be 1, 2 or 4")
 
 
-def _get_clipfn(size, signed=True):
+def _get_clipfn(size: int, signed: bool = True):
     maxval = _get_maxval(size, signed)
     minval = _get_minval(size, signed)
     return lambda val: builtin_max(min(val, maxval), minval)
 
 
-def _overflow(val, size, signed=True):
+def _overflow(val: int, size: int, signed: bool = True) -> int:
     minval = _get_minval(size, signed)
     maxval = _get_maxval(size, signed)
     if minval <= val <= maxval:
@@ -98,40 +101,41 @@ def _overflow(val, size, signed=True):
 
     bits = size * 8
     if signed:
-        offset = 2**(bits-1)
+        offset = 2 ** (bits - 1)
         return ((val + offset) % (2**bits)) - offset
     else:
         return val % (2**bits)
 
 
-def getsample(cp, size, i):
+def _get_samples(cp: bytes, size: int, signed: bool = True):
+    for i in range(_sample_count(cp, size)):
+        yield _get_sample(cp, size, i, signed)
+
+
+def getsample(cp: bytes, size: int, i: int) -> int:
     _check_params(len(cp), size)
-    if not (0 <= i < len(cp) / size):
+    if not (0 <= i < (len(cp) // size)):
         raise error("Index out of range")
     return _get_sample(cp, size, i)
 
 
-def max(cp, size):
+def max(cp: bytes, size: int) -> int:
     _check_params(len(cp), size)
-
     if len(cp) == 0:
         return 0
-
     return builtin_max(abs(sample) for sample in _get_samples(cp, size))
 
 
-def minmax(cp, size):
+def minmax(cp: bytes, size: int):
     _check_params(len(cp), size)
-
     max_sample, min_sample = 0, 0
     for sample in _get_samples(cp, size):
         max_sample = builtin_max(sample, max_sample)
         min_sample = builtin_min(sample, min_sample)
-
     return min_sample, max_sample
 
 
-def avg(cp, size):
+def avg(cp: bytes, size: int):
     _check_params(len(cp), size)
     sample_count = _sample_count(cp, size)
     if sample_count == 0:
@@ -139,18 +143,16 @@ def avg(cp, size):
     return sum(_get_samples(cp, size)) / sample_count
 
 
-def rms(cp, size):
+def rms(cp: bytes, size: int) -> int:
     _check_params(len(cp), size)
-
     sample_count = _sample_count(cp, size)
     if sample_count == 0:
         return 0
-
     sum_squares = sum(sample**2 for sample in _get_samples(cp, size))
     return int(math.sqrt(sum_squares / sample_count))
 
 
-def _sum2(cp1, cp2, length):
+def _sum2(cp1: bytes, cp2: bytes, length: int) -> int:
     size = 2
     total = 0
     for i in range(length):
@@ -158,12 +160,11 @@ def _sum2(cp1, cp2, length):
     return total
 
 
-def findfit(cp1, cp2):
+def findfit(cp1: bytes, cp2: bytes):
     size = 2
 
     if len(cp1) % 2 != 0 or len(cp2) % 2 != 0:
         raise error("Strings should be even-sized")
-
     if len(cp1) < len(cp2):
         raise error("First sample should be longer")
 
@@ -184,7 +185,7 @@ def findfit(cp1, cp2):
         aj_lm1 = _get_sample(cp1, size, i + len2 - 1)
 
         sum_aij_2 += aj_lm1**2 - aj_m1**2
-        sum_aij_ri = _sum2(buffer(cp1)[i*size:], cp2, len2)
+        sum_aij_ri = _sum2(buffer(cp1)[i * size :], cp2, len2)
 
         result = (sum_ri_2 * sum_aij_2 - sum_aij_ri * sum_aij_ri) / sum_aij_2
 
@@ -192,38 +193,32 @@ def findfit(cp1, cp2):
             best_result = result
             best_i = i
 
-    factor = _sum2(buffer(cp1)[best_i*size:], cp2, len2) / sum_ri_2
-
+    factor = _sum2(buffer(cp1)[best_i * size :], cp2, len2) / sum_ri_2
     return best_i, factor
 
 
-def findfactor(cp1, cp2):
+def findfactor(cp1: bytes, cp2: bytes):
     size = 2
 
     if len(cp1) % 2 != 0:
         raise error("Strings should be even-sized")
-
     if len(cp1) != len(cp2):
         raise error("Samples should be same size")
 
     sample_count = _sample_count(cp1, size)
-
     sum_ri_2 = _sum2(cp2, cp2, sample_count)
     sum_aij_ri = _sum2(cp1, cp2, sample_count)
-
     return sum_aij_ri / sum_ri_2
 
 
-def findmax(cp, len2):
+def findmax(cp: bytes, len2: int) -> int:
     size = 2
     sample_count = _sample_count(cp, size)
 
     if len(cp) % 2 != 0:
         raise error("Strings should be even-sized")
-
     if len2 < 0 or sample_count < len2:
         raise error("Input sample should be longer")
-
     if sample_count == 0:
         return 0
 
@@ -234,10 +229,8 @@ def findmax(cp, len2):
     for i in range(1, sample_count - len2 + 1):
         sample_leaving_window = getsample(cp, size, i - 1)
         sample_entering_window = getsample(cp, size, i + len2 - 1)
-
         result -= sample_leaving_window**2
         result += sample_entering_window**2
-
         if result > best_result:
             best_result = result
             best_i = i
@@ -245,7 +238,7 @@ def findmax(cp, len2):
     return best_i
 
 
-def avgpp(cp, size):
+def avgpp(cp: bytes, size: int):
     _check_params(len(cp), size)
     sample_count = _sample_count(cp, size)
 
@@ -256,7 +249,6 @@ def avgpp(cp, size):
 
     prevval = getsample(cp, size, 0)
     val = getsample(cp, size, 1)
-
     prevdiff = val - prevval
 
     for i in range(1, sample_count):
@@ -265,9 +257,8 @@ def avgpp(cp, size):
 
         if diff * prevdiff < 0:
             if prevextremevalid:
-                avg += abs(prevval - prevextreme)
+                avg += abs(prevval - prevextreme)  # type: ignore[operator]
                 nextreme += 1
-
             prevextremevalid = True
             prevextreme = prevval
 
@@ -277,21 +268,19 @@ def avgpp(cp, size):
 
     if nextreme == 0:
         return 0
-
     return avg / nextreme
 
 
-def maxpp(cp, size):
+def maxpp(cp: bytes, size: int):
     _check_params(len(cp), size)
     sample_count = _sample_count(cp, size)
 
     prevextremevalid = False
     prevextreme = None
-    max = 0
+    max_val = 0  # avoid shadowing builtin
 
     prevval = getsample(cp, size, 0)
     val = getsample(cp, size, 1)
-
     prevdiff = val - prevval
 
     for i in range(1, sample_count):
@@ -300,9 +289,9 @@ def maxpp(cp, size):
 
         if diff * prevdiff < 0:
             if prevextremevalid:
-                extremediff = abs(prevval - prevextreme)
-                if extremediff > max:
-                    max = extremediff
+                extremediff = abs(prevval - prevextreme)  # type: ignore[operator]
+                if extremediff > max_val:
+                    max_val = extremediff
             prevextremevalid = True
             prevextreme = prevval
 
@@ -310,58 +299,49 @@ def maxpp(cp, size):
         if diff != 0:
             prevdiff = diff
 
-    return max
+    return max_val
 
 
-def cross(cp, size):
+def cross(cp: bytes, size: int) -> int:
     _check_params(len(cp), size)
-
     crossings = 0
     last_sample = 0
     for sample in _get_samples(cp, size):
-        if sample <= 0 < last_sample or sample >= 0 > last_sample:
+        if (sample <= 0 < last_sample) or (sample >= 0 > last_sample):
             crossings += 1
         last_sample = sample
-
     return crossings
 
 
-def mul(cp, size, factor):
+def mul(cp: bytes, size: int, factor: float) -> bytes:
     _check_params(len(cp), size)
     clip = _get_clipfn(size)
 
     result = create_string_buffer(len(cp))
-
     for i, sample in enumerate(_get_samples(cp, size)):
         sample = clip(int(sample * factor))
         _put_sample(result, size, i, sample)
-
     return result.raw
 
 
-def tomono(cp, size, fac1, fac2):
+def tomono(cp: bytes, size: int, fac1: float, fac2: float) -> bytes:
     _check_params(len(cp), size)
     clip = _get_clipfn(size)
 
     sample_count = _sample_count(cp, size)
-
-    result = create_string_buffer(len(cp) / 2)
+    result = create_string_buffer(len(cp) // 2)
 
     for i in range(0, sample_count, 2):
         l_sample = getsample(cp, size, i)
         r_sample = getsample(cp, size, i + 1)
-
-        sample = (l_sample * fac1) + (r_sample * fac2)
-        sample = clip(sample)
-
-        _put_sample(result, size, i / 2, sample)
+        sample = clip(int(l_sample * fac1 + r_sample * fac2))
+        _put_sample(result, size, i // 2, sample)
 
     return result.raw
 
 
-def tostereo(cp, size, fac1, fac2):
+def tostereo(cp: bytes, size: int, fac1: float, fac2: float) -> bytes:
     _check_params(len(cp), size)
-
     sample_count = _sample_count(cp, size)
 
     result = create_string_buffer(len(cp) * 2)
@@ -369,19 +349,16 @@ def tostereo(cp, size, fac1, fac2):
 
     for i in range(sample_count):
         sample = _get_sample(cp, size, i)
-
-        l_sample = clip(sample * fac1)
-        r_sample = clip(sample * fac2)
-
+        l_sample = clip(int(sample * fac1))
+        r_sample = clip(int(sample * fac2))
         _put_sample(result, size, i * 2, l_sample)
         _put_sample(result, size, i * 2 + 1, r_sample)
 
     return result.raw
 
 
-def add(cp1, cp2, size):
+def add(cp1: bytes, cp2: bytes, size: int) -> bytes:
     _check_params(len(cp1), size)
-
     if len(cp1) != len(cp2):
         raise error("Lengths should be the same")
 
@@ -392,85 +369,76 @@ def add(cp1, cp2, size):
     for i in range(sample_count):
         sample1 = getsample(cp1, size, i)
         sample2 = getsample(cp2, size, i)
-
-        sample = clip(sample1 + sample2)
-
-        _put_sample(result, size, i, sample)
+        _put_sample(result, size, i, clip(sample1 + sample2))
 
     return result.raw
 
 
-def bias(cp, size, bias):
+def bias(cp: bytes, size: int, bias_val: int) -> bytes:
     _check_params(len(cp), size)
-
     result = create_string_buffer(len(cp))
-
     for i, sample in enumerate(_get_samples(cp, size)):
-        sample = _overflow(sample + bias, size)
-        _put_sample(result, size, i, sample)
-
+        _put_sample(result, size, i, _overflow(sample + bias_val, size))
     return result.raw
 
 
-def reverse(cp, size):
+def reverse(cp: bytes, size: int) -> bytes:
     _check_params(len(cp), size)
     sample_count = _sample_count(cp, size)
-
     result = create_string_buffer(len(cp))
     for i, sample in enumerate(_get_samples(cp, size)):
         _put_sample(result, size, sample_count - i - 1, sample)
-
     return result.raw
 
 
-def lin2lin(cp, size, size2):
+def lin2lin(cp: bytes, size: int, size2: int) -> bytes:
     _check_params(len(cp), size)
     _check_size(size2)
 
     if size == size2:
         return cp
 
-    new_len = (len(cp) / size) * size2
-
+    new_len = (len(cp) // size) * size2
     result = create_string_buffer(new_len)
+
+    # shift amounts must be ints
+    shift_up = (4 * size2) // size
+    shift_down = (4 * size) // size2
 
     for i in range(_sample_count(cp, size)):
         sample = _get_sample(cp, size, i)
         if size < size2:
-            sample = sample << (4 * size2 / size)
+            sample = sample << shift_up
         elif size > size2:
-            sample = sample >> (4 * size / size2)
-
+            sample = sample >> shift_down
         sample = _overflow(sample, size2)
-
         _put_sample(result, size2, i, sample)
 
     return result.raw
 
 
-def ratecv(cp, size, nchannels, inrate, outrate, state, weightA=1, weightB=0):
+def ratecv(
+    cp: bytes, size: int, nchannels: int, inrate: int, outrate: int, state, weightA=1, weightB=0
+):
     _check_params(len(cp), size)
     if nchannels < 1:
         raise error("# of channels should be >= 1")
 
     bytes_per_frame = size * nchannels
-    frame_count = len(cp) / bytes_per_frame
+    frame_count = len(cp) // bytes_per_frame
 
-    if bytes_per_frame / nchannels != size:
+    if (bytes_per_frame // nchannels) != size:
         raise OverflowError("width * nchannels too big for a C int")
-
     if weightA < 1 or weightB < 0:
         raise error("weightA should be >= 1, weightB should be >= 0")
-
     if len(cp) % bytes_per_frame != 0:
         raise error("not a whole number of frames")
-
     if inrate <= 0 or outrate <= 0:
         raise error("sampling rate not > 0")
 
     d = gcd(inrate, outrate)
-    inrate /= d
-    outrate /= d
+    inrate //= d
+    outrate //= d
 
     prev_i = [0] * nchannels
     cur_i = [0] * nchannels
@@ -479,17 +447,14 @@ def ratecv(cp, size, nchannels, inrate, outrate, state, weightA=1, weightB=0):
         d = -outrate
     else:
         d, samps = state
-
         if len(samps) != nchannels:
             raise error("illegal state argument")
-
         prev_i, cur_i = zip(*samps)
         prev_i, cur_i = list(prev_i), list(cur_i)
 
-    q = frame_count / inrate
+    q = frame_count // inrate
     ceiling = (q + 1) * outrate
     nbytes = ceiling * bytes_per_frame
-
     result = create_string_buffer(nbytes)
 
     samples = _get_samples(cp, size)
@@ -499,20 +464,16 @@ def ratecv(cp, size, nchannels, inrate, outrate, state, weightA=1, weightB=0):
             if frame_count == 0:
                 samps = zip(prev_i, cur_i)
                 retval = result.raw
-
                 # slice off extra bytes
                 trim_index = (out_i * bytes_per_frame) - len(retval)
                 retval = buffer(retval)[:trim_index]
-
                 return (retval, (d, tuple(samps)))
 
             for chan in range(nchannels):
                 prev_i[chan] = cur_i[chan]
-                cur_i[chan] = samples.next()
-
-                cur_i[chan] = (
-                    (weightA * cur_i[chan] + weightB * prev_i[chan])
-                    / (weightA + weightB)
+                cur_i[chan] = next(samples)  # Py3
+                cur_i[chan] = int(
+                    (weightA * cur_i[chan] + weightB * prev_i[chan]) / (weightA + weightB)
                 )
 
             frame_count -= 1
@@ -520,11 +481,8 @@ def ratecv(cp, size, nchannels, inrate, outrate, state, weightA=1, weightB=0):
 
         while d >= 0:
             for chan in range(nchannels):
-                cur_o = (
-                    (prev_i[chan] * d + cur_i[chan] * (outrate - d))
-                    / outrate
-                )
-                _put_sample(result, size, out_i, _overflow(cur_o, size))
+                cur_o = (prev_i[chan] * d + cur_i[chan] * (outrate - d)) / outrate
+                _put_sample(result, size, out_i, _overflow(int(cur_o), size))
                 out_i += 1
             d -= inrate
 

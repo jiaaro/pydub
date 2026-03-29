@@ -1,45 +1,44 @@
-from __future__ import division
-
 import array
-import os
-import subprocess
-from tempfile import NamedTemporaryFile
-import wave
-import sys
-import struct
-from .logging_utils import log_conversion, log_subprocess_output
-from .utils import mediainfo_json, fsdecode
 import base64
+import os
+import struct
+import subprocess
+import sys
+import wave
 from collections import namedtuple
+from tempfile import NamedTemporaryFile
+
+from .logging_utils import log_conversion, log_subprocess_output
+from .utils import fsdecode, mediainfo_json
 
 try:
     from StringIO import StringIO
-except:
+except Exception:
     from io import StringIO
 
 from io import BytesIO
 
 try:
     from itertools import izip
-except:
+except Exception:
     izip = zip
 
-from .utils import (
-    _fd_or_path_or_tempfile,
-    db_to_float,
-    ratio_to_db,
-    get_encoder_name,
-    get_array_type,
-    audioop,
-)
 from .exceptions import (
-    TooManyMissingFrames,
+    CouldntDecodeError,
+    CouldntEncodeError,
     InvalidDuration,
     InvalidID3TagVersion,
     InvalidTag,
-    CouldntDecodeError,
-    CouldntEncodeError,
     MissingAudioParameter,
+    TooManyMissingFrames,
+)
+from .utils import (
+    _fd_or_path_or_tempfile,
+    audioop,
+    db_to_float,
+    get_array_type,
+    get_encoder_name,
+    ratio_to_db,
 )
 
 if sys.version_info >= (3, 0):
@@ -48,7 +47,7 @@ if sys.version_info >= (3, 0):
     StringIO = BytesIO
 
 
-class ClassPropertyDescriptor(object):
+class ClassPropertyDescriptor:
 
     def __init__(self, fget, fset=None):
         self.fget = fget
@@ -84,9 +83,11 @@ AUDIO_FILE_EXT_ALIASES = {
     "wave": "wav",
 }
 
-WavSubChunk = namedtuple('WavSubChunk', ['id', 'position', 'size'])
-WavData = namedtuple('WavData', ['audio_format', 'channels', 'sample_rate',
-                                 'bits_per_sample', 'raw_data'])
+WavSubChunk = namedtuple("WavSubChunk", ["id", "position", "size"])
+WavData = namedtuple(
+    "WavData",
+    ["audio_format", "channels", "sample_rate", "bits_per_sample", "raw_data"],
+)
 
 
 def extract_wav_headers(data):
@@ -94,10 +95,10 @@ def extract_wav_headers(data):
     pos = 12  # The size of the RIFF chunk descriptor
     subchunks = []
     while pos + 8 <= len(data) and len(subchunks) < 10:
-        subchunk_id = data[pos:pos + 4]
-        subchunk_size = struct.unpack_from('<I', data[pos + 4:pos + 8])[0]
+        subchunk_id = data[pos : pos + 4]
+        subchunk_size = struct.unpack_from("<I", data[pos + 4 : pos + 8])[0]
         subchunks.append(WavSubChunk(subchunk_id, pos, subchunk_size))
-        if subchunk_id == b'data':
+        if subchunk_id == b"data":
             # 'data' is the last subchunk
             break
         pos += subchunk_size + 8
@@ -109,32 +110,36 @@ def read_wav_audio(data, headers=None):
     if not headers:
         headers = extract_wav_headers(data)
 
-    fmt = [x for x in headers if x.id == b'fmt ']
+    fmt = [x for x in headers if x.id == b"fmt "]
     if not fmt or fmt[0].size < 16:
         raise CouldntDecodeError("Couldn't find fmt header in wav data")
     fmt = fmt[0]
     pos = fmt.position + 8
-    audio_format = struct.unpack_from('<H', data[pos:pos + 2])[0]
+    audio_format = struct.unpack_from("<H", data[pos : pos + 2])[0]
     if audio_format != 1 and audio_format != 0xFFFE:
-        raise CouldntDecodeError("Unknown audio format 0x%X in wav data" %
-                                 audio_format)
+        raise CouldntDecodeError("Unknown audio format 0x%X in wav data" % audio_format)
 
-    channels = struct.unpack_from('<H', data[pos + 2:pos + 4])[0]
-    sample_rate = struct.unpack_from('<I', data[pos + 4:pos + 8])[0]
-    bits_per_sample = struct.unpack_from('<H', data[pos + 14:pos + 16])[0]
+    channels = struct.unpack_from("<H", data[pos + 2 : pos + 4])[0]
+    sample_rate = struct.unpack_from("<I", data[pos + 4 : pos + 8])[0]
+    bits_per_sample = struct.unpack_from("<H", data[pos + 14 : pos + 16])[0]
 
     data_hdr = headers[-1]
-    if data_hdr.id != b'data':
+    if data_hdr.id != b"data":
         raise CouldntDecodeError("Couldn't find data header in wav data")
 
     pos = data_hdr.position + 8
-    return WavData(audio_format, channels, sample_rate, bits_per_sample,
-                   data[pos:pos + data_hdr.size])
+    return WavData(
+        audio_format,
+        channels,
+        sample_rate,
+        bits_per_sample,
+        data[pos : pos + data_hdr.size],
+    )
 
 
 def fix_wav_headers(data):
     headers = extract_wav_headers(data)
-    if not headers or headers[-1].id != b'data':
+    if not headers or headers[-1].id != b"data":
         return
 
     # TODO: Handle huge files in some other way
@@ -142,14 +147,14 @@ def fix_wav_headers(data):
         raise CouldntDecodeError("Unable to process >4GB files")
 
     # Set the file size in the RIFF chunk descriptor
-    data[4:8] = struct.pack('<I', len(data) - 8)
+    data[4:8] = struct.pack("<I", len(data) - 8)
 
     # Set the data size in the data subchunk
     pos = headers[-1].position
-    data[pos + 4:pos + 8] = struct.pack('<I', len(data) - pos - 8)
+    data[pos + 4 : pos + 8] = struct.pack("<I", len(data) - pos - 8)
 
 
-class AudioSegment(object):
+class AudioSegment:
     """
     AudioSegments are *immutable* objects representing segments of audio
     that can be manipulated using python code.
@@ -160,6 +165,7 @@ class AudioSegment(object):
         first_second = a[:1000] # get the first second of an mp3
         slice = a[5000:10000] # get a slice from 5 to 10 seconds of an mp3
     """
+
     converter = get_encoder_name()  # either ffmpeg or avconv
 
     # TODO: remove in 1.0 release
@@ -172,9 +178,40 @@ class AudioSegment(object):
     def ffmpeg(cls, val):
         cls.converter = val
 
-    DEFAULT_CODECS = {
-        "ogg": "libvorbis"
-    }
+    DEFAULT_CODECS = {"ogg": "libvorbis"}
+
+    def loop(self, count=2, crossfade=0, trim_to=None, end_padding=0):
+        """
+        Repeat this segment `count` times, with optional `crossfade` (ms) between repeats.
+        If `trim_to` (ms) is given, the final result is truncated to that length.
+        If `end_padding` (ms) > 0, append silence of that duration at the end.
+
+        Returns a new AudioSegment.
+        """
+        if not isinstance(count, int) or count < 1:
+            raise ValueError("count must be a positive integer")
+        if crossfade < 0:
+            raise ValueError("crossfade must be >= 0")
+        if trim_to is not None and trim_to < 0:
+            raise ValueError("trim_to must be >= 0")
+        if end_padding < 0:
+            raise ValueError("end_padding must be >= 0")
+
+        out = self
+        for _ in range(1, count):
+            # append handles format conversion and validates crossfade <= len(self)
+            out = out.append(self, crossfade=crossfade)
+
+        if trim_to is not None:
+            out = out[:trim_to]
+
+        if end_padding:
+            pad = AudioSegment.silent(duration=end_padding, frame_rate=self.frame_rate)
+            # match channels and sample width to avoid implicit conversions
+            pad = pad.set_channels(self.channels).set_sample_width(self.sample_width)
+            out = out.append(pad, crossfade=0)
+
+        return out
 
     def __init__(self, data=None, *args, **kwargs):
         self.sample_width = kwargs.pop("sample_width", None)
@@ -186,12 +223,14 @@ class AudioSegment(object):
         if isinstance(data, array.array):
             try:
                 data = data.tobytes()
-            except:
+            except Exception:
                 data = data.tostring()
 
         # prevent partial specification of arguments
         if any(audio_params) and None in audio_params:
-            raise MissingAudioParameter("Either all audio parameters or no parameter must be specified")
+            raise MissingAudioParameter(
+                "Either all audio parameters or no parameter must be specified"
+            )
 
         # all arguments are given
         elif self.sample_width is not None:
@@ -202,21 +241,21 @@ class AudioSegment(object):
             self._data = data
 
         # keep support for 'metadata' until audio params are used everywhere
-        elif kwargs.get('metadata', False):
+        elif kwargs.get("metadata", False):
             # internal use only
             self._data = data
-            for attr, val in kwargs.pop('metadata').items():
+            for attr, val in kwargs.pop("metadata").items():
                 setattr(self, attr, val)
         else:
             # normal construction
             try:
                 data = data if isinstance(data, (basestring, bytes)) else data.read()
-            except(OSError):
-                d = b''
-                reader = data.read(2 ** 31 - 1)
+            except OSError:
+                d = b""
+                reader = data.read(2**31 - 1)
                 while reader:
                     d += reader
-                    reader = data.read(2 ** 31 - 1)
+                    reader = data.read(2**31 - 1)
                 data = d
 
             wav_data = read_wav_audio(data)
@@ -239,15 +278,15 @@ class AudioSegment(object):
 
             # Workaround for python 2 vs python 3. _data in 2.x are length-1 strings,
             # And in 3.x are ints.
-            pack_fmt = 'BBB' if isinstance(self._data[0], int) else 'ccc'
+            pack_fmt = "BBB" if isinstance(self._data[0], int) else "ccc"
 
             # This conversion maintains the 24 bit values.  The values are
             # not scaled up to the 32 bit range.  Other conversions could be
             # implemented.
             i = iter(self._data)
-            padding = {False: b'\x00', True: b'\xFF'}
+            padding = {False: b"\x00", True: b"\xFF"}
             for b0, b1, b2 in izip(i, i, i):
-                byte_buffer.write(padding[b2 > b'\x7f'[0]])
+                byte_buffer.write(padding[b2 > b"\x7f"[0]])
                 old_bytes = struct.pack(pack_fmt, b0, b1, b2)
                 byte_buffer.write(old_bytes)
 
@@ -285,11 +324,13 @@ class AudioSegment(object):
     def __eq__(self, other):
         try:
             return self._data == other._data
-        except:
+        except Exception:
             return False
 
     def __hash__(self):
-        return hash(AudioSegment) ^ hash((self.channels, self.frame_rate, self.sample_width, self._data))
+        return hash(AudioSegment) ^ hash(
+            (self.channels, self.frame_rate, self.sample_width, self._data)
+        )
 
     def __ne__(self, other):
         return not (self == other)
@@ -301,13 +342,11 @@ class AudioSegment(object):
         if isinstance(millisecond, slice):
             if millisecond.step:
                 return (
-                    self[i:i + millisecond.step]
-                    for i in xrange(*millisecond.indices(len(self)))
+                    self[i : i + millisecond.step] for i in xrange(*millisecond.indices(len(self)))
                 )
 
             start = millisecond.start if millisecond.start is not None else 0
-            end = millisecond.stop if millisecond.stop is not None \
-                else len(self)
+            end = millisecond.stop if millisecond.stop is not None else len(self)
 
             start = min(start, len(self))
             end = min(end, len(self))
@@ -327,10 +366,10 @@ class AudioSegment(object):
                 raise TooManyMissingFrames(
                     "You should never be filling in "
                     "   more than 2 ms with silence here, "
-                    "missing frames: %s" % missing_frames)
-            silence = audioop.mul(data[:self.frame_width],
-                                  self.sample_width, 0)
-            data += (silence * missing_frames)
+                    "missing frames: %s" % missing_frames
+                )
+            silence = audioop.mul(data[: self.frame_width], self.sample_width, 0)
+            data += silence * missing_frames
 
         return self._spawn(data)
 
@@ -371,13 +410,11 @@ class AudioSegment(object):
         """
         if rarg == 0:
             return self
-        raise TypeError("Gains must be the second addend after the "
-                        "AudioSegment")
+        raise TypeError("Gains must be the second addend after the " "AudioSegment")
 
     def __sub__(self, arg):
         if isinstance(arg, AudioSegment):
-            raise TypeError("AudioSegment objects can't be subtracted from "
-                            "each other")
+            raise TypeError("AudioSegment objects can't be subtracted from " "each other")
         else:
             return self.apply_gain(-arg)
 
@@ -408,25 +445,25 @@ class AudioSegment(object):
         """
         # accept lists of data chunks
         if isinstance(data, list):
-            data = b''.join(data)
+            data = b"".join(data)
 
         if isinstance(data, array.array):
             try:
                 data = data.tobytes()
-            except:
+            except Exception:
                 data = data.tostring()
 
         # accept file-like objects
-        if hasattr(data, 'read'):
-            if hasattr(data, 'seek'):
+        if hasattr(data, "read"):
+            if hasattr(data, "seek"):
                 data.seek(0)
             data = data.read()
 
         metadata = {
-            'sample_width': self.sample_width,
-            'frame_rate': self.frame_rate,
-            'frame_width': self.frame_width,
-            'channels': self.channels
+            "sample_width": self.sample_width,
+            "frame_rate": self.frame_rate,
+            "frame_width": self.frame_width,
+            "channels": self.channels,
         }
         metadata.update(overrides)
         return self.__class__(data=data, metadata=metadata)
@@ -445,18 +482,20 @@ class AudioSegment(object):
     def _parse_position(self, val):
         if val < 0:
             val = len(self) - abs(val)
-        val = self.frame_count(ms=len(self)) if val == float("inf") else \
-            self.frame_count(ms=val)
+        val = self.frame_count(ms=len(self)) if val == float("inf") else self.frame_count(ms=val)
         return int(val)
 
     @classmethod
     def empty(cls):
-        return cls(b'', metadata={
-            "channels": 1,
-            "sample_width": 1,
-            "frame_rate": 1,
-            "frame_width": 1
-        })
+        return cls(
+            b"",
+            metadata={
+                "channels": 1,
+                "sample_width": 1,
+                "frame_rate": 1,
+                "frame_width": 1,
+            },
+        )
 
     @classmethod
     def silent(cls, duration=1000, frame_rate=11025):
@@ -466,10 +505,15 @@ class AudioSegment(object):
         """
         frames = int(frame_rate * (duration / 1000.0))
         data = b"\0\0" * frames
-        return cls(data, metadata={"channels": 1,
-                                   "sample_width": 2,
-                                   "frame_rate": frame_rate,
-                                   "frame_width": 2})
+        return cls(
+            data,
+            metadata={
+                "channels": 1,
+                "sample_width": 2,
+                "frame_rate": frame_rate,
+                "frame_width": 2,
+            },
+        )
 
     @classmethod
     def from_mono_audiosegments(cls, *mono_segments):
@@ -480,17 +524,15 @@ class AudioSegment(object):
 
         if segs[0].channels != 1:
             raise ValueError(
-                "AudioSegment.from_mono_audiosegments requires all arguments are mono AudioSegment instances")
+                "AudioSegment.from_mono_audiosegments requires all arguments are mono AudioSegment instances"
+            )
 
         channels = len(segs)
         sample_width = segs[0].sample_width
         frame_rate = segs[0].frame_rate
 
         frame_count = max(int(seg.frame_count()) for seg in segs)
-        data = array.array(
-            segs[0].array_type,
-            b'\0' * (frame_count * sample_width * channels)
-        )
+        data = array.array(segs[0].array_type, b"\0" * (frame_count * sample_width * channels))
 
         for i, seg in enumerate(segs):
             data[i::channels] = seg.get_array_of_samples()
@@ -503,9 +545,18 @@ class AudioSegment(object):
         )
 
     @classmethod
-    def from_file_using_temporary_files(cls, file, format=None, codec=None, parameters=None, start_second=None, duration=None, **kwargs):
+    def from_file_using_temporary_files(
+        cls,
+        file,
+        format=None,
+        codec=None,
+        parameters=None,
+        start_second=None,
+        duration=None,
+        **kwargs,
+    ):
         orig_file = file
-        file, close_file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
+        file, close_file = _fd_or_path_or_tempfile(file, "rb", tempfile=False)
 
         if format:
             format = format.lower()
@@ -516,9 +567,9 @@ class AudioSegment(object):
             if format == f:
                 return True
             if isinstance(orig_file, basestring):
-                return orig_file.lower().endswith(".{0}".format(f))
+                return orig_file.lower().endswith(f".{f}")
             if isinstance(orig_file, bytes):
-                return orig_file.lower().endswith((".{0}".format(f)).encode('utf8'))
+                return orig_file.lower().endswith((f".{f}").encode())
             return False
 
         if is_format("wav"):
@@ -529,22 +580,22 @@ class AudioSegment(object):
                 if start_second is None and duration is None:
                     return obj
                 elif start_second is not None and duration is None:
-                    return obj[start_second*1000:]
+                    return obj[start_second * 1000 :]
                 elif start_second is None and duration is not None:
-                    return obj[:duration*1000]
+                    return obj[: duration * 1000]
                 else:
-                    return obj[start_second*1000:(start_second+duration)*1000]
-            except:
+                    return obj[start_second * 1000 : (start_second + duration) * 1000]
+            except Exception:
                 file.seek(0)
         elif is_format("raw") or is_format("pcm"):
-            sample_width = kwargs['sample_width']
-            frame_rate = kwargs['frame_rate']
-            channels = kwargs['channels']
+            sample_width = kwargs["sample_width"]
+            frame_rate = kwargs["frame_rate"]
+            channels = kwargs["channels"]
             metadata = {
-                'sample_width': sample_width,
-                'frame_rate': frame_rate,
-                'channels': channels,
-                'frame_width': channels * sample_width
+                "sample_width": sample_width,
+                "frame_rate": frame_rate,
+                "channels": channels,
+                "frame_width": channels * sample_width,
             }
             obj = cls(data=file.read(), metadata=metadata)
             if close_file:
@@ -552,36 +603,37 @@ class AudioSegment(object):
             if start_second is None and duration is None:
                 return obj
             elif start_second is not None and duration is None:
-                return obj[start_second * 1000:]
+                return obj[start_second * 1000 :]
             elif start_second is None and duration is not None:
-                return obj[:duration * 1000]
+                return obj[: duration * 1000]
             else:
-                return obj[start_second * 1000:(start_second + duration) * 1000]
+                return obj[start_second * 1000 : (start_second + duration) * 1000]
 
-        input_file = NamedTemporaryFile(mode='wb', delete=False)
+        input_file = NamedTemporaryFile(mode="wb", delete=False)
         try:
             input_file.write(file.read())
-        except(OSError):
+        except OSError:
             input_file.flush()
             input_file.close()
-            input_file = NamedTemporaryFile(mode='wb', delete=False, buffering=2 ** 31 - 1)
+            input_file = NamedTemporaryFile(mode="wb", delete=False, buffering=2**31 - 1)
             if close_file:
                 file.close()
             close_file = True
-            file = open(orig_file, buffering=2 ** 13 - 1, mode='rb')
-            reader = file.read(2 ** 31 - 1)
+            file = open(orig_file, buffering=2**13 - 1, mode="rb")
+            reader = file.read(2**31 - 1)
             while reader:
                 input_file.write(reader)
-                reader = file.read(2 ** 31 - 1)
+                reader = file.read(2**31 - 1)
         input_file.flush()
         if close_file:
             file.close()
 
         output = NamedTemporaryFile(mode="rb", delete=False)
 
-        conversion_command = [cls.converter,
-                              '-y',  # always overwrite existing files
-                              ]
+        conversion_command = [
+            cls.converter,
+            "-y",  # always overwrite existing files
+        ]
 
         # If format is not defined
         # ffmpeg/avconv will detect it automatically
@@ -593,9 +645,11 @@ class AudioSegment(object):
             conversion_command += ["-acodec", codec]
 
         conversion_command += [
-            "-i", input_file.name,  # input_file options (filename last)
+            "-i",
+            input_file.name,  # input_file options (filename last)
             "-vn",  # Drop any video streams if there are any
-            "-f", "wav"  # output options (filename last)
+            "-f",
+            "wav",  # output options (filename last)
         ]
 
         if start_second is not None:
@@ -612,8 +666,13 @@ class AudioSegment(object):
 
         log_conversion(conversion_command)
 
-        with open(os.devnull, 'rb') as devnull:
-            p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        with open(os.devnull, "rb") as devnull:
+            p = subprocess.Popen(
+                conversion_command,
+                stdin=devnull,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
         p_out, p_err = p.communicate()
 
         log_subprocess_output(p_out)
@@ -623,7 +682,9 @@ class AudioSegment(object):
             if p.returncode != 0:
                 raise CouldntDecodeError(
                     "Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(
-                        p.returncode, p_err.decode(errors='ignore') ))
+                        p.returncode, p_err.decode(errors="ignore")
+                    )
+                )
             obj = cls._from_safe_wav(output)
         finally:
             input_file.close()
@@ -636,19 +697,27 @@ class AudioSegment(object):
         elif start_second is not None and duration is None:
             return obj[0:]
         elif start_second is None and duration is not None:
-            return obj[:duration * 1000]
+            return obj[: duration * 1000]
         else:
-            return obj[0:duration * 1000]
-
+            return obj[0 : duration * 1000]
 
     @classmethod
-    def from_file(cls, file, format=None, codec=None, parameters=None, start_second=None, duration=None, **kwargs):
+    def from_file(
+        cls,
+        file,
+        format=None,
+        codec=None,
+        parameters=None,
+        start_second=None,
+        duration=None,
+        **kwargs,
+    ):
         orig_file = file
         try:
             filename = fsdecode(file)
         except TypeError:
             filename = None
-        file, close_file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
+        file, close_file = _fd_or_path_or_tempfile(file, "rb", tempfile=False)
 
         if format:
             format = format.lower()
@@ -660,7 +729,7 @@ class AudioSegment(object):
                 return True
 
             if filename:
-                return filename.lower().endswith(".{0}".format(f))
+                return filename.lower().endswith(f".{f}")
 
             return False
 
@@ -669,35 +738,40 @@ class AudioSegment(object):
                 if start_second is None and duration is None:
                     return cls._from_safe_wav(file)
                 elif start_second is not None and duration is None:
-                    return cls._from_safe_wav(file)[start_second*1000:]
+                    return cls._from_safe_wav(file)[start_second * 1000 :]
                 elif start_second is None and duration is not None:
-                    return cls._from_safe_wav(file)[:duration*1000]
+                    return cls._from_safe_wav(file)[: duration * 1000]
                 else:
-                    return cls._from_safe_wav(file)[start_second*1000:(start_second+duration)*1000]
-            except:
+                    return cls._from_safe_wav(file)[
+                        start_second * 1000 : (start_second + duration) * 1000
+                    ]
+            except Exception:
                 file.seek(0)
         elif is_format("raw") or is_format("pcm"):
-            sample_width = kwargs['sample_width']
-            frame_rate = kwargs['frame_rate']
-            channels = kwargs['channels']
+            sample_width = kwargs["sample_width"]
+            frame_rate = kwargs["frame_rate"]
+            channels = kwargs["channels"]
             metadata = {
-                'sample_width': sample_width,
-                'frame_rate': frame_rate,
-                'channels': channels,
-                'frame_width': channels * sample_width
+                "sample_width": sample_width,
+                "frame_rate": frame_rate,
+                "channels": channels,
+                "frame_width": channels * sample_width,
             }
             if start_second is None and duration is None:
                 return cls(data=file.read(), metadata=metadata)
             elif start_second is not None and duration is None:
-                return cls(data=file.read(), metadata=metadata)[start_second*1000:]
+                return cls(data=file.read(), metadata=metadata)[start_second * 1000 :]
             elif start_second is None and duration is not None:
-                return cls(data=file.read(), metadata=metadata)[:duration*1000]
+                return cls(data=file.read(), metadata=metadata)[: duration * 1000]
             else:
-                return cls(data=file.read(), metadata=metadata)[start_second*1000:(start_second+duration)*1000]
+                return cls(data=file.read(), metadata=metadata)[
+                    start_second * 1000 : (start_second + duration) * 1000
+                ]
 
-        conversion_command = [cls.converter,
-                              '-y',  # always overwrite existing files
-                              ]
+        conversion_command = [
+            cls.converter,
+            "-y",  # always overwrite existing files
+        ]
 
         # If format is not defined
         # ffmpeg/avconv will detect it automatically
@@ -708,15 +782,19 @@ class AudioSegment(object):
             # force audio decoder
             conversion_command += ["-acodec", codec]
 
-        read_ahead_limit = kwargs.get('read_ahead_limit', -1)
+        read_ahead_limit = kwargs.get("read_ahead_limit", -1)
         if filename:
             conversion_command += ["-i", filename]
             stdin_parameter = None
             stdin_data = None
         else:
-            if cls.converter == 'ffmpeg':
-                conversion_command += ["-read_ahead_limit", str(read_ahead_limit),
-                                       "-i", "cache:pipe:0"]
+            if cls.converter == "ffmpeg":
+                conversion_command += [
+                    "-read_ahead_limit",
+                    str(read_ahead_limit),
+                    "-i",
+                    "cache:pipe:0",
+                ]
             else:
                 conversion_command += ["-i", "-"]
             stdin_parameter = subprocess.PIPE
@@ -727,26 +805,31 @@ class AudioSegment(object):
         else:
             info = mediainfo_json(orig_file, read_ahead_limit=read_ahead_limit)
         if info:
-            audio_streams = [x for x in info['streams']
-                             if x['codec_type'] == 'audio']
+            audio_streams = [x for x in info["streams"] if x["codec_type"] == "audio"]
             # This is a workaround for some ffprobe versions that always say
             # that mp3/mp4/aac/webm/ogg files contain fltp samples
-            audio_codec = audio_streams[0].get('codec_name')
-            if (audio_streams[0].get('sample_fmt') == 'fltp' and
-                    audio_codec in ['mp3', 'mp4', 'aac', 'webm', 'ogg']):
+            audio_codec = audio_streams[0].get("codec_name")
+            if audio_streams[0].get("sample_fmt") == "fltp" and audio_codec in [
+                "mp3",
+                "mp4",
+                "aac",
+                "webm",
+                "ogg",
+            ]:
                 bits_per_sample = 16
             else:
-                bits_per_sample = audio_streams[0]['bits_per_sample']
+                bits_per_sample = audio_streams[0]["bits_per_sample"]
             if bits_per_sample == 8:
-                acodec = 'pcm_u8'
+                acodec = "pcm_u8"
             else:
-                acodec = 'pcm_s%dle' % bits_per_sample
+                acodec = "pcm_s%dle" % bits_per_sample
 
             conversion_command += ["-acodec", acodec]
 
         conversion_command += [
             "-vn",  # Drop any video streams if there are any
-            "-f", "wav"  # output options (filename last)
+            "-f",
+            "wav",  # output options (filename last)
         ]
 
         if start_second is not None:
@@ -763,8 +846,12 @@ class AudioSegment(object):
 
         log_conversion(conversion_command)
 
-        p = subprocess.Popen(conversion_command, stdin=stdin_parameter,
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            conversion_command,
+            stdin=stdin_parameter,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         p_out, p_err = p.communicate(input=stdin_data)
 
         if p.returncode != 0 or len(p_out) == 0:
@@ -772,7 +859,9 @@ class AudioSegment(object):
                 file.close()
             raise CouldntDecodeError(
                 "Decoding failed. ffmpeg returned error code: {0}\n\nOutput from ffmpeg/avlib:\n\n{1}".format(
-                    p.returncode, p_err.decode(errors='ignore') ))
+                    p.returncode, p_err.decode(errors="ignore")
+                )
+            )
 
         p_out = bytearray(p_out)
         fix_wav_headers(p_out)
@@ -787,42 +876,56 @@ class AudioSegment(object):
         elif start_second is not None and duration is None:
             return obj[0:]
         elif start_second is None and duration is not None:
-            return obj[:duration * 1000]
+            return obj[: duration * 1000]
         else:
-            return obj[0:duration * 1000]
+            return obj[0 : duration * 1000]
 
     @classmethod
     def from_mp3(cls, file, parameters=None):
-        return cls.from_file(file, 'mp3', parameters=parameters)
+        return cls.from_file(file, "mp3", parameters=parameters)
 
     @classmethod
     def from_flv(cls, file, parameters=None):
-        return cls.from_file(file, 'flv', parameters=parameters)
+        return cls.from_file(file, "flv", parameters=parameters)
 
     @classmethod
     def from_ogg(cls, file, parameters=None):
-        return cls.from_file(file, 'ogg', parameters=parameters)
+        return cls.from_file(file, "ogg", parameters=parameters)
 
     @classmethod
     def from_wav(cls, file, parameters=None):
-        return cls.from_file(file, 'wav', parameters=parameters)
+        return cls.from_file(file, "wav", parameters=parameters)
 
     @classmethod
     def from_raw(cls, file, **kwargs):
-        return cls.from_file(file, 'raw', sample_width=kwargs['sample_width'], frame_rate=kwargs['frame_rate'],
-                             channels=kwargs['channels'])
+        return cls.from_file(
+            file,
+            "raw",
+            sample_width=kwargs["sample_width"],
+            frame_rate=kwargs["frame_rate"],
+            channels=kwargs["channels"],
+        )
 
     @classmethod
     def _from_safe_wav(cls, file):
-        file, close_file = _fd_or_path_or_tempfile(file, 'rb', tempfile=False)
+        file, close_file = _fd_or_path_or_tempfile(file, "rb", tempfile=False)
         file.seek(0)
         obj = cls(data=file)
         if close_file:
             file.close()
         return obj
 
-    def export(self, out_f=None, format='mp3', codec=None, bitrate=None, parameters=None, tags=None, id3v2_version='4',
-               cover=None):
+    def export(
+        self,
+        out_f=None,
+        format="mp3",
+        codec=None,
+        bitrate=None,
+        parameters=None,
+        tags=None,
+        id3v2_version="4",
+        cover=None,
+    ):
         """
         Export an AudioSegment to a file with given options
 
@@ -856,15 +959,16 @@ class AudioSegment(object):
         cover (file)
             Set cover for audio file from image file. (png or jpg)
         """
-        id3v2_allowed_versions = ['3', '4']
+        id3v2_allowed_versions = ["3", "4"]
 
         if format == "raw" and (codec is not None or parameters is not None):
             raise AttributeError(
-                    'Can not invoke ffmpeg when export format is "raw"; '
-                    'specify an ffmpeg raw format like format="s16le" instead '
-                    'or call export(format="raw") with no codec or parameters')
+                'Can not invoke ffmpeg when export format is "raw"; '
+                'specify an ffmpeg raw format like format="s16le" instead '
+                'or call export(format="raw") with no codec or parameters'
+            )
 
-        out_f, _ = _fd_or_path_or_tempfile(out_f, 'wb+')
+        out_f, _ = _fd_or_path_or_tempfile(out_f, "wb+")
         out_f.seek(0)
 
         if format == "raw":
@@ -885,7 +989,7 @@ class AudioSegment(object):
             # convert to unsigned integers for wav
             pcm_for_wav = audioop.bias(self._data, 1, 128)
 
-        wave_data = wave.open(data, 'wb')
+        wave_data = wave.open(data, "wb")
         wave_data.setnchannels(self.channels)
         wave_data.setsampwidth(self.sample_width)
         wave_data.setframerate(self.frame_rate)
@@ -905,19 +1009,26 @@ class AudioSegment(object):
         # build converter command to export
         conversion_command = [
             self.converter,
-            '-y',  # always overwrite existing files
-            "-f", "wav", "-i", data.name,  # input options (filename last)
+            "-y",  # always overwrite existing files
+            "-f",
+            "wav",
+            "-i",
+            data.name,  # input options (filename last)
         ]
 
         if codec is None:
             codec = self.DEFAULT_CODECS.get(format, None)
 
         if cover is not None:
-            if cover.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff')) and format == "mp3":
+            if (
+                cover.lower().endswith((".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"))
+                and format == "mp3"
+            ):
                 conversion_command.extend(["-i", cover, "-map", "0", "-map", "1", "-c:v", "mjpeg"])
             else:
                 raise AttributeError(
-                    "Currently cover images are only supported by MP3 files. The allowed image formats are: .tif, .jpg, .bmp, .jpeg and .png.")
+                    "Currently cover images are only supported by MP3 files. The allowed image formats are: .tif, .jpg, .bmp, .jpeg and .png."
+                )
 
         if codec is not None:
             # force audio encoder
@@ -937,30 +1048,38 @@ class AudioSegment(object):
                 # Extend converter command with tags
                 # print(tags)
                 for key, value in tags.items():
-                    conversion_command.extend(
-                        ['-metadata', '{0}={1}'.format(key, value)])
+                    conversion_command.extend(["-metadata", f"{key}={value}"])
 
-                if format == 'mp3':
+                if format == "mp3":
                     # set id3v2 tag version
                     if id3v2_version not in id3v2_allowed_versions:
                         raise InvalidID3TagVersion(
-                            "id3v2_version not allowed, allowed versions: %s" % id3v2_allowed_versions)
-                    conversion_command.extend([
-                        "-id3v2_version", id3v2_version
-                    ])
+                            "id3v2_version not allowed, allowed versions: %s"
+                            % id3v2_allowed_versions
+                        )
+                    conversion_command.extend(["-id3v2_version", id3v2_version])
 
-        if sys.platform == 'darwin' and codec == 'mp3':
+        if sys.platform == "darwin" and codec == "mp3":
             conversion_command.extend(["-write_xing", "0"])
 
-        conversion_command.extend([
-            "-f", format, output.name,  # output options (filename last)
-        ])
+        conversion_command.extend(
+            [
+                "-f",
+                format,
+                output.name,  # output options (filename last)
+            ]
+        )
 
         log_conversion(conversion_command)
 
         # read stdin / write stdout
-        with open(os.devnull, 'rb') as devnull:
-            p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        with open(os.devnull, "rb") as devnull:
+            p = subprocess.Popen(
+                conversion_command,
+                stdin=devnull,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
         p_out, p_err = p.communicate()
 
         log_subprocess_output(p_out)
@@ -970,7 +1089,9 @@ class AudioSegment(object):
             if p.returncode != 0:
                 raise CouldntEncodeError(
                     "Encoding failed. ffmpeg/avlib returned error code: {0}\n\nCommand:{1}\n\nOutput from ffmpeg/avlib:\n\n{2}".format(
-                        p.returncode, conversion_command, p_err.decode(errors='ignore') ))
+                        p.returncode, conversion_command, p_err.decode(errors="ignore")
+                    )
+                )
 
             output.seek(0)
             out_f.write(output.read())
@@ -1007,7 +1128,7 @@ class AudioSegment(object):
 
         return self._spawn(
             audioop.lin2lin(self._data, self.sample_width, sample_width),
-            overrides={'sample_width': sample_width, 'frame_width': frame_width}
+            overrides={"sample_width": sample_width, "frame_width": frame_width},
         )
 
     def set_frame_rate(self, frame_rate):
@@ -1015,14 +1136,18 @@ class AudioSegment(object):
             return self
 
         if self._data:
-            converted, _ = audioop.ratecv(self._data, self.sample_width,
-                                          self.channels, self.frame_rate,
-                                          frame_rate, None)
+            converted, _ = audioop.ratecv(
+                self._data,
+                self.sample_width,
+                self.channels,
+                self.frame_rate,
+                frame_rate,
+                None,
+            )
         else:
             converted = self._data
 
-        return self._spawn(data=converted,
-                           overrides={'frame_rate': frame_rate})
+        return self._spawn(data=converted, overrides={"frame_rate": frame_rate})
 
     def set_channels(self, channels):
         if channels == self.channels:
@@ -1042,8 +1167,7 @@ class AudioSegment(object):
             channels_data = [seg.get_array_of_samples() for seg in self.split_to_mono()]
             frame_count = int(self.frame_count())
             converted = array.array(
-                channels_data[0].typecode,
-                b'\0' * (frame_count * self.sample_width)
+                channels_data[0].typecode, b"\0" * (frame_count * self.sample_width)
             )
             for raw_channel_data in channels_data:
                 for i in range(frame_count):
@@ -1054,12 +1178,12 @@ class AudioSegment(object):
             return AudioSegment.from_mono_audiosegments(*dup_channels)
         else:
             raise ValueError(
-                "AudioSegment.set_channels only supports mono-to-multi channel and multi-to-mono channel conversion")
+                "AudioSegment.set_channels only supports mono-to-multi channel and multi-to-mono channel conversion"
+            )
 
-        return self._spawn(data=converted,
-                           overrides={
-                               'channels': channels,
-                               'frame_width': frame_width})
+        return self._spawn(
+            data=converted, overrides={"channels": channels, "frame_width": frame_width}
+        )
 
     def split_to_mono(self):
         if self.channels == 1:
@@ -1069,7 +1193,7 @@ class AudioSegment(object):
 
         mono_channels = []
         for i in range(self.channels):
-            samples_for_current_channel = samples[i::self.channels]
+            samples_for_current_channel = samples[i :: self.channels]
 
             try:
                 mono_data = samples_for_current_channel.tobytes()
@@ -1077,7 +1201,10 @@ class AudioSegment(object):
                 mono_data = samples_for_current_channel.tostring()
 
             mono_channels.append(
-                self._spawn(mono_data, overrides={"channels": 1, "frame_width": self.sample_width})
+                self._spawn(
+                    mono_data,
+                    overrides={"channels": 1, "frame_width": self.sample_width},
+                )
             )
 
         return mono_channels
@@ -1100,7 +1227,7 @@ class AudioSegment(object):
     @property
     def max_possible_amplitude(self):
         bits = self.sample_width * 8
-        max_possible_val = (2 ** bits)
+        max_possible_val = 2**bits
 
         # since half is above 0 and half is below the max amplitude is divided
         return max_possible_val / 2
@@ -1165,12 +1292,12 @@ class AudioSegment(object):
         left_channel = audioop.tostereo(left_channel, self.sample_width, 1, 0)
         right_channel = audioop.tostereo(right_channel, self.sample_width, 0, 1)
 
-        return self._spawn(data=audioop.add(left_channel, right_channel,
-                                            self.sample_width))
+        return self._spawn(data=audioop.add(left_channel, right_channel, self.sample_width))
 
     def apply_gain(self, volume_change):
-        return self._spawn(data=audioop.mul(self._data, self.sample_width,
-                                            db_to_float(float(volume_change))))
+        return self._spawn(
+            data=audioop.mul(self._data, self.sample_width, db_to_float(float(volume_change)))
+        )
 
     def overlay(self, seg, position=0, loop=False, times=None, gain_during_overlay=None):
         """
@@ -1232,13 +1359,15 @@ class AudioSegment(object):
                 times = 1
 
             if gain_during_overlay:
-                seg1_overlaid = seg1[pos:pos + seg2_len]
-                seg1_adjusted_gain = audioop.mul(seg1_overlaid, self.sample_width,
-                                                 db_to_float(float(gain_during_overlay)))
+                seg1_overlaid = seg1[pos : pos + seg2_len]
+                seg1_adjusted_gain = audioop.mul(
+                    seg1_overlaid,
+                    self.sample_width,
+                    db_to_float(float(gain_during_overlay)),
+                )
                 output.write(audioop.add(seg1_adjusted_gain, seg2, sample_width))
             else:
-                output.write(audioop.add(seg1[pos:pos + seg2_len], seg2,
-                                         sample_width))
+                output.write(audioop.add(seg1[pos : pos + seg2_len], seg2, sample_width))
             pos += seg2_len
 
             # dec times to break our while loop (eventually)
@@ -1254,16 +1383,16 @@ class AudioSegment(object):
         if not crossfade:
             return seg1._spawn(seg1._data + seg2._data)
         elif crossfade > len(self):
-            raise ValueError("Crossfade is longer than the original AudioSegment ({}ms > {}ms)".format(
-                crossfade, len(self)
-            ))
+            raise ValueError(
+                f"Crossfade is longer than the original AudioSegment ({crossfade}ms > {len(self)}ms)"
+            )
         elif crossfade > len(seg):
-            raise ValueError("Crossfade is longer than the appended AudioSegment ({}ms > {}ms)".format(
-                crossfade, len(seg)
-            ))
+            raise ValueError(
+                f"Crossfade is longer than the appended AudioSegment ({crossfade}ms > {len(seg)}ms)"
+            )
 
-        xf = seg1[-crossfade:].fade(to_gain=-120, start=0, end=float('inf'))
-        xf *= seg2[:crossfade].fade(from_gain=-120, start=0, end=float('inf'))
+        xf = seg1[-crossfade:].fade(to_gain=-120, start=0, end=float("inf"))
+        xf *= seg2[:crossfade].fade(from_gain=-120, start=0, end=float("inf"))
 
         output = BytesIO()
 
@@ -1276,8 +1405,7 @@ class AudioSegment(object):
         output.close()
         return obj
 
-    def fade(self, to_gain=0, from_gain=0, start=None, end=None,
-             duration=None):
+    def fade(self, to_gain=0, from_gain=0, start=None, end=None, duration=None):
         """
         Fade the volume of this audio segment.
 
@@ -1297,8 +1425,10 @@ class AudioSegment(object):
             the duration of the fade
         """
         if None not in [duration, end, start]:
-            raise TypeError('Only two of the three arguments, "start", '
-                            '"end", and "duration" may be specified')
+            raise TypeError(
+                'Only two of the three arguments, "start", '
+                '"end", and "duration" may be specified'
+            )
 
         # no fade == the same audio
         if to_gain == 0 and from_gain == 0:
@@ -1330,9 +1460,7 @@ class AudioSegment(object):
         # original data - up until the crossfade portion, as is
         before_fade = self[:start]._data
         if from_gain != 0:
-            before_fade = audioop.mul(before_fade,
-                                      self.sample_width,
-                                      from_power)
+            before_fade = audioop.mul(before_fade, self.sample_width, from_power)
         output.append(before_fade)
 
         gain_delta = db_to_float(to_gain) - from_power
@@ -1346,9 +1474,7 @@ class AudioSegment(object):
             for i in range(duration):
                 volume_change = from_power + (scale_step * i)
                 chunk = self[start + i]
-                chunk = audioop.mul(chunk._data,
-                                    self.sample_width,
-                                    volume_change)
+                chunk = audioop.mul(chunk._data, self.sample_width, volume_change)
 
                 output.append(chunk)
         else:
@@ -1367,23 +1493,19 @@ class AudioSegment(object):
         # original data after the crossfade portion, at the new volume
         after_fade = self[end:]._data
         if to_gain != 0:
-            after_fade = audioop.mul(after_fade,
-                                     self.sample_width,
-                                     db_to_float(to_gain))
+            after_fade = audioop.mul(after_fade, self.sample_width, db_to_float(to_gain))
         output.append(after_fade)
 
         return self._spawn(data=output)
 
     def fade_out(self, duration):
-        return self.fade(to_gain=-120, duration=duration, end=float('inf'))
+        return self.fade(to_gain=-120, duration=duration, end=float("inf"))
 
     def fade_in(self, duration):
         return self.fade(from_gain=-120, duration=duration, start=0)
 
     def reverse(self):
-        return self._spawn(
-            data=audioop.reverse(self._data, self.sample_width)
-        )
+        return self._spawn(data=audioop.reverse(self._data, self.sample_width))
 
     def _repr_html_(self):
         src = """
@@ -1393,8 +1515,5 @@ class AudioSegment(object):
                     </audio>
                   """
         fh = self.export()
-        data = base64.b64encode(fh.read()).decode('ascii')
+        data = base64.b64encode(fh.read()).decode("ascii")
         return src.format(base64=data)
-
-
-from . import effects
