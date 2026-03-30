@@ -16,13 +16,13 @@ def _play_with_ffplay(seg):
         subprocess.call([PLAYER, "-nodisp", "-autoexit", "-hide_banner", f.name])
 
 
-def _play_with_pyaudio(seg):
+def _play_with_pyaudio(seg, device_index = None):
     import pyaudio
-
     p = pyaudio.PyAudio()
     stream = p.open(format=p.get_format_from_width(seg.sample_width),
                     channels=seg.channels,
                     rate=seg.frame_rate,
+                    output_device_index = device_index,
                     output=True)
 
     # Just in case there were any exceptions/interrupts, we release the resource
@@ -48,7 +48,7 @@ def _play_with_simpleaudio(seg):
     )
 
 
-def play(audio_segment):
+def play(audio_segment, device_index = None):
     try:
         playback = _play_with_simpleaudio(audio_segment)
         try:
@@ -61,7 +61,7 @@ def play(audio_segment):
         return
 
     try:
-        _play_with_pyaudio(audio_segment)
+        _play_with_pyaudio(audio_segment, device_index)
         return
     except ImportError:
         pass
