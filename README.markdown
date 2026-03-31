@@ -9,6 +9,7 @@ Pydub lets you do stuff to audio in a way that isn't stupid.
  - [Playback](https://github.com/jiaaro/pydub#playback)
  - [Setting up ffmpeg](https://github.com/jiaaro/pydub#getting-ffmpeg-set-up)
  - [Questions/Bugs](https://github.com/jiaaro/pydub#bugs--questions)
+ - [Pydub Website](http://pydub.com/)
  
 
 ##  Quickstart
