@@ -1358,6 +1358,12 @@ class PartialAudioSegmentLoadTests(unittest.TestCase):
         partial_seg2 = AudioSegment.from_file(self.mp3_path_str, start_second=1., duration=1.)
         self.assertEqual(len(partial_seg1), len(partial_seg2))
         self.assertEqual(partial_seg1._data, partial_seg2._data)
+    
+    def test_partial_load_small_start_second_and_duration_equals_cropped_mp3_audio_segment(self):
+        partial_seg1 = AudioSegment.from_file(self.mp3_path_str)[10:1010]
+        partial_seg2 = AudioSegment.from_file(self.mp3_path_str, start_second=0.01, duration=1.)
+        self.assertEqual(len(partial_seg1), len(partial_seg2))
+        self.assertEqual(partial_seg1._data, partial_seg2._data)
 
     def test_partial_load_duration_equals_cropped_wav_audio_segment(self):
         partial_seg1 = AudioSegment.from_file(self.wave_path_str)[:1000]
