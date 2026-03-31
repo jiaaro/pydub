@@ -1153,6 +1153,46 @@ class SilenceTests(unittest.TestCase):
             self.assertTrue(start > prev_end)
             prev_end = end
 
+    def test_detect_silence_noncontinous_without_gap(self):
+        raw_data = b"\xFF\x7F\xFF\x7F\x00\x00\x00\x00\xFF\x7F\x00\x00\xFF\x7F\x00\x00\x00\x00\xFF\x7F\xFF\x7F"
+        seg = AudioSegment(raw_data, frame_rate=1000, channels=1, sample_width=2)
+        
+        self.assertEqual(seg.frame_count(), 11.0)
+        self.assertEqual(len(seg), 11)
+        
+        silent_ranges = detect_silence(seg, min_silence_len=3, silence_thresh=-4, seek_step=1)
+        self.assertEqual(silent_ranges, [[1, 10]])
+    
+    def test_detect_silence_noncontinuous_with_gap(self):
+        raw_data = b"\xFF\x7F\xFF\x7F\x00\x00\x00\x00\xFF\x7F\xFF\x7F\xFF\x7F\x00\x00\x00\x00\xFF\x7F\xFF\x7F"
+        seg = AudioSegment(raw_data, frame_rate=1000, channels=1, sample_width=2)
+        
+        self.assertEqual(seg.frame_count(), 11.0)
+        self.assertEqual(len(seg), 11)
+        
+        silent_ranges = detect_silence(seg, min_silence_len=3, silence_thresh=-4, seek_step=1)
+        self.assertEqual(silent_ranges, [[1, 5], [6, 10]])
+    
+    def test_detect_silence_noncontinuous_without_gap_last_slice(self):
+        raw_data = b"\xFF\x7F\xFF\x7F\x00\x00\x00\x00\xFF\x7F\xFF\x7F\x00\x00\x00\x00"
+        seg = AudioSegment(raw_data, frame_rate=1000, channels=1, sample_width=2)
+        
+        self.assertEqual(seg.frame_count(), 8.0)
+        self.assertEqual(len(seg), 8)
+        
+        silent_ranges = detect_silence(seg, min_silence_len=3, silence_thresh=-4, seek_step=2)
+        self.assertEqual(silent_ranges, [[2, 8]])
+    
+    def test_detect_silence_noncontinuous_with_gap_last_slice(self):
+        raw_data = b"\xFF\x7F\xFF\x7F\x00\x00\x00\x00\xFF\x7F\xFF\x7F\xFF\x7F\x00\x00\xFF\x7F\x00\x00"
+        seg = AudioSegment(raw_data, frame_rate=1000, channels=1, sample_width=2)
+        
+        self.assertEqual(seg.frame_count(), 10.0)
+        self.assertEqual(len(seg), 10)
+        
+        silent_ranges = detect_silence(seg, min_silence_len=3, silence_thresh=-4, seek_step=2)
+        self.assertEqual(silent_ranges, [[2, 5], [7, 10]])
+
 
 class GeneratorTests(unittest.TestCase):
 
