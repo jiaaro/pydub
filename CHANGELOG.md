@@ -2,11 +2,11 @@
 - Fix crashing bug in new scipy-powered EQ effects
 
 # v0.25.0
-- Don't show a runtime warning about the optional ffplay dependency being missing until someone trys to use it
+- Don't show a runtime warning about the optional ffplay dependency being missing until someone tries to use it
 - Documentation improvements
 - Python 3.9 support
 - Improved efficiency of loading wave files with `pydub.AudioSegment.from_file()`
-- Ensure `pydub.AudioSegment().export()` always retuns files with a seek position at the beginning of the file   
+- Ensure `pydub.AudioSegment().export()` always returns files with a seek position at the beginning of the file   
 - Added more EQ effects to `pydub.scipy_effects` (requires scipy to be installed)
 - Fix a packaging bug where the LICENSE file was not included in the source distribution
 - Add a way to instantiate a `pydub.AudioSegment()` with a portion of an audio file via `pydub.AudioSegment().from_file()`

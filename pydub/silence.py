@@ -14,7 +14,7 @@ def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek
     audio_segment - the segment to find silence in
     min_silence_len - the minimum length for any silent section
     silence_thresh - the upper bound for how quiet is silent in dFBS
-    seek_step - step size for interating over the segment in ms
+    seek_step - step size for interacting over the segment in ms
     """
     seg_len = len(audio_segment)
 
@@ -25,7 +25,7 @@ def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek
     # convert silence threshold to a float value (so we can compare it to rms)
     silence_thresh = db_to_float(silence_thresh) * audio_segment.max_possible_amplitude
 
-    # find silence and add start and end indicies to the to_cut list
+    # find silence and add start and end indices to the to_cut list
     silence_starts = []
 
     # check successive (1 sec by default) chunk of sound for silence
@@ -81,7 +81,7 @@ def detect_nonsilent(audio_segment, min_silence_len=1000, silence_thresh=-16, se
     audio_segment - the segment to find silence in
     min_silence_len - the minimum length for any silent section
     silence_thresh - the upper bound for how quiet is silent in dFBS
-    seek_step - step size for interating over the segment in ms
+    seek_step - step size for interacting over the segment in ms
     """
     silent_ranges = detect_silence(audio_segment, min_silence_len, silence_thresh, seek_step)
     len_seg = len(audio_segment)
@@ -131,7 +131,7 @@ def split_on_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, ke
         If True is specified, all the silence is kept, if False none is kept.
         default: 100ms
 
-    seek_step - step size for interating over the segment in ms
+    seek_step - step size for interacting over the segment in ms
     """
 
     # from the itertools documentation
@@ -169,7 +169,7 @@ def detect_leading_silence(sound, silence_threshold=-50.0, chunk_size=10):
 
     audio_segment - the segment to find silence in
     silence_threshold - the upper bound for how quiet is silent in dFBS
-    chunk_size - chunk size for interating over the segment in ms
+    chunk_size - chunk size for interacting over the segment in ms
     """
     trim_ms = 0 # ms
     assert chunk_size > 0 # to avoid infinite loop

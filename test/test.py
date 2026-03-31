@@ -102,7 +102,7 @@ if sys.version_info >= (3, 6):
             self.assertEqual(seg1._data, seg2._data)
             self.assertTrue(len(seg1) > 0)
 
-        def test_non_existant_pathlib_path(self):
+        def test_non_existent_pathlib_path(self):
             from pathlib import Path
             path = Path('this/path/should/not/exist/do/not/make/this/exist')
             with self.assertRaises(FileNotFoundError):
@@ -116,7 +116,7 @@ if sys.version_info >= (3, 6):
             with self.assertRaises(OSError):
                 _ = AudioSegment.from_file(path)
 
-        def test_non_existant_path_like_str(self):
+        def test_non_existent_path_like_str(self):
             path = self.MyPathLike('this/path/should/not/exist/do/not/make/this/exist')
             with self.assertRaises(FileNotFoundError):
                 _ = AudioSegment.from_file(path)
@@ -125,7 +125,7 @@ if sys.version_info >= (3, 6):
             with self.assertRaises(FileNotFoundError):
                 _ = AudioSegment.from_file(path)
 
-        def test_non_existant_path_like_bytes(self):
+        def test_non_existent_path_like_bytes(self):
             path = self.MyPathLike(bytes('this/path/should/not/exist/do/not/make/this/exist', sys.getdefaultencoding()))
             with self.assertRaises(FileNotFoundError):
                 _ = AudioSegment.from_file(path)

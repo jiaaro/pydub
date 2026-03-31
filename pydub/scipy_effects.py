@@ -148,12 +148,12 @@ def eq(seg, focus_freq, bandwidth=100, channel_mode="L+R", filter_mode="peak", g
     if channel_mode == "L":
         seg = seg.split_to_mono()
         seg = [_eq(seg[0], focus_freq, bandwidth, filter_mode, gain_dB, order), seg[1]]
-        return AudioSegment.from_mono_audio_segements(seg[0], seg[1])
+        return AudioSegment.from_mono_audio_segments(seg[0], seg[1])
         
     if channel_mode == "R":
         seg = seg.split_to_mono()
         seg = [seg[0], _eq(seg[1], focus_freq, bandwidth, filter_mode, gain_dB, order)]
-        return AudioSegment.from_mono_audio_segements(seg[0], seg[1])
+        return AudioSegment.from_mono_audio_segments(seg[0], seg[1])
         
     if channel_mode == "M+S":
         seg = stereo_to_ms(seg)
@@ -163,13 +163,13 @@ def eq(seg, focus_freq, bandwidth=100, channel_mode="L+R", filter_mode="peak", g
     if channel_mode == "M":
         seg = stereo_to_ms(seg).split_to_mono()
         seg = [_eq(seg[0], focus_freq, bandwidth, filter_mode, gain_dB, order), seg[1]]
-        seg = AudioSegment.from_mono_audio_segements(seg[0], seg[1])
+        seg = AudioSegment.from_mono_audio_segments(seg[0], seg[1])
         return ms_to_stereo(seg)
         
     if channel_mode == "S":
         seg = stereo_to_ms(seg).split_to_mono()
         seg = [seg[0], _eq(seg[1], focus_freq, bandwidth, filter_mode, gain_dB, order)]
-        seg = AudioSegment.from_mono_audio_segements(seg[0], seg[1])
+        seg = AudioSegment.from_mono_audio_segments(seg[0], seg[1])
         return ms_to_stereo(seg)
 
 
