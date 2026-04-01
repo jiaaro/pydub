@@ -1,0 +1,20 @@
+from gtts import gTTS
+from pydub import AudioSegment
+
+# Create the voiceover using gTTS
+tts = gTTS("Attention associates, price check on aisle 5! Price check on aisle 5!", lang="en")
+voice_path = "/mnt/data/voiceover.mp3"
+tts.save(voice_path)
+
+# Load the existing alarm
+alarm = AudioSegment.from_mp3("/mnt/data/walmart_clearance_alarm.mp3")
+voice = AudioSegment.from_mp3(voice_path).apply_gain(+6)
+
+# Overlay the voiceover around 2s mark
+final_alarm = alarm.overlay(voice, position=2000)
+
+# Export final combined version
+final_output_path = "/mnt/data/walmart_clearance_alarm_with_voice.mp3"
+final_alarm.export(final_output_path, format="mp3")
+
+final_output_path
