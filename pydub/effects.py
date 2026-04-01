@@ -1,6 +1,7 @@
 import sys
 import math
 import array
+from io import BytesIO
 from .utils import (
     db_to_float,
     ratio_to_db,
@@ -77,6 +78,11 @@ def speedup(seg, playback_speed=1.5, chunk_size=150, crossfade=25):
         raise Exception("Could not speed up AudioSegment, it was too short {2:0.2f}s for the current settings:\n{0}ms chunks at {1:0.1f}x speedup".format(
             chunk_size, playback_speed, seg.duration_seconds))
 
+    if crossfade > ms_to_remove_per_chunk:
+        raise Exception("Could not speed up AudioSegment, the selected crossfade was too long for the current settings (can be max {} ms)".format(
+            ms_to_remove_per_chunk
+        ))
+
     # we'll actually truncate a bit less than we calculated to make up for the
     # crossfade between chunks
     ms_to_remove_per_chunk -= crossfade
@@ -86,11 +92,22 @@ def speedup(seg, playback_speed=1.5, chunk_size=150, crossfade=25):
     last_chunk = chunks[-1]
     chunks = [chunk[:-ms_to_remove_per_chunk] for chunk in chunks[:-1]]
 
-    out = chunks[0]
-    for chunk in chunks[1:]:
-        out = out.append(chunk, crossfade=crossfade)
+    # TODO: temporary asserts; these should not be required for final code, but working around them
+    #       here would complicate things very much and this is arguably not the place for it
+    assert len(chunks[0]) >= 2*crossfade
+    assert len(last_chunk) >= 2*crossfade
+    
+    output = BytesIO()
+    output.write(chunks[0][:-crossfade]._data)
+    for i in range(1, len(chunks)):
+        xf  = chunks[i - 1][-crossfade:].fade(to_gain=-120, start=0, end=float('inf'))
+        xf *= chunks[i][:crossfade].fade(from_gain=-120, start=0, end=float('inf'))
+        output.write(xf._data)
+        output.write(chunks[i][crossfade:-crossfade]._data)
+        # out = out.append(chunk, crossfade=crossfade)
 
-    out += last_chunk
+    output.write(last_chunk[-crossfade:]._data)
+    out = seg._spawn(output)
     return out
     
 
