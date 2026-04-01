@@ -182,8 +182,7 @@ Copy the pydub directory into your python path. Zip
 ## Dependencies
 
 You can open and save WAV files with pure python. For opening and saving non-wav 
-files – like mp3 – you'll need [ffmpeg](http://www.ffmpeg.org/) or 
-[libav](http://libav.org/).
+files – like mp3 – you'll need [ffmpeg](http://www.ffmpeg.org/)
 
 ### Playback
 
@@ -204,30 +203,16 @@ play(sound)
 
 ## Getting ffmpeg set up
 
-You may use **libav or ffmpeg**.
-
 Mac (using [homebrew](http://brew.sh)):
 
 ```bash
-# libav
-brew install libav
-
-####    OR    #####
-
-# ffmpeg
 brew install ffmpeg
 ```
 
 Linux (using aptitude):
 
 ```bash
-# libav
-apt-get install libav-tools libavcodec-extra
-
-####    OR    #####
-
-# ffmpeg
-apt-get install ffmpeg libavcodec-extra
+apt-get install ffmpeg
 ```
 
 Windows:
