@@ -165,10 +165,10 @@ def get_encoder_name():
     """
     Return enconder default application for system, either avconv or ffmpeg
     """
-    if which("avconv"):
-        return "avconv"
-    elif which("ffmpeg"):
-        return "ffmpeg"
+    if path := which("avconv"):
+        return path
+    elif path := which("ffmpeg"):
+        return path
     else:
         # should raise exception
         warn("Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work", RuntimeWarning)
@@ -179,10 +179,10 @@ def get_player_name():
     """
     Return enconder default application for system, either avconv or ffmpeg
     """
-    if which("avplay"):
-        return "avplay"
-    elif which("ffplay"):
-        return "ffplay"
+    if path := which("avplay"):
+        return path
+    elif path := which("ffplay"):
+        return path
     else:
         # should raise exception
         warn("Couldn't find ffplay or avplay - defaulting to ffplay, but may not work", RuntimeWarning)
@@ -193,10 +193,10 @@ def get_prober_name():
     """
     Return probe application, either avconv or ffmpeg
     """
-    if which("avprobe"):
-        return "avprobe"
-    elif which("ffprobe"):
-        return "ffprobe"
+    if path := which("avprobe"):
+        return path
+    elif path := which("ffprobe"):
+        return path
     else:
         # should raise exception
         warn("Couldn't find ffprobe or avprobe - defaulting to ffprobe, but may not work", RuntimeWarning)
@@ -262,7 +262,7 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
         stdin_parameter = None
         stdin_data = None
     except TypeError:
-        if prober == 'ffprobe':
+        if prober.endswith('ffprobe'):
             command_args += ["-read_ahead_limit", str(read_ahead_limit),
                              "cache:pipe:0"]
         else:
