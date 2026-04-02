@@ -9,6 +9,7 @@ import subprocess
 from tempfile import NamedTemporaryFile
 from .utils import get_player_name, make_chunks
 
+
 def _play_with_ffplay(seg):
     PLAYER = get_player_name()
     with NamedTemporaryFile("w+b", suffix=".wav") as f:
@@ -48,13 +49,17 @@ def _play_with_simpleaudio(seg):
     )
 
 
-def play(audio_segment):
+def play(audio_segment, **kwargs):
     try:
         playback = _play_with_simpleaudio(audio_segment)
         try:
             playback.wait_done()
+            if kwargs["loop"] is True:
+                play(audio_segment, loop=True)
+            else:
+                play(audio_segment)
         except KeyboardInterrupt:
-            playback.stop()
+            stop(playback)
     except ImportError:
         pass
     else:
@@ -69,3 +74,7 @@ def play(audio_segment):
         return
 
     _play_with_ffplay(audio_segment)
+
+
+def stop(playback):
+    playback.stop()
