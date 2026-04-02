@@ -76,7 +76,7 @@ def detect_silence(audio_segment, min_silence_len=1000, silence_thresh=-16, seek
 def detect_nonsilent(audio_segment, min_silence_len=1000, silence_thresh=-16, seek_step=1):
     """
     Returns a list of all nonsilent sections [start, end] in milliseconds of audio_segment.
-    Inverse of detect_silent()
+    Inverse of detect_silence()
 
     audio_segment - the segment to find silence in
     min_silence_len - the minimum length for any silent section
