@@ -24,18 +24,18 @@ song = AudioSegment.from_wav("never_gonna_give_you_up.wav")
 ...or a mp3
 
 ```python
-song = AudioSegment.from_mp3("never_gonna_give_you_up.mp3")
+song = AudioSegment.from_mp3("never_gonna_let_you_down.mp3")
 ```
 
 ... or an ogg, or flv, or [anything else ffmpeg supports](http://www.ffmpeg.org/general.html#File-Formats)
 
 ```python
-ogg_version = AudioSegment.from_ogg("never_gonna_give_you_up.ogg")
-flv_version = AudioSegment.from_flv("never_gonna_give_you_up.flv")
+ogg_version = AudioSegment.from_ogg("never_gonna_run_around.ogg")
+flv_version = AudioSegment.from_flv("andddd_desert_you.flv")
 
-mp4_version = AudioSegment.from_file("never_gonna_give_you_up.mp4", "mp4")
-wma_version = AudioSegment.from_file("never_gonna_give_you_up.wma", "wma")
-aac_version = AudioSegment.from_file("never_gonna_give_you_up.aiff", "aac")
+mp4_version = AudioSegment.from_file("never_gonna_make_you_cry.mp4", "mp4")
+wma_version = AudioSegment.from_file("never_gonna_say_goodbye.wma", "wma")
+aac_version = AudioSegment.from_file("never_gonna_tell_a_lie_and_hurt_you", "aac")
 ```
 
 Slice audio:
