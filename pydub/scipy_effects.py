@@ -9,8 +9,10 @@ will be used when calling audio_segment.high_pass_filter() and
 audio_segment.high_pass_filter() instead of the slower, less powerful versions
 provided by pydub.effects.
 """
+
 from scipy.signal import butter, sosfilt
-from .utils import (register_pydub_effect,stereo_to_ms,ms_to_stereo)
+
+from .utils import ms_to_stereo, register_pydub_effect, stereo_to_ms
 
 
 def _mk_butter_filter(freq, type, order):
@@ -29,6 +31,7 @@ def _mk_butter_filter(freq, type, order):
         function which can filter a mono audio segment
 
     """
+
     def filter_fn(seg):
         assert seg.channels == 1
 
@@ -38,7 +41,7 @@ def _mk_butter_filter(freq, type, order):
         except TypeError:
             freqs = freq / nyq
 
-        sos = butter(order, freqs, btype=type, output='sos')
+        sos = butter(order, freqs, btype=type, output="sos")
         y = sosfilt(sos, seg.get_array_of_samples())
 
         return seg._spawn(y.astype(seg.array_type))
@@ -48,19 +51,19 @@ def _mk_butter_filter(freq, type, order):
 
 @register_pydub_effect
 def band_pass_filter(seg, low_cutoff_freq, high_cutoff_freq, order=5):
-    filter_fn = _mk_butter_filter([low_cutoff_freq, high_cutoff_freq], 'band', order=order)
+    filter_fn = _mk_butter_filter([low_cutoff_freq, high_cutoff_freq], "band", order=order)
     return seg.apply_mono_filter_to_each_channel(filter_fn)
 
 
 @register_pydub_effect
 def high_pass_filter(seg, cutoff_freq, order=5):
-    filter_fn = _mk_butter_filter(cutoff_freq, 'highpass', order=order)
+    filter_fn = _mk_butter_filter(cutoff_freq, "highpass", order=order)
     return seg.apply_mono_filter_to_each_channel(filter_fn)
 
 
 @register_pydub_effect
 def low_pass_filter(seg, cutoff_freq, order=5):
-    filter_fn = _mk_butter_filter(cutoff_freq, 'lowpass', order=order)
+    filter_fn = _mk_butter_filter(cutoff_freq, "lowpass", order=order)
     return seg.apply_mono_filter_to_each_channel(filter_fn)
 
 
@@ -72,48 +75,50 @@ def _eq(seg, focus_freq, bandwidth=100, mode="peak", gain_dB=0, order=2):
         bandwidth - range of the equalizer band
         mode - Mode of Equalization(Peak/Notch(Bell Curve),High Shelf, Low Shelf)
         order - Rolloff factor(1 - 6dB/Octave 2 - 12dB/Octave)
-    
+
     Returns:
         Equalized/Filtered AudioSegment
     """
     filt_mode = ["peak", "low_shelf", "high_shelf"]
     if mode not in filt_mode:
         raise ValueError("Incorrect Mode Selection")
-        
+
     if gain_dB >= 0:
         if mode == "peak":
-            sec = band_pass_filter(seg, focus_freq - bandwidth/2, focus_freq + bandwidth/2, order = order)
+            sec = band_pass_filter(
+                seg, focus_freq - bandwidth / 2, focus_freq + bandwidth / 2, order=order
+            )
             seg = seg.overlay(sec - (3 - gain_dB))
             return seg
-        
+
         if mode == "low_shelf":
             sec = low_pass_filter(seg, focus_freq, order=order)
             seg = seg.overlay(sec - (3 - gain_dB))
             return seg
-        
+
         if mode == "high_shelf":
             sec = high_pass_filter(seg, focus_freq, order=order)
             seg = seg.overlay(sec - (3 - gain_dB))
             return seg
-        
+
     if gain_dB < 0:
         if mode == "peak":
-            sec = high_pass_filter(seg, focus_freq - bandwidth/2, order=order)
+            sec = high_pass_filter(seg, focus_freq - bandwidth / 2, order=order)
             seg = seg.overlay(sec - (3 + gain_dB)) + gain_dB
-            sec = low_pass_filter(seg, focus_freq + bandwidth/2, order=order)
+            sec = low_pass_filter(seg, focus_freq + bandwidth / 2, order=order)
             seg = seg.overlay(sec - (3 + gain_dB)) + gain_dB
             return seg
-        
+
         if mode == "low_shelf":
             sec = high_pass_filter(seg, focus_freq, order=order)
             seg = seg.overlay(sec - (3 + gain_dB)) + gain_dB
             return seg
-        
-        if mode=="high_shelf":
-            sec=low_pass_filter(seg, focus_freq, order=order)
-            seg=seg.overlay(sec - (3 + gain_dB)) +gain_dB
+
+        if mode == "high_shelf":
+            sec = low_pass_filter(seg, focus_freq, order=order)
+            seg = seg.overlay(sec - (3 + gain_dB)) + gain_dB
             return seg
-        
+
 
 @register_pydub_effect
 def eq(seg, focus_freq, bandwidth=100, channel_mode="L+R", filter_mode="peak", gain_dB=0, order=2):
@@ -131,45 +136,43 @@ def eq(seg, focus_freq, bandwidth=100, channel_mode="L+R", filter_mode="peak", g
             Mono Audio Segments are completely filtered.
         filter_mode - Mode of Equalization(Peak/Notch(Bell Curve),High Shelf, Low Shelf)
         order - Rolloff factor(1 - 6dB/Octave 2 - 12dB/Octave)
-    
+
     Returns:
         Equalized/Filtered AudioSegment
     """
     channel_modes = ["L+R", "M+S", "L", "R", "M", "S"]
     if channel_mode not in channel_modes:
         raise ValueError("Incorrect Channel Mode Selection")
-        
+
     if seg.channels == 1:
         return _eq(seg, focus_freq, bandwidth, filter_mode, gain_dB, order)
-        
+
     if channel_mode == "L+R":
         return _eq(seg, focus_freq, bandwidth, filter_mode, gain_dB, order)
-        
+
     if channel_mode == "L":
         seg = seg.split_to_mono()
         seg = [_eq(seg[0], focus_freq, bandwidth, filter_mode, gain_dB, order), seg[1]]
         return AudioSegment.from_mono_audio_segements(seg[0], seg[1])
-        
+
     if channel_mode == "R":
         seg = seg.split_to_mono()
         seg = [seg[0], _eq(seg[1], focus_freq, bandwidth, filter_mode, gain_dB, order)]
         return AudioSegment.from_mono_audio_segements(seg[0], seg[1])
-        
+
     if channel_mode == "M+S":
         seg = stereo_to_ms(seg)
         seg = _eq(seg, focus_freq, bandwidth, filter_mode, gain_dB, order)
         return ms_to_stereo(seg)
-        
+
     if channel_mode == "M":
         seg = stereo_to_ms(seg).split_to_mono()
         seg = [_eq(seg[0], focus_freq, bandwidth, filter_mode, gain_dB, order), seg[1]]
         seg = AudioSegment.from_mono_audio_segements(seg[0], seg[1])
         return ms_to_stereo(seg)
-        
+
     if channel_mode == "S":
         seg = stereo_to_ms(seg).split_to_mono()
         seg = [seg[0], _eq(seg[1], focus_freq, bandwidth, filter_mode, gain_dB, order)]
         seg = AudioSegment.from_mono_audio_segements(seg[0], seg[1])
         return ms_to_stereo(seg)
-
-

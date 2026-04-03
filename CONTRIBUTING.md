@@ -43,3 +43,15 @@ Here are some general topics of interest for future development:
 
 [bugs]: https://github.com/jiaaro/pydub/issues?q=is%3Aissue+is%3Aopen+label%3Abug
 [todos]: https://github.com/jiaaro/pydub/issues?q=is%3Aissue+is%3Aopen+label%3Atodo
+
+
+## Dev Setup
+
+```bash
+python -m venv .venv
+. .venv/bin/activate  # Windows: .venv\Scripts\activate
+python -m pip install -U pip
+pip install -e .
+pip install -r requirements-dev.txt  # if present
+pip install ruff black pre-commit
+pre-commit install
