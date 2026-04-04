@@ -640,7 +640,7 @@ print(silence.detect_silence(AudioSegment.silent(2000)))
 
 ### silence.detect_nonsilent()
 
-Returns a list of all silent sections [start, end] in milliseconds of audio_segment. Inverse of detect_silence() and has all the same arguments. Can be very slow since it has to iterate over the whole segment.
+Returns a list of all nonsilent sections [start, end] in milliseconds of audio_segment. Inverse of detect_silence() and has all the same arguments. Can be very slow since it has to iterate over the whole segment.
 
 **Supported keyword arguments**:
 
