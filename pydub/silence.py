@@ -172,7 +172,10 @@ def detect_leading_silence(sound, silence_threshold=-50.0, chunk_size=10):
     chunk_size - chunk size for interating over the segment in ms
     """
     trim_ms = 0 # ms
-    assert chunk_size > 0 # to avoid infinite loop
+
+    if chunk_size <= 0: # to avoid infinite loop
+        raise ValueError("`chunk_size` must be greater than zero to avoid an infinite loop.")
+
     while sound[trim_ms:trim_ms+chunk_size].dBFS < silence_threshold and trim_ms < len(sound):
         trim_ms += chunk_size
 
