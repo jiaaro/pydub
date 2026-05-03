@@ -9,9 +9,9 @@ import subprocess
 from tempfile import NamedTemporaryFile
 from .utils import get_player_name, make_chunks
 
-def _play_with_ffplay(seg):
+def _play_with_ffplay(seg, temp=None, delete=True):
     PLAYER = get_player_name()
-    with NamedTemporaryFile("w+b", suffix=".wav") as f:
+    with NamedTemporaryFile("w+b", suffix=".wav", dir=temp, delete=delete) as f:
         seg.export(f.name, "wav")
         subprocess.call([PLAYER, "-nodisp", "-autoexit", "-hide_banner", f.name])
 
@@ -48,7 +48,20 @@ def _play_with_simpleaudio(seg):
     )
 
 
-def play(audio_segment):
+def play(audio_segment, temp=None, delete=True):
+    """Plays an audio segment.
+
+    Args:
+        audio_segment: The audio segment to play. This could be a pydub
+                       AudioSegment object or a path to an audio file.
+        temp (str, optional): While using the 'ffmpeg' player.
+                              A path to a temporary file where the audio segment
+                              will be saved before playing. If None, a default
+                              temporary file location will be used. Defaults to None.
+        delete (bool, optional): While using the 'ffmpeg' player.
+                                 If True, the temporary audio file will be
+                                 deleted after playback. Defaults to True.
+    """
     try:
         playback = _play_with_simpleaudio(audio_segment)
         try:
@@ -62,10 +75,9 @@ def play(audio_segment):
 
     try:
         _play_with_pyaudio(audio_segment)
-        return
     except ImportError:
         pass
     else:
         return
 
-    _play_with_ffplay(audio_segment)
+    _play_with_ffplay(audio_segment, temp, delete)
