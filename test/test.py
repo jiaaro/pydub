@@ -231,6 +231,31 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(seg.sample_width, 2)
         self.assertEqual(seg.frame_rate, 32000)
 
+    def _wav_header_with(self, offset, replacement):
+        wav_data = (
+            b'RIFF\x28\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x02\x00'
+            b'\x00}\x00\x00\x00\xf4\x01\x00\x04\x00\x10\x00data\x04\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00')
+        return wav_data[:offset] + replacement + wav_data[offset + len(replacement):]
+
+    def test_wav_with_unreasonable_sample_rate_fails(self):
+        wav_data = self._wav_header_with(24, struct.pack('<I', 100000000))
+
+        with self.assertRaises(CouldntDecodeError):
+            AudioSegment(wav_data)
+
+    def test_wav_with_unreasonable_channel_count_fails(self):
+        wav_data = self._wav_header_with(22, struct.pack('<H', 65535))
+
+        with self.assertRaises(CouldntDecodeError):
+            AudioSegment(wav_data)
+
+    def test_wav_with_unreasonable_bit_depth_fails(self):
+        wav_data = self._wav_header_with(34, struct.pack('<H', 65535))
+
+        with self.assertRaises(CouldntDecodeError):
+            AudioSegment(wav_data)
+
     def test_24_bit_audio(self):
         path24 = os.path.join(data_dir, 'test1-24bit.wav')
         seg24 = AudioSegment._from_safe_wav(path24)

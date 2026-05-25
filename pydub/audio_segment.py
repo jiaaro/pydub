@@ -88,6 +88,10 @@ WavSubChunk = namedtuple('WavSubChunk', ['id', 'position', 'size'])
 WavData = namedtuple('WavData', ['audio_format', 'channels', 'sample_rate',
                                  'bits_per_sample', 'raw_data'])
 
+MAX_WAV_SAMPLE_RATE = 384000
+MAX_WAV_CHANNELS = 8
+MAX_WAV_BITS_PER_SAMPLE = 64
+
 
 def extract_wav_headers(data):
     # def search_subchunk(data, subchunk_id):
@@ -122,6 +126,17 @@ def read_wav_audio(data, headers=None):
     channels = struct.unpack_from('<H', data[pos + 2:pos + 4])[0]
     sample_rate = struct.unpack_from('<I', data[pos + 4:pos + 8])[0]
     bits_per_sample = struct.unpack_from('<H', data[pos + 14:pos + 16])[0]
+    if not 1 <= channels <= MAX_WAV_CHANNELS:
+        raise CouldntDecodeError("Invalid channel count %s in wav data" %
+                                 channels)
+    if not 1 <= sample_rate <= MAX_WAV_SAMPLE_RATE:
+        raise CouldntDecodeError("Invalid sample rate %s in wav data" %
+                                 sample_rate)
+    if (bits_per_sample < 8 or
+            bits_per_sample > MAX_WAV_BITS_PER_SAMPLE or
+            bits_per_sample % 8 != 0):
+        raise CouldntDecodeError("Invalid bit depth %s in wav data" %
+                                 bits_per_sample)
 
     data_hdr = headers[-1]
     if data_hdr.id != b'data':
