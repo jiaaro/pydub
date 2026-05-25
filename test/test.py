@@ -9,6 +9,7 @@ from tempfile import (
 )
 import tempfile
 import struct
+from io import BytesIO
 
 from pydub import AudioSegment
 from pydub.audio_segment import extract_wav_headers
@@ -226,6 +227,32 @@ class AudioSegmentTests(unittest.TestCase):
     def test_direct_instantiation_with_bytes(self):
         seg = AudioSegment(
             b'RIFF\x28\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x02\x00\x00}\x00\x00\x00\xf4\x01\x00\x04\x00\x10\x00data\x04\x00\x00\x00\x00\x00\x00\x00')
+        self.assertEqual(seg.frame_count(), 1)
+        self.assertEqual(seg.channels, 2)
+        self.assertEqual(seg.sample_width, 2)
+        self.assertEqual(seg.frame_rate, 32000)
+
+    def test_wav_with_odd_sized_chunk_before_data(self):
+        fmt = (
+            b'fmt ' +
+            struct.pack('<I', 16) +
+            struct.pack('<HHIIHH', 1, 2, 32000, 128000, 4, 16)
+        )
+        junk = b'JUNK' + struct.pack('<I', 1) + b'x' + b'\0'
+        pcm = b'\0\0\0\0'
+        data = b'data' + struct.pack('<I', len(pcm)) + pcm
+        riff_payload = b'WAVE' + fmt + junk + data
+        wav_data = (
+            b'RIFF' +
+            struct.pack('<I', len(riff_payload)) +
+            riff_payload
+        )
+
+        headers = extract_wav_headers(wav_data)
+
+        self.assertEqual([b'fmt ', b'JUNK', b'data'],
+                         [header.id for header in headers])
+        seg = AudioSegment.from_wav(BytesIO(wav_data))
         self.assertEqual(seg.frame_count(), 1)
         self.assertEqual(seg.channels, 2)
         self.assertEqual(seg.sample_width, 2)

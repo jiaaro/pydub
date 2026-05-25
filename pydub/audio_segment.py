@@ -101,6 +101,9 @@ def extract_wav_headers(data):
             # 'data' is the last subchunk
             break
         pos += subchunk_size + 8
+        # RIFF chunks are word-aligned; odd payloads include one pad byte.
+        if subchunk_size % 2:
+            pos += 1
 
     return subchunks
 
