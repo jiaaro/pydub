@@ -558,6 +558,13 @@ class AudioSegment(object):
             else:
                 return obj[start_second * 1000:(start_second + duration) * 1000]
 
+        if cls.converter is None:
+            raise OSError(
+                "AudioSegment.converter is not set. Check that ffmpeg or "
+                "avconv is installed and that AudioSegment.converter is "
+                "configured."
+            )
+
         input_file = NamedTemporaryFile(mode='wb', delete=False)
         try:
             input_file.write(file.read())
@@ -694,6 +701,13 @@ class AudioSegment(object):
                 return cls(data=file.read(), metadata=metadata)[:duration*1000]
             else:
                 return cls(data=file.read(), metadata=metadata)[start_second*1000:(start_second+duration)*1000]
+
+        if cls.converter is None:
+            raise OSError(
+                "AudioSegment.converter is not set. Check that ffmpeg or "
+                "avconv is installed and that AudioSegment.converter is "
+                "configured."
+            )
 
         conversion_command = [cls.converter,
                               '-y',  # always overwrite existing files
