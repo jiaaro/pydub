@@ -1251,6 +1251,13 @@ class NoConverterTests(unittest.TestCase):
         func = partial(AudioSegment.from_file, self.mp3_file, format="mp3")
         self.assertRaises(OSError, func)
 
+    def test_opening_mp3_file_with_unset_converter_has_context(self):
+        AudioSegment.converter = None
+        func = partial(AudioSegment.from_file, self.mp3_file, format="mp3")
+
+        with self.assertRaisesRegexp(OSError, "AudioSegment.converter is not set"):
+            func()
+
     def test_init_AudioSegment_data_buffer(self):
         seg = AudioSegment(data="\0" * 34, sample_width=2, frame_rate=4, channels=1)
 
