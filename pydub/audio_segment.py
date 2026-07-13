@@ -14,14 +14,14 @@ from collections import namedtuple
 
 try:
     from StringIO import StringIO
-except:
+except ImportError:
     from io import StringIO
 
 from io import BytesIO
 
 try:
     from itertools import izip
-except:
+except ImportError:
     izip = zip
 
 from .utils import (
@@ -186,7 +186,7 @@ class AudioSegment(object):
         if isinstance(data, array.array):
             try:
                 data = data.tobytes()
-            except:
+            except AttributeError:
                 data = data.tostring()
 
         # prevent partial specification of arguments

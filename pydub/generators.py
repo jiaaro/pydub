@@ -47,7 +47,7 @@ class SignalGenerator(object):
         
         try:
             data = data.tobytes()
-        except:
+        except AttributeError:
             data = data.tostring()
 
         return AudioSegment(data=data, metadata={

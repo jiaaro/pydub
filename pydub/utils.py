@@ -377,7 +377,7 @@ def cache_codecs(function):
     def wrapper():
         try:
             return cache[0]
-        except:
+        except KeyError:
             cache[0] = function()
             return cache[0]
 
