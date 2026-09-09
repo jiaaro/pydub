@@ -1,9 +1,9 @@
-from __future__ import division
 from io import BufferedReader
 
 import json
 import os
 import re
+import shutil
 import sys
 from subprocess import Popen, PIPE
 from math import log, ceil
@@ -11,13 +11,15 @@ from tempfile import TemporaryFile
 from warnings import warn
 from functools import wraps
 
-try:
-    import audioop
-except ImportError:
-    import pyaudioop as audioop
+from .exceptions import ConverterNotFoundError
 
-if sys.version_info >= (3, 0):
-    basestring = str
+try:
+    # stdlib on Python <= 3.12, or the audioop-lts backport on 3.13+
+    import audioop
+    audioop_backend = "audioop"
+except ImportError:
+    from . import pyaudioop as audioop
+    audioop_backend = "pyaudioop"
 
 FRAME_WIDTHS = {
     8: 1,
@@ -57,21 +59,12 @@ def _fd_or_path_or_tempfile(fd, mode='w+b', tempfile=True):
         fd = TemporaryFile(mode=mode)
         close_fd = True
 
-    if isinstance(fd, basestring):
+    if isinstance(fd, (str, os.PathLike)):
         fd = open(fd, mode=mode)
         close_fd = True
 
     if isinstance(fd, BufferedReader):
         close_fd = True
-
-    try:
-        if isinstance(fd, os.PathLike):
-            fd = open(fd, mode=mode)
-            close_fd = True
-    except AttributeError:
-        # module os has no attribute PathLike, so we're on python < 3.6.
-        # The protocol we're trying to support doesn't exist, so just pass.
-        pass
 
     return fd, close_fd
 
@@ -121,7 +114,7 @@ def register_pydub_effect(fn, name=None):
         def normalize_audio_segment(audio_segment):
             ...
     """
-    if isinstance(fn, basestring):
+    if isinstance(fn, str):
         name = fn
         return lambda fn: register_pydub_effect(fn, name)
 
@@ -153,12 +146,26 @@ def which(program):
     if os.name == "nt" and not program.endswith(".exe"):
         program += ".exe"
 
-    envdir_list = [os.curdir] + os.environ["PATH"].split(os.pathsep)
+    envdir_list = [os.curdir] + os.environ.get("PATH", "").split(os.pathsep)
 
     for envdir in envdir_list:
         program_path = os.path.join(envdir, program)
         if os.path.isfile(program_path) and os.access(program_path, os.X_OK):
             return program_path
+
+    # shutil.which knows about PATHEXT on Windows and other platform quirks
+    return shutil.which(program)
+
+
+def missing_converter_message(name):
+    """Explain a FileNotFoundError from launching ffmpeg/ffprobe/ffplay."""
+    return (
+        "Couldn't run {0!r}. pydub needs ffmpeg (or avconv) installed and on "
+        "the PATH to decode or encode anything other than wav/raw audio. "
+        "Install it from https://ffmpeg.org/download.html (macOS: brew install "
+        "ffmpeg, Debian/Ubuntu: apt install ffmpeg, Windows: winget install "
+        "ffmpeg) or point AudioSegment.converter at the executable."
+    ).format(name)
 
 
 def get_encoder_name():
@@ -204,20 +211,9 @@ def get_prober_name():
 
 
 def fsdecode(filename):
-    """Wrapper for os.fsdecode which was introduced in python 3.2 ."""
-
-    if sys.version_info >= (3, 2):
-        PathLikeTypes = (basestring, bytes)
-        if sys.version_info >= (3, 6):
-            PathLikeTypes += (os.PathLike,)
-        if isinstance(filename, PathLikeTypes):
-            return os.fsdecode(filename)
-    else:
-        if isinstance(filename, bytes):
-            return filename.decode(sys.getfilesystemencoding())
-        if isinstance(filename, basestring):
-            return filename
-
+    """os.fsdecode for str, bytes and os.PathLike; TypeError for anything else."""
+    if isinstance(filename, (str, bytes, os.PathLike)):
+        return os.fsdecode(filename)
     raise TypeError("type {0} not accepted by fsdecode".format(type(filename)))
 
 
@@ -275,14 +271,20 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
             file.close()
 
     command = [prober, '-of', 'json'] + command_args
-    res = Popen(command, stdin=stdin_parameter, stdout=PIPE, stderr=PIPE)
+    try:
+        res = Popen(command, stdin=stdin_parameter, stdout=PIPE, stderr=PIPE)
+    except FileNotFoundError:
+        # No prober: callers fall back to decoding without stream details,
+        # and the converter step reports the missing ffmpeg clearly.
+        warn(missing_converter_message(prober), RuntimeWarning)
+        return None
     output, stderr = res.communicate(input=stdin_data)
     output = output.decode("utf-8", 'ignore')
     stderr = stderr.decode("utf-8", 'ignore')
 
     try:
         info = json.loads(output)
-    except  json.decoder.JSONDecodeError:
+    except ValueError:
         # If ffprobe didn't give any information, just return it
         # (for example, because the file doesn't exist)
         return None
@@ -291,7 +293,7 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
 
     extra_info = get_extra_info(stderr)
 
-    audio_streams = [x for x in info['streams'] if x['codec_type'] == 'audio']
+    audio_streams = [x for x in info.get('streams', []) if x.get('codec_type') == 'audio']
     if len(audio_streams) == 0:
         return info
 
@@ -302,7 +304,7 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
         if prop not in stream or stream[prop] == 0:
             stream[prop] = value
 
-    for token in extra_info[stream['index']]:
+    for token in extra_info.get(stream.get('index'), []):
         m = re.match(r'([su]([0-9]{1,2})p?) \(([0-9]{1,2}) bit\)$', token)
         m2 = re.match(r'([su]([0-9]{1,2})p?)( \(default\))?$', token)
         if m:
@@ -337,12 +339,15 @@ def mediainfo(filepath):
     ]
 
     command = [prober, '-of', 'old'] + command_args
-    res = Popen(command, stdout=PIPE)
-    output = res.communicate()[0].decode("utf-8")
+    try:
+        res = Popen(command, stdout=PIPE)
+    except FileNotFoundError:
+        raise ConverterNotFoundError(missing_converter_message(prober))
+    output = res.communicate()[0].decode("utf-8", 'ignore')
 
     if res.returncode != 0:
         command = [prober] + command_args
-        output = Popen(command, stdout=PIPE).communicate()[0].decode("utf-8")
+        output = Popen(command, stdout=PIPE).communicate()[0].decode("utf-8", 'ignore')
 
     rgx = re.compile(r"(?:(?P<inner_dict>.*?):)?(?P<key>.*?)\=(?P<value>.*?)$")
     info = {}
@@ -377,10 +382,11 @@ def cache_codecs(function):
     def wrapper():
         try:
             return cache[0]
-        except:
+        except KeyError:
             cache[0] = function()
             return cache[0]
 
+    wrapper.clear_cache = cache.clear
     return wrapper
 
 
@@ -388,10 +394,13 @@ def cache_codecs(function):
 def get_supported_codecs():
     encoder = get_encoder_name()
     command = [encoder, "-codecs"]
-    res = Popen(command, stdout=PIPE, stderr=PIPE)
-    output = res.communicate()[0].decode("utf-8")
+    try:
+        res = Popen(command, stdout=PIPE, stderr=PIPE)
+    except FileNotFoundError:
+        return (set(), set())
+    output = res.communicate()[0].decode("utf-8", 'ignore')
     if res.returncode != 0:
-        return []
+        return (set(), set())
 
     if sys.platform == 'win32':
         output = output.replace("\r", "")
@@ -421,6 +430,59 @@ def get_supported_decoders():
 
 def get_supported_encoders():
     return get_supported_codecs()[1]
+
+
+@cache_codecs
+def get_supported_encoder_names():
+    """
+    Names of the encoders ffmpeg/avconv was built with (``ffmpeg -encoders``),
+    e.g. {'libvorbis', 'vorbis', 'libmp3lame', ...}. Unlike codec names these
+    are what ``-acodec`` accepts. Empty when the converter can't be run.
+    """
+    encoder = get_encoder_name()
+    try:
+        res = Popen([encoder, "-hide_banner", "-encoders"], stdout=PIPE, stderr=PIPE)
+    except FileNotFoundError:
+        return set()
+    output = res.communicate()[0].decode("utf-8", 'ignore')
+    if res.returncode != 0:
+        return set()
+    names = set()
+    rgx = re.compile(r"^ ?([AVS][A-Z.]{5}) +(\S+)")
+    for line in output.replace("\r", "").split("\n"):
+        m = rgx.match(line)
+        if m and m.group(1)[0] == "A":
+            names.add(m.group(2))
+    return names
+
+
+# Encoders that are substituted when the preferred one was not compiled into
+# ffmpeg. The value is (replacement encoder, extra ffmpeg arguments); the
+# built-in vorbis and opus encoders are marked experimental and need -strict.
+ENCODER_FALLBACKS = {
+    "libvorbis": ("vorbis", ["-strict", "-2"]),
+    "libopus": ("opus", ["-strict", "-2"]),
+    "libmp3lame": ("mp3", []),
+    "libfdk_aac": ("aac", []),
+}
+
+
+def resolve_encoder(codec):
+    """
+    Return (codec, extra_args) to use for the requested encoder, swapping in
+    a fallback when ffmpeg lacks it (Homebrew's ffmpeg ships without
+    libvorbis, for example). Unknown or unavailable names pass through
+    unchanged so ffmpeg reports the error.
+    """
+    if codec not in ENCODER_FALLBACKS:
+        return codec, []
+    available = get_supported_encoder_names()
+    if not available or codec in available:
+        return codec, []
+    replacement, extra = ENCODER_FALLBACKS[codec]
+    if replacement in available:
+        return replacement, list(extra)
+    return codec, []
 
 def stereo_to_ms(audio_segment):
 	'''
