@@ -5,15 +5,29 @@ is tricky to install. See my notes on installing pyaudio in a virtualenv (on
 OSX 10.10): https://gist.github.com/jiaaro/9767512210a1d80a8a0d
 """
 
+import os
 import subprocess
 from tempfile import NamedTemporaryFile
-from .utils import get_player_name, make_chunks
+from .utils import get_player_name, make_chunks, missing_converter_message
 
 def _play_with_ffplay(seg):
     PLAYER = get_player_name()
-    with NamedTemporaryFile("w+b", suffix=".wav") as f:
+    # Close the temp file before ffplay opens it: on Windows a file that is
+    # still open in this process can't be read by another one.
+    f = NamedTemporaryFile("w+b", suffix=".wav", delete=False)
+    f.close()
+    try:
         seg.export(f.name, "wav")
-        subprocess.call([PLAYER, "-nodisp", "-autoexit", "-hide_banner", f.name])
+        try:
+            subprocess.call([PLAYER, "-nodisp", "-autoexit", "-hide_banner",
+                             "-loglevel", "error", f.name])
+        except FileNotFoundError:
+            raise OSError(missing_converter_message(PLAYER))
+    finally:
+        try:
+            os.unlink(f.name)
+        except OSError:
+            pass
 
 
 def _play_with_pyaudio(seg):

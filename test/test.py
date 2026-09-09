@@ -20,6 +20,7 @@ from pydub.utils import (
     get_encoder_name,
     get_supported_decoders,
     get_supported_encoders,
+    get_supported_encoder_names,
 )
 from pydub.exceptions import (
     InvalidTag,
@@ -780,6 +781,8 @@ class AudioSegmentTests(unittest.TestCase):
                                                               format="mp3")
 
     def test_export_mp3_as_ogg(self):
+        if 'libvorbis' not in get_supported_encoder_names():
+            self.skipTest("this ffmpeg lacks libvorbis and its built-in vorbis encoder is stereo-only")
         with NamedTemporaryFile('w+b', suffix='.ogg') as tmp_ogg_file:
             AudioSegment.from_file(self.mp3_file_path).export(tmp_ogg_file,
                                                               format="ogg")
@@ -1086,7 +1089,7 @@ class AudioSegmentTests(unittest.TestCase):
             tmp_wav_file.flush()
             self.assertRaises(CouldntDecodeError, AudioSegment.from_file, tmp_wav_file.name)
             files = os.listdir(tempfile.tempdir)
-            self.assertEquals(files, [os.path.basename(tmp_wav_file.name)])
+            self.assertEqual(files, [os.path.basename(tmp_wav_file.name)])
 
         if sys.platform == 'win32':
             os.remove(tmp_wav_file.name)
@@ -1109,7 +1112,7 @@ class SilenceTests(unittest.TestCase):
 
     def test_split_on_silence_complete_silence(self):
         seg = AudioSegment.silent(5000)
-        self.assertEquals( split_on_silence(seg), [] )
+        self.assertEqual( split_on_silence(seg), [] )
 
     def test_split_on_silence_test1(self):
         self.assertEqual(

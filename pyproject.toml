@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pydub"
+dynamic = ["version"]
+description = "Manipulate audio with a simple and easy high level interface"
+readme = { file = "README.markdown", content-type = "text/markdown" }
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "James Robert", email = "jiaaro@gmail.com" }]
+maintainers = [{ name = "Keith Adler" }]
+keywords = ["audio", "sound", "high-level"]
+requires-python = ">=3.9"
+dependencies = [
+    # audioop left the standard library in Python 3.13; this is the same C
+    # module as a wheel. pydub also ships a pure-Python fallback.
+    "audioop-lts>=0.2.1; python_version >= '3.13'",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Multimedia :: Sound/Audio :: Analysis",
+    "Topic :: Multimedia :: Sound/Audio :: Conversion",
+    "Topic :: Multimedia :: Sound/Audio :: Editors",
+    "Topic :: Multimedia :: Sound/Audio :: Mixers",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Utilities",
+]
+
+[project.optional-dependencies]
+# faster pure-Python audioop fallback (only matters without audioop-lts)
+numpy = ["numpy>=1.20"]
+# pydub.scipy_effects
+scipy = ["scipy>=1.7"]
+# pydub.playback backends
+playback = ["simpleaudio"]
+
+[project.urls]
+Homepage = "http://pydub.com"
+Documentation = "https://github.com/keithadler/pydub/blob/master/API.markdown"
+Source = "https://github.com/keithadler/pydub"
+Changelog = "https://github.com/keithadler/pydub/blob/master/CHANGELOG.md"
+Upstream = "https://github.com/jiaaro/pydub"
+
+[tool.setuptools]
+packages = ["pydub"]
+
+[tool.setuptools.dynamic]
+version = { attr = "pydub.__version__" }

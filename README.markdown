@@ -1,6 +1,8 @@
-# Pydub [![Build Status](https://travis-ci.org/jiaaro/pydub.svg?branch=master)](https://travis-ci.org/jiaaro/pydub) [![Build status](https://ci.appveyor.com/api/projects/status/gy1ucp9o5khq7fqi/branch/master?svg=true)](https://ci.appveyor.com/project/jiaaro/pydub/branch/master)
+# Pydub [![CI](https://github.com/keithadler/pydub/actions/workflows/ci.yml/badge.svg)](https://github.com/keithadler/pydub/actions/workflows/ci.yml)
 
 Pydub lets you do stuff to audio in a way that isn't stupid.
+
+> **Status (2026):** this is a maintained continuation of [jiaaro/pydub](https://github.com/jiaaro/pydub), which last shipped a release in March 2021 and no longer imports on Python 3.13+ (the `audioop` module it relied on was removed from the standard library). Version 0.26 fixes that, runs on Python 3.9 through 3.14 on Linux, macOS and Windows under CI, and folds in the fixes that were waiting in upstream pull requests. The API is unchanged. Changes are offered back upstream; see the [CHANGELOG](CHANGELOG.md).
 
 **Stuff you might be looking for**:
  - [Installing Pydub](https://github.com/jiaaro/pydub#installation)
@@ -164,26 +166,44 @@ We keep an eye on both.
 
 Installing pydub is easy, but don't forget to install ffmpeg/avlib (the next section in this doc)
 
-    pip install pydub
+    pip install "pydub @ git+https://github.com/keithadler/pydub.git@v0.26.0"
 
-Or install the latest dev version from github (or replace `@master` with a [release version like `@v0.12.0`](https://github.com/jiaaro/pydub/releases))…
+(The `pydub` package on PyPI is still upstream's 0.25.1 from 2021, which does
+not import on Python 3.13 or newer.) Or track the development branch:
 
-    pip install git+https://github.com/jiaaro/pydub.git@master
-
--OR-
-
-    git clone https://github.com/jiaaro/pydub.git
+    pip install git+https://github.com/keithadler/pydub.git@master
 
 -OR-
 
-Copy the pydub directory into your python path. Zip 
-[here](https://github.com/jiaaro/pydub/zipball/master)
+    git clone https://github.com/keithadler/pydub.git
+
+-OR-
+
+Copy the pydub directory into your python path. Zip
+[here](https://github.com/keithadler/pydub/zipball/master)
+
+### Python 3.13 and newer
+
+Python 3.13 removed the standard library's `audioop` module, which pydub used
+for all sample math. pydub 0.26 installs the
+[`audioop-lts`](https://pypi.org/project/audioop-lts/) wheel (the same C code)
+on 3.13+, and also ships a pure-Python implementation (`pydub.pyaudioop`) that
+is used automatically when no C module is importable. The fallback is exact
+but slower; installing NumPy makes it fast (`pip install "pydub[numpy]"`).
+`pydub.utils.audioop_backend` tells you which one is in use.
 
 ## Dependencies
 
-You can open and save WAV files with pure python. For opening and saving non-wav 
-files – like mp3 – you'll need [ffmpeg](http://www.ffmpeg.org/) or 
-[libav](http://libav.org/).
+You can open and save WAV files with pure python. For opening and saving non-wav
+files – like mp3 – you'll need [ffmpeg](http://www.ffmpeg.org/) or
+[libav](http://libav.org/). If ffmpeg can't be found, pydub raises
+`pydub.exceptions.ConverterNotFoundError` (an `OSError`) with install hints.
+
+Not every ffmpeg build has every encoder. Homebrew's `ffmpeg` formula, for
+example, is built without `libvorbis`; pydub then falls back to ffmpeg's
+built-in `vorbis` encoder for `.ogg` exports, which only handles stereo. For
+mono ogg exports install a build that includes libvorbis (the static builds
+linked from ffmpeg.org do) or export as opus or mp3 instead.
 
 ### Playback
 

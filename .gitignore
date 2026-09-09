@@ -10,3 +10,9 @@ env
 
 /build/
 .remote-sync.json
+__pycache__/
+*.pyc
+build/
+dist/
+*.egg-info/
+.venv/
