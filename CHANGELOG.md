@@ -1,3 +1,16 @@
+# v0.26.0
+- Python 3.13 and 3.14 support: `audioop` left the standard library, so pydub now depends on the `audioop-lts` wheel on 3.13+ and ships a rewritten, exact pure-Python `pydub.pyaudioop` fallback (NumPy-accelerated when NumPy is installed). The old fallback was Python 2 code and could not import on Python 3 at all.
+- Dropped Python 2 and Python < 3.9; packaging moved to `pyproject.toml`; CI runs the suite on Linux, macOS and Windows for Python 3.9 - 3.14, with and without the C audioop module.
+- Exports feed ffmpeg raw PCM instead of a temporary wav file, so segments over 4 GB can be encoded.
+- Reading wav data honours RIFF pad bytes on odd-sized chunks, accepts streaming (`0xFFFFFFFF`) data sizes and files over 4 GB, and rejects headers with impossible channel counts, sample rates or bit depths instead of misreading them.
+- 24-bit wav loading is vectorised (was a per-byte Python loop); output is byte-for-byte identical.
+- A missing or unset ffmpeg now raises `pydub.exceptions.ConverterNotFoundError` (subclass of `FileNotFoundError`/`OSError`) with install hints instead of a bare `FileNotFoundError` from `subprocess`.
+- Encoder fallback: when ffmpeg lacks `libvorbis` (Homebrew's build), ogg exports use the built-in `vorbis` encoder; a clear error explains that it is stereo-only. Same for `libopus`/`opus` and `libmp3lame`/`mp3`.
+- `AudioSegment.from_file(parameters=...)` now applies the extra ffmpeg arguments to the output as documented (they were appended after the output target and ignored).
+- `pydub.playback.play()` with ffplay closes the temporary file before playing (fixes `PermissionError` on Windows) and is less verbose.
+- Bare `except:` clauses replaced with specific exceptions; `ffprobe` JSON errors handled on all Python versions.
+- New tests: differential tests of the pure-Python audioop against the C module, wav header edge cases, converter errors, encoder fallback and export round trips.
+
 # v0.25.1
 - Fix crashing bug in new scipy-powered EQ effects
 
