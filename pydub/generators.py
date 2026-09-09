@@ -45,10 +45,7 @@ class SignalGenerator(object):
 
         data = array.array(array_type, sample_data)
         
-        try:
-            data = data.tobytes()
-        except:
-            data = data.tostring()
+        data = data.tobytes()
 
         return AudioSegment(data=data, metadata={
             "channels": 1,

@@ -30,3 +30,11 @@ class CouldntEncodeError(PydubException):
 
 class MissingAudioParameter(PydubException):
     pass
+
+
+class ConverterNotFoundError(PydubException, FileNotFoundError):
+    """
+    ffmpeg/avconv (or ffprobe/ffplay) could not be run. Subclasses
+    FileNotFoundError/OSError so existing ``except OSError`` handlers keep
+    working.
+    """

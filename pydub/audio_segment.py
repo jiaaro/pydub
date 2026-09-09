@@ -1,28 +1,16 @@
-from __future__ import division
-
 import array
 import os
+import shutil
 import subprocess
 from tempfile import NamedTemporaryFile
 import wave
 import sys
 import struct
 from .logging_utils import log_conversion, log_subprocess_output
-from .utils import mediainfo_json, fsdecode
+from .utils import mediainfo_json, fsdecode, missing_converter_message, resolve_encoder
 import base64
 from collections import namedtuple
-
-try:
-    from StringIO import StringIO
-except:
-    from io import StringIO
-
 from io import BytesIO
-
-try:
-    from itertools import izip
-except:
-    izip = zip
 
 from .utils import (
     _fd_or_path_or_tempfile,
@@ -33,6 +21,7 @@ from .utils import (
     audioop,
 )
 from .exceptions import (
+    ConverterNotFoundError,
     TooManyMissingFrames,
     InvalidDuration,
     InvalidID3TagVersion,
@@ -42,11 +31,18 @@ from .exceptions import (
     MissingAudioParameter,
 )
 
-if sys.version_info >= (3, 0):
-    basestring = str
-    xrange = range
-    StringIO = BytesIO
 
+# 24-bit samples are widened to 32 bits on load. This table gives the sign
+# extension byte for the high byte of each 24-bit sample.
+_SIGN_EXTEND = bytes([0] * 128 + [0xFF] * 128)
+
+# ffmpeg raw PCM formats for each sample width; used when exporting so the
+# converter never has to read a wav file, which cannot exceed 4 GB.
+_RAW_PCM_FORMATS = {1: "s8", 2: "s16le", 3: "s24le", 4: "s32le"}
+
+MAX_WAV_SAMPLE_RATE = 384000
+MAX_WAV_CHANNELS = 64
+MAX_WAV_BITS_PER_SAMPLE = 64
 
 class ClassPropertyDescriptor(object):
 
@@ -96,11 +92,19 @@ def extract_wav_headers(data):
     while pos + 8 <= len(data) and len(subchunks) < 10:
         subchunk_id = data[pos:pos + 4]
         subchunk_size = struct.unpack_from('<I', data[pos + 4:pos + 8])[0]
-        subchunks.append(WavSubChunk(subchunk_id, pos, subchunk_size))
         if subchunk_id == b'data':
-            # 'data' is the last subchunk
+            # 'data' is the last subchunk. Streams (ffmpeg writing to a pipe)
+            # and files over 4 GB carry a placeholder size: use what's there.
+            remaining = len(data) - pos - 8
+            if subchunk_size == 0xFFFFFFFF or subchunk_size > remaining:
+                subchunk_size = remaining
+            subchunks.append(WavSubChunk(subchunk_id, pos, subchunk_size))
             break
+        subchunks.append(WavSubChunk(subchunk_id, pos, subchunk_size))
         pos += subchunk_size + 8
+        # RIFF chunks are word-aligned; odd payloads carry one pad byte.
+        if subchunk_size % 2:
+            pos += 1
 
     return subchunks
 
@@ -122,6 +126,13 @@ def read_wav_audio(data, headers=None):
     channels = struct.unpack_from('<H', data[pos + 2:pos + 4])[0]
     sample_rate = struct.unpack_from('<I', data[pos + 4:pos + 8])[0]
     bits_per_sample = struct.unpack_from('<H', data[pos + 14:pos + 16])[0]
+    if not 1 <= channels <= MAX_WAV_CHANNELS:
+        raise CouldntDecodeError("Invalid channel count %s in wav data" % channels)
+    if not 1 <= sample_rate <= MAX_WAV_SAMPLE_RATE:
+        raise CouldntDecodeError("Invalid sample rate %s in wav data" % sample_rate)
+    if (bits_per_sample < 8 or bits_per_sample > MAX_WAV_BITS_PER_SAMPLE or
+            bits_per_sample % 8 != 0):
+        raise CouldntDecodeError("Invalid bit depth %s in wav data" % bits_per_sample)
 
     data_hdr = headers[-1]
     if data_hdr.id != b'data':
@@ -137,15 +148,18 @@ def fix_wav_headers(data):
     if not headers or headers[-1].id != b'data':
         return
 
-    # TODO: Handle huge files in some other way
-    if len(data) > 2**32:
-        raise CouldntDecodeError("Unable to process >4GB files")
+    pos = headers[-1].position
+    if len(data) - 8 >= 2**32:
+        # Too big for the 32-bit RIFF size fields; leave the streaming
+        # placeholders in place, extract_wav_headers() reads to the end.
+        data[4:8] = struct.pack('<I', 0xFFFFFFFF)
+        data[pos + 4:pos + 8] = struct.pack('<I', 0xFFFFFFFF)
+        return
 
     # Set the file size in the RIFF chunk descriptor
     data[4:8] = struct.pack('<I', len(data) - 8)
 
     # Set the data size in the data subchunk
-    pos = headers[-1].position
     data[pos + 4:pos + 8] = struct.pack('<I', len(data) - pos - 8)
 
 
@@ -184,10 +198,7 @@ class AudioSegment(object):
         audio_params = (self.sample_width, self.frame_rate, self.channels)
 
         if isinstance(data, array.array):
-            try:
-                data = data.tobytes()
-            except:
-                data = data.tostring()
+            data = data.tobytes()
 
         # prevent partial specification of arguments
         if any(audio_params) and None in audio_params:
@@ -210,8 +221,8 @@ class AudioSegment(object):
         else:
             # normal construction
             try:
-                data = data if isinstance(data, (basestring, bytes)) else data.read()
-            except(OSError):
+                data = data if isinstance(data, (str, bytes)) else data.read()
+            except OSError:
                 d = b''
                 reader = data.read(2 ** 31 - 1)
                 while reader:
@@ -235,23 +246,18 @@ class AudioSegment(object):
         # Convert 24-bit audio to 32-bit audio.
         # (stdlib audioop and array modules do not support 24-bit data)
         if self.sample_width == 3:
-            byte_buffer = BytesIO()
-
-            # Workaround for python 2 vs python 3. _data in 2.x are length-1 strings,
-            # And in 3.x are ints.
-            pack_fmt = 'BBB' if isinstance(self._data[0], int) else 'ccc'
-
             # This conversion maintains the 24 bit values.  The values are
             # not scaled up to the 32 bit range.  Other conversions could be
             # implemented.
-            i = iter(self._data)
-            padding = {False: b'\x00', True: b'\xFF'}
-            for b0, b1, b2 in izip(i, i, i):
-                byte_buffer.write(padding[b2 > b'\x7f'[0]])
-                old_bytes = struct.pack(pack_fmt, b0, b1, b2)
-                byte_buffer.write(old_bytes)
+            src = bytes(self._data)
+            src = src[:len(src) - len(src) % 3]
+            widened = bytearray(len(src) // 3 * 4)
+            widened[0::4] = src[2::3].translate(_SIGN_EXTEND)
+            widened[1::4] = src[0::3]
+            widened[2::4] = src[1::3]
+            widened[3::4] = src[2::3]
 
-            self._data = byte_buffer.getvalue()
+            self._data = bytes(widened)
             self.sample_width = 4
             self.frame_width = self.channels * self.sample_width
 
@@ -285,7 +291,7 @@ class AudioSegment(object):
     def __eq__(self, other):
         try:
             return self._data == other._data
-        except:
+        except AttributeError:
             return False
 
     def __hash__(self):
@@ -295,14 +301,14 @@ class AudioSegment(object):
         return not (self == other)
 
     def __iter__(self):
-        return (self[i] for i in xrange(len(self)))
+        return (self[i] for i in range(len(self)))
 
     def __getitem__(self, millisecond):
         if isinstance(millisecond, slice):
             if millisecond.step:
                 return (
                     self[i:i + millisecond.step]
-                    for i in xrange(*millisecond.indices(len(self)))
+                    for i in range(*millisecond.indices(len(self)))
                 )
 
             start = millisecond.start if millisecond.start is not None else 0
@@ -411,10 +417,7 @@ class AudioSegment(object):
             data = b''.join(data)
 
         if isinstance(data, array.array):
-            try:
-                data = data.tobytes()
-            except:
-                data = data.tostring()
+            data = data.tobytes()
 
         # accept file-like objects
         if hasattr(data, 'read'):
@@ -515,7 +518,7 @@ class AudioSegment(object):
             f = f.lower()
             if format == f:
                 return True
-            if isinstance(orig_file, basestring):
+            if isinstance(orig_file, str):
                 return orig_file.lower().endswith(".{0}".format(f))
             if isinstance(orig_file, bytes):
                 return orig_file.lower().endswith((".{0}".format(f)).encode('utf8'))
@@ -534,7 +537,7 @@ class AudioSegment(object):
                     return obj[:duration*1000]
                 else:
                     return obj[start_second*1000:(start_second+duration)*1000]
-            except:
+            except (CouldntDecodeError, ValueError, struct.error, EOFError):
                 file.seek(0)
         elif is_format("raw") or is_format("pcm"):
             sample_width = kwargs['sample_width']
@@ -557,6 +560,12 @@ class AudioSegment(object):
                 return obj[:duration * 1000]
             else:
                 return obj[start_second * 1000:(start_second + duration) * 1000]
+
+        if cls.converter is None:
+            raise ConverterNotFoundError(
+                "AudioSegment.converter is not set. Check that ffmpeg or "
+                "avconv is installed and that AudioSegment.converter is "
+                "configured.")
 
         input_file = NamedTemporaryFile(mode='wb', delete=False)
         try:
@@ -604,17 +613,24 @@ class AudioSegment(object):
         if duration is not None:
             conversion_command += ["-t", str(duration)]
 
-        conversion_command += [output.name]
-
         if parameters is not None:
             # extend arguments with arbitrary set
             conversion_command.extend(parameters)
 
+        conversion_command += [output.name]
+
         log_conversion(conversion_command)
 
-        with open(os.devnull, 'rb') as devnull:
-            p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        p_out, p_err = p.communicate()
+        try:
+            with open(os.devnull, 'rb') as devnull:
+                p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p_out, p_err = p.communicate()
+        except FileNotFoundError:
+            input_file.close()
+            output.close()
+            os.unlink(input_file.name)
+            os.unlink(output.name)
+            raise ConverterNotFoundError(missing_converter_message(cls.converter))
 
         log_subprocess_output(p_out)
         log_subprocess_output(p_err)
@@ -674,7 +690,7 @@ class AudioSegment(object):
                     return cls._from_safe_wav(file)[:duration*1000]
                 else:
                     return cls._from_safe_wav(file)[start_second*1000:(start_second+duration)*1000]
-            except:
+            except (CouldntDecodeError, ValueError, struct.error, EOFError):
                 file.seek(0)
         elif is_format("raw") or is_format("pcm"):
             sample_width = kwargs['sample_width']
@@ -694,6 +710,12 @@ class AudioSegment(object):
                 return cls(data=file.read(), metadata=metadata)[:duration*1000]
             else:
                 return cls(data=file.read(), metadata=metadata)[start_second*1000:(start_second+duration)*1000]
+
+        if cls.converter is None:
+            raise ConverterNotFoundError(
+                "AudioSegment.converter is not set. Check that ffmpeg or "
+                "avconv is installed and that AudioSegment.converter is "
+                "configured.")
 
         conversion_command = [cls.converter,
                               '-y',  # always overwrite existing files
@@ -726,9 +748,11 @@ class AudioSegment(object):
             info = None
         else:
             info = mediainfo_json(orig_file, read_ahead_limit=read_ahead_limit)
+        audio_streams = []
         if info:
-            audio_streams = [x for x in info['streams']
-                             if x['codec_type'] == 'audio']
+            audio_streams = [x for x in info.get('streams', [])
+                             if x.get('codec_type') == 'audio']
+        if audio_streams:
             # This is a workaround for some ffprobe versions that always say
             # that mp3/mp4/aac/webm/ogg files contain fltp samples
             audio_codec = audio_streams[0].get('codec_name')
@@ -736,11 +760,13 @@ class AudioSegment(object):
                     audio_codec in ['mp3', 'mp4', 'aac', 'webm', 'ogg']):
                 bits_per_sample = 16
             else:
-                bits_per_sample = audio_streams[0]['bits_per_sample']
+                bits_per_sample = audio_streams[0].get('bits_per_sample') or 16
             if bits_per_sample == 8:
                 acodec = 'pcm_u8'
-            else:
+            elif bits_per_sample in (16, 24, 32):
                 acodec = 'pcm_s%dle' % bits_per_sample
+            else:
+                acodec = 'pcm_s16le'
 
             conversion_command += ["-acodec", acodec]
 
@@ -755,16 +781,21 @@ class AudioSegment(object):
         if duration is not None:
             conversion_command += ["-t", str(duration)]
 
-        conversion_command += ["-"]
-
         if parameters is not None:
             # extend arguments with arbitrary set
             conversion_command.extend(parameters)
 
+        conversion_command += ["-"]
+
         log_conversion(conversion_command)
 
-        p = subprocess.Popen(conversion_command, stdin=stdin_parameter,
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            p = subprocess.Popen(conversion_command, stdin=stdin_parameter,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except FileNotFoundError:
+            if close_file:
+                file.close()
+            raise ConverterNotFoundError(missing_converter_message(cls.converter))
         p_out, p_err = p.communicate(input=stdin_data)
 
         if p.returncode != 0 or len(p_out) == 0:
@@ -876,41 +907,61 @@ class AudioSegment(object):
         easy_wav = format == "wav" and codec is None and parameters is None
 
         if easy_wav:
-            data = out_f
-        else:
-            data = NamedTemporaryFile(mode="wb", delete=False)
+            pcm_for_wav = self._data
+            if self.sample_width == 1:
+                # convert to unsigned integers for wav
+                pcm_for_wav = audioop.bias(self._data, 1, 128)
 
-        pcm_for_wav = self._data
-        if self.sample_width == 1:
-            # convert to unsigned integers for wav
-            pcm_for_wav = audioop.bias(self._data, 1, 128)
-
-        wave_data = wave.open(data, 'wb')
-        wave_data.setnchannels(self.channels)
-        wave_data.setsampwidth(self.sample_width)
-        wave_data.setframerate(self.frame_rate)
-        # For some reason packing the wave header struct with
-        # a float in python 2 doesn't throw an exception
-        wave_data.setnframes(int(self.frame_count()))
-        wave_data.writeframesraw(pcm_for_wav)
-        wave_data.close()
-
-        # for easy wav files, we're done (wav data is written directly to out_f)
-        if easy_wav:
+            wave_data = wave.open(out_f, 'wb')
+            wave_data.setnchannels(self.channels)
+            wave_data.setsampwidth(self.sample_width)
+            wave_data.setframerate(self.frame_rate)
+            wave_data.setnframes(int(self.frame_count()))
+            wave_data.writeframesraw(pcm_for_wav)
+            wave_data.close()
             out_f.seek(0)
             return out_f
 
+        if self.converter is None:
+            raise ConverterNotFoundError(
+                "AudioSegment.converter is not set. Check that ffmpeg or "
+                "avconv is installed and that AudioSegment.converter is "
+                "configured.")
+
+        # Hand the converter raw PCM rather than a wav file: no 4 GB limit,
+        # and nothing to parse on its side.
+        data = NamedTemporaryFile(mode="wb", delete=False)
+        data.write(self._data)
+        data.close()
+
         output = NamedTemporaryFile(mode="w+b", delete=False)
+        output.close()
 
         # build converter command to export
         conversion_command = [
             self.converter,
             '-y',  # always overwrite existing files
-            "-f", "wav", "-i", data.name,  # input options (filename last)
+            "-f", _RAW_PCM_FORMATS[self.sample_width],
+            "-ar", str(self.frame_rate),
+            "-ac", str(self.channels),
+            "-i", data.name,  # input options (filename last)
         ]
 
         if codec is None:
             codec = self.DEFAULT_CODECS.get(format, None)
+
+        if codec is not None:
+            # swap in a built-in encoder when ffmpeg lacks the preferred one
+            requested_codec = codec
+            codec, codec_args = resolve_encoder(codec)
+            conversion_command.extend(codec_args)
+            if codec == "vorbis" and requested_codec == "libvorbis" and self.channels != 2:
+                raise CouldntEncodeError(
+                    "This ffmpeg was built without libvorbis, and its built-in "
+                    "vorbis encoder only handles stereo audio (this segment has "
+                    "{0} channel(s)). Install an ffmpeg build that includes "
+                    "libvorbis (the static builds linked from ffmpeg.org do), or "
+                    "export with format='opus' or 'mp3' instead.".format(self.channels))
 
         if cover is not None:
             if cover.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff')) and format == "mp3":
@@ -958,26 +1009,27 @@ class AudioSegment(object):
 
         log_conversion(conversion_command)
 
-        # read stdin / write stdout
-        with open(os.devnull, 'rb') as devnull:
-            p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        p_out, p_err = p.communicate()
-
-        log_subprocess_output(p_out)
-        log_subprocess_output(p_err)
-
         try:
+            # read stdin / write stdout
+            try:
+                with open(os.devnull, 'rb') as devnull:
+                    p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            except FileNotFoundError:
+                raise ConverterNotFoundError(missing_converter_message(self.converter))
+            p_out, p_err = p.communicate()
+
+            log_subprocess_output(p_out)
+            log_subprocess_output(p_err)
+
             if p.returncode != 0:
                 raise CouldntEncodeError(
                     "Encoding failed. ffmpeg/avlib returned error code: {0}\n\nCommand:{1}\n\nOutput from ffmpeg/avlib:\n\n{2}".format(
                         p.returncode, conversion_command, p_err.decode(errors='ignore') ))
 
-            output.seek(0)
-            out_f.write(output.read())
+            with open(output.name, 'rb') as encoded:
+                shutil.copyfileobj(encoded, out_f)
 
         finally:
-            data.close()
-            output.close()
             os.unlink(data.name)
             os.unlink(output.name)
 
@@ -1071,10 +1123,7 @@ class AudioSegment(object):
         for i in range(self.channels):
             samples_for_current_channel = samples[i::self.channels]
 
-            try:
-                mono_data = samples_for_current_channel.tobytes()
-            except AttributeError:
-                mono_data = samples_for_current_channel.tostring()
+            mono_data = samples_for_current_channel.tobytes()
 
             mono_channels.append(
                 self._spawn(mono_data, overrides={"channels": 1, "frame_width": self.sample_width})
@@ -1208,7 +1257,7 @@ class AudioSegment(object):
             # it's a no-op, make a copy since we never mutate
             return self._spawn(self._data)
 
-        output = StringIO()
+        output = BytesIO()
 
         seg1, seg2 = AudioSegment._sync(self, seg)
         sample_width = seg1.sample_width
