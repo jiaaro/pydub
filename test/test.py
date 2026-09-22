@@ -163,6 +163,64 @@ if sys.version_info >= (3, 6):
                 os.unlink(path)
 
 
+class ReverseTests(unittest.TestCase):
+
+    def assertReversedFrames(self, channels, sample_width, frame_count=4):
+        sample_format = {1: 'b', 2: '<h', 4: '<i'}[sample_width]
+        scale = 1 << (8 * (sample_width - 1))
+        frames = [
+            b''.join(
+                struct.pack(sample_format,
+                            (10 * frame + channel + 1) * scale *
+                            (-1 if channel % 2 else 1))
+                for channel in range(channels)
+            )
+            for frame in range(frame_count)
+        ]
+        data = b''.join(frames)
+        segment = AudioSegment(data, sample_width=sample_width,
+                               channels=channels, frame_rate=44100)
+
+        reversed_segment = segment.reverse()
+
+        self.assertEqual(reversed_segment.raw_data, b''.join(frames[::-1]))
+        self.assertEqual(reversed_segment.channels, channels)
+        self.assertEqual(reversed_segment.sample_width, sample_width)
+        self.assertEqual(reversed_segment.frame_rate, segment.frame_rate)
+        self.assertEqual(reversed_segment.frame_width, segment.frame_width)
+        self.assertEqual(reversed_segment.frame_count(), frame_count)
+        self.assertEqual(reversed_segment.reverse().raw_data, data)
+        self.assertEqual(segment.raw_data, data)
+
+    def test_reverse_stereo_8_bit(self):
+        self.assertReversedFrames(2, 1)
+
+    def test_reverse_stereo_16_bit(self):
+        self.assertReversedFrames(2, 2)
+
+    def test_reverse_stereo_32_bit(self):
+        self.assertReversedFrames(2, 4)
+
+    def test_reverse_multichannel(self):
+        for channels in (3, 6):
+            for sample_width in (1, 2, 4):
+                self.assertReversedFrames(channels, sample_width)
+
+    def test_reverse_single_frame(self):
+        for channels in (2, 3, 6):
+            for sample_width in (1, 2, 4):
+                self.assertReversedFrames(channels, sample_width, frame_count=1)
+
+    def test_reverse_empty(self):
+        for channels in (1, 2, 3, 6):
+            for sample_width in (1, 2, 4):
+                self.assertReversedFrames(channels, sample_width, frame_count=0)
+
+    def test_reverse_mono(self):
+        for sample_width in (1, 2, 4):
+            self.assertReversedFrames(1, sample_width)
+
+
 class FileAccessTests(unittest.TestCase):
 
     def setUp(self):

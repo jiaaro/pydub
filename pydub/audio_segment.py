@@ -1381,6 +1381,12 @@ class AudioSegment(object):
         return self.fade(from_gain=-120, duration=duration, start=0)
 
     def reverse(self):
+        if self.channels > 1:
+            samples = self.get_array_of_samples()
+            for channel in range(self.channels):
+                samples[channel::self.channels] = samples[channel::self.channels][::-1]
+            return self._spawn(data=samples)
+
         return self._spawn(
             data=audioop.reverse(self._data, self.sample_width)
         )
