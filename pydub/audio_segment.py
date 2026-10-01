@@ -464,7 +464,7 @@ class AudioSegment(object):
         Generate a silent audio segment.
         duration specified in milliseconds (default duration: 1000ms, default frame_rate: 11025).
         """
-        frames = int(frame_rate * (duration / 1000.0))
+        frames = int(frame_rate * duration / 1000.0)
         data = b"\0\0" * frames
         return cls(data, metadata={"channels": 1,
                                    "sample_width": 2,

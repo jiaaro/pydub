@@ -59,6 +59,25 @@ class UtilityTests(unittest.TestCase):
         self.assertEqual(12, ratio_to_db(db_to_float(12, using_amplitude=False), using_amplitude=False))
 
 
+class GeneratedDurationTests(unittest.TestCase):
+
+    def test_exact_frame_counts(self):
+        for duration, frame_rate, frames in [
+            (4095, 8000, 32760),
+            (4095.0, 8000, 32760),
+            (1000, 44100, 44100),
+            (0, 8000, 0),
+            (0.125, 8000, 1),
+            (1.99, 8000, 15),
+        ]:
+            silence = AudioSegment.silent(duration, frame_rate=frame_rate)
+            tone = Sine(1000, sample_rate=frame_rate).to_audio_segment(duration)
+            for segment in (silence, tone):
+                self.assertEqual(segment.frame_count(), frames)
+                self.assertEqual(len(segment.raw_data), frames * segment.frame_width)
+                self.assertEqual(segment.duration_seconds, frames / float(frame_rate))
+
+
 if sys.version_info >= (3, 6):
     class PathLikeObjectTests(unittest.TestCase):
 

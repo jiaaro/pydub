@@ -38,7 +38,7 @@ class SignalGenerator(object):
         array_type = get_array_type(self.bit_depth)
 
         gain = db_to_float(volume)
-        sample_count = int(self.sample_rate * (duration / 1000.0))
+        sample_count = int(self.sample_rate * duration / 1000.0)
 
         sample_data = (int(val * maxval * gain) for val in self.generate())
         sample_data = itertools.islice(sample_data, 0, sample_count)
