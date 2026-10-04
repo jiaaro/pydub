@@ -17,6 +17,7 @@ from pydub.utils import (
     ratio_to_db,
     make_chunks,
     mediainfo,
+    mediainfo_json,
     get_encoder_name,
     get_supported_decoders,
     get_supported_encoders,
@@ -57,6 +58,34 @@ class UtilityTests(unittest.TestCase):
         self.assertEqual(12, ratio_to_db(db_to_float(12)))
         self.assertEqual(3, db_to_float(ratio_to_db(3, using_amplitude=False), using_amplitude=False))
         self.assertEqual(12, ratio_to_db(db_to_float(12, using_amplitude=False), using_amplitude=False))
+
+
+class ProbeFilenameTests(unittest.TestCase):
+
+    def test_leading_dash_filename(self):
+        # ffprobe treats an unqualified filename beginning with '-' as an option.
+        import shutil
+        directory = mkdtemp()
+        previous = os.getcwd()
+        try:
+            path = os.path.join(directory, "-sample.flac")
+            with AudioSegment.silent(100).export(path, format="flac"):
+                pass
+            os.chdir(directory)
+            filenames = ["-sample.flac", b"-sample.flac"]
+            if sys.version_info >= (3, 6):
+                from pathlib import Path
+                filenames.append(Path("-sample.flac"))
+            for filename in filenames:
+                info = mediainfo_json(filename)
+                self.assertIsNotNone(info)
+                self.assertEqual(info["streams"][0]["codec_name"], "flac")
+                self.assertEqual(mediainfo(filename)["codec_name"], "flac")
+            self.assertEqual(len(AudioSegment.from_file("-sample.flac")), 100)
+        finally:
+            os.chdir(previous)
+            shutil.rmtree(directory)
+
 
 
 if sys.version_info >= (3, 6):
