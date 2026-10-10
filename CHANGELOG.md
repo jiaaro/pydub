@@ -1,3 +1,6 @@
+# Unreleased
+- Fix overlay volume adjustments when audio segments have different sample widths.
+
 # v0.25.1
 - Fix crashing bug in new scipy-powered EQ effects
 
