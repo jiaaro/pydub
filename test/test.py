@@ -433,20 +433,31 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(len(seg_over), 5000)
 
     def test_overlay_gain_uses_synchronized_sample_width(self):
+        def set_width(segment, width):
+            if width != 3:
+                return segment.set_sample_width(width)
+            # Python 2's audioop cannot create 24-bit samples. Build packed
+            # 24-bit PCM from 32-bit samples, then exercise pydub's promotion.
+            data = segment.set_sample_width(4).raw_data
+            data = b''.join(data[i + 1:i + 4] for i in range(0, len(data), 4))
+            return AudioSegment(data=data, sample_width=3,
+                                frame_rate=segment.frame_rate,
+                                channels=segment.channels)
+
         for base_width, overlay_width in ((1, 2), (1, 3), (1, 4),
                                           (2, 3), (2, 4), (3, 4),
                                           (4, 2), (2, 2)):
             for base_channels, overlay_channels in ((1, 1), (2, 2), (1, 2)):
                 for base_rate, overlay_rate in ((8000, 8000), (8000, 12000)):
                     for gain in (-6, 3):
-                        base = (Sine(440).to_audio_segment(duration=100, volume=-12)
-                                .set_frame_rate(base_rate)
-                                .set_channels(base_channels)
-                                .set_sample_width(base_width))
-                        overlay = (Sine(660).to_audio_segment(duration=100, volume=-18)
-                                   .set_frame_rate(overlay_rate)
-                                   .set_channels(overlay_channels)
-                                   .set_sample_width(overlay_width))
+                        base = set_width(
+                            Sine(440).to_audio_segment(duration=100, volume=-12)
+                            .set_frame_rate(base_rate).set_channels(base_channels),
+                            base_width)
+                        overlay = set_width(
+                            Sine(660).to_audio_segment(duration=100, volume=-18)
+                            .set_frame_rate(overlay_rate).set_channels(overlay_channels),
+                            overlay_width)
                         channels = max(base.channels, overlay.channels)
                         rate = max(base.frame_rate, overlay.frame_rate)
                         width = max(base.sample_width, overlay.sample_width)
