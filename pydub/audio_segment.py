@@ -1233,7 +1233,7 @@ class AudioSegment(object):
 
             if gain_during_overlay:
                 seg1_overlaid = seg1[pos:pos + seg2_len]
-                seg1_adjusted_gain = audioop.mul(seg1_overlaid, self.sample_width,
+                seg1_adjusted_gain = audioop.mul(seg1_overlaid, sample_width,
                                                  db_to_float(float(gain_during_overlay)))
                 output.write(audioop.add(seg1_adjusted_gain, seg2, sample_width))
             else:
