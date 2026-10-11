@@ -1214,6 +1214,9 @@ class AudioSegment(object):
         sample_width = seg1.sample_width
         spawn = seg1._spawn
 
+        if not seg2._data:
+            return spawn(seg1._data)
+
         output.write(seg1[:position]._data)
 
         # drop down to the raw data
