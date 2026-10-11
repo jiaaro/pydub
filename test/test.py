@@ -417,6 +417,39 @@ class AudioSegmentTests(unittest.TestCase):
         self.assertEqual(len(seg_over), 4000)
         self.assertFalse(seg_mult._data == seg_over._data)
 
+    def test_overlay_empty_segment_does_not_loop(self):
+        from pydub import audio_segment
+
+        original_add = audio_segment.audioop.add
+        calls = [0]
+
+        def bounded_add(*args):
+            calls[0] += 1
+            if calls[0] > 10:
+                raise AssertionError("empty overlay failed to make progress")
+            return original_add(*args)
+
+        audio_segment.audioop.add = bounded_add
+        try:
+            base = Sine(440).to_audio_segment(duration=10)
+            for empty in (AudioSegment.empty(), base[:0], base.set_sample_width(4).set_channels(2)[:0]):
+                for options in ({"loop": True}, {"times": -1}, {"times": 1000000}, {}):
+                    for position in (0, 3, -3, len(base)):
+                        calls[0] = 0
+                        result = base.overlay(empty, position=position, **options)
+                        expected, _ = AudioSegment._sync(base, empty)
+                        self.assertEqual(result.raw_data, expected.raw_data)
+                        self.assertEqual(result.frame_rate, expected.frame_rate)
+                        self.assertEqual(result.channels, expected.channels)
+                        self.assertEqual(result.sample_width, expected.sample_width)
+        finally:
+            audio_segment.audioop.add = original_add
+
+        # A nonempty segment can still have a rounded millisecond length of zero.
+        one_frame = base._spawn(base.raw_data[base.frame_width:2 * base.frame_width])
+        self.assertEqual(len(one_frame), 0)
+        self.assertNotEqual(base.overlay(one_frame).raw_data, base.raw_data)
+
     def test_overlay_with_gain_change(self):
         # Use overlay silence with volume change
         seg_one = self.seg1[:5000]
