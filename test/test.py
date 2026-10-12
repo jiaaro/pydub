@@ -58,6 +58,90 @@ class UtilityTests(unittest.TestCase):
         self.assertEqual(3, db_to_float(ratio_to_db(3, using_amplitude=False), using_amplitude=False))
         self.assertEqual(12, ratio_to_db(db_to_float(12, using_amplitude=False), using_amplitude=False))
 
+    def _mediainfo_stream(self, stream, stderr):
+        import json
+        from pydub import utils
+
+        class ProbeResult(object):
+            def communicate(self, input=None):
+                return (json.dumps({'streams': [stream]}).encode('utf-8'),
+                        stderr.encode('utf-8'))
+
+        def fake_popen(*args, **kwargs):
+            return ProbeResult()
+
+        original_popen = utils.Popen
+        utils.Popen = fake_popen
+        try:
+            return utils.mediainfo_json('unused.flac')['streams'][0]
+        finally:
+            utils.Popen = original_popen
+
+    def test_mediainfo_json_default_24_bit_stream(self):
+        stream = self._mediainfo_stream(
+            {'index': 0, 'codec_type': 'audio', 'sample_fmt': 's32',
+             'bits_per_sample': 0, 'bits_per_raw_sample': '24'},
+            '    Stream #0:0: Audio: flac, 48000 Hz, stereo, '
+            's32 (24 bit) (default)\n')
+        self.assertEqual(stream['bits_per_sample'], 32)
+        self.assertEqual(stream['bits_per_raw_sample'], '24')
+
+    def test_mediainfo_json_structured_sample_formats(self):
+        formats = [('u8', 8), ('s16', 16), ('s32', 32), ('s64', 64),
+                   ('flt', 32), ('dbl', 64)]
+        for sample_fmt, bits in formats:
+            for suffix in ('', 'p'):
+                stream = self._mediainfo_stream(
+                    {'index': 0, 'codec_type': 'audio',
+                     'sample_fmt': sample_fmt + suffix, 'bits_per_sample': 0},
+                    '    Stream #0:0: Audio: flac\n')
+                self.assertEqual(stream['bits_per_sample'], bits)
+                self.assertEqual(stream['bits_per_raw_sample'], bits)
+
+    def test_mediainfo_json_preserves_reported_precision(self):
+        stream = self._mediainfo_stream(
+            {'index': 0, 'codec_type': 'audio', 'sample_fmt': 's32',
+             'bits_per_sample': 24, 'bits_per_raw_sample': '20'},
+            '    Stream #0:0: Audio: flac, 48000 Hz, stereo\n')
+        self.assertEqual(stream['bits_per_sample'], 24)
+        self.assertEqual(stream['bits_per_raw_sample'], '20')
+
+    def test_mediainfo_json_prefers_stderr_precision(self):
+        stream = self._mediainfo_stream(
+            {'index': 0, 'codec_type': 'audio', 'sample_fmt': 's32',
+             'bits_per_sample': 0},
+            '    Stream #0:0: Audio: flac, 48000 Hz, stereo, s32 (24 bit)\n')
+        self.assertEqual(stream['bits_per_sample'], 32)
+        self.assertEqual(stream['bits_per_raw_sample'], 24)
+
+    def test_mediainfo_json_without_stderr_stream(self):
+        stream = self._mediainfo_stream(
+            {'index': 1, 'codec_type': 'audio', 'sample_fmt': 's16'}, '')
+        self.assertEqual(stream['bits_per_sample'], 16)
+        self.assertEqual(stream['bits_per_raw_sample'], 16)
+
+    def test_from_file_default_flac_in_matroska(self):
+        import shutil
+        import subprocess
+        directory = mkdtemp()
+        try:
+            path = os.path.join(directory, 'default-flac.mkv')
+            source = Sine(440).to_audio_segment(duration=100).set_sample_width(4)
+            for channels in (1, 2):
+                source.set_channels(channels).export(
+                    path, format='matroska', codec='flac',
+                    parameters=['-disposition:a', 'default']).close()
+                decoded = AudioSegment.from_file(path)
+                expected = subprocess.check_output([
+                    AudioSegment.converter, '-v', 'error', '-i', path,
+                    '-acodec', 'pcm_s32le', '-f', 's32le', '-'])
+                self.assertEqual(decoded.sample_width, 4)
+                self.assertEqual(decoded.channels, channels)
+                self.assertEqual(decoded.frame_rate, source.frame_rate)
+                self.assertEqual(decoded.raw_data, expected)
+        finally:
+            shutil.rmtree(directory)
+
 
 if sys.version_info >= (3, 6):
     class PathLikeObjectTests(unittest.TestCase):

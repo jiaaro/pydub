@@ -1,3 +1,6 @@
+# Unreleased
+- Fix decoding default 24-bit FLAC tracks in Matroska by using the structured sample format when ffprobe's stderr does not yield a bit depth.
+
 # v0.25.1
 - Fix crashing bug in new scipy-powered EQ effects
 

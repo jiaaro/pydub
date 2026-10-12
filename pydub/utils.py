@@ -302,7 +302,9 @@ def mediainfo_json(filepath, read_ahead_limit=-1):
         if prop not in stream or stream[prop] == 0:
             stream[prop] = value
 
-    for token in extra_info[stream['index']]:
+    # Prefer stderr's precision details, then fall back to the structured format.
+    tokens = extra_info.get(stream['index'], []) + [stream.get('sample_fmt', '')]
+    for token in tokens:
         m = re.match(r'([su]([0-9]{1,2})p?) \(([0-9]{1,2}) bit\)$', token)
         m2 = re.match(r'([su]([0-9]{1,2})p?)( \(default\))?$', token)
         if m:
