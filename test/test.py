@@ -1095,6 +1095,64 @@ class AudioSegmentTests(unittest.TestCase):
         os.rmdir(new_tmpdir)
 
 
+class CompressionReleaseTests(unittest.TestCase):
+
+    def test_release_below_threshold(self):
+        for frame_rate in (8000, 44100):
+            tone = Sine(440, sample_rate=frame_rate).to_audio_segment(duration=100)
+            for sample_width in (1, 2, 4):
+                for channels in (1, 2):
+                    loud = tone.apply_gain(-6).set_sample_width(sample_width)
+                    loud = loud.set_channels(channels)
+                    quiet = (tone * 3).apply_gain(-24).set_sample_width(sample_width)
+                    quiet = quiet.set_channels(channels)
+                    original = loud + quiet
+                    for release in (10, 50, 100):
+                        compressed = original.compress_dynamic_range(release=release)
+                        self.assertEqual(compressed[220:].raw_data, original[220:].raw_data)
+                        self.assertEqual(compressed[:100].raw_data,
+                                         loud.compress_dynamic_range(release=release).raw_data)
+                        self.assertEqual(len(compressed.raw_data), len(original.raw_data))
+                        self.assertEqual(compressed.channels, channels)
+                        self.assertEqual(compressed.sample_width, sample_width)
+                        self.assertEqual(compressed.frame_rate, frame_rate)
+
+    def test_release_duration(self):
+        # Constant levels make the RMS and linear release envelope exact.
+        loud = AudioSegment(struct.pack('<h', 16000) * 100,
+                            sample_width=2, frame_rate=1000, channels=1)
+        quiet = AudioSegment(struct.pack('<h', 1000) * 200,
+                             sample_width=2, frame_rate=1000, channels=1)
+        attenuation = 0.75 * ratio_to_db(16000 / (32768 * db_to_float(-20)))
+        for release in (10, 50, 100):
+            compressed = (loud + quiet).compress_dynamic_range(attack=1, release=release)
+            samples = compressed.get_array_of_samples()
+            # The one-frame RMS window sees the quiet level at frame 101.
+            for elapsed in (1, release // 2, release):
+                remaining = attenuation * (1 - elapsed / float(release))
+                expected = 1000 * db_to_float(-remaining)
+                self.assertAlmostEqual(samples[100 + elapsed], expected, delta=1)
+            self.assertEqual(compressed[release + 102:].raw_data,
+                             (loud + quiet)[release + 102:].raw_data)
+
+    def test_release_over_silence_and_retrigger(self):
+        tone = Sine(440).to_audio_segment(duration=100)
+        loud = tone.apply_gain(-6)
+        quiet = tone.apply_gain(-24)
+        original = loud + AudioSegment.silent(duration=200) + quiet + loud + quiet * 2
+        compressed = original.compress_dynamic_range(release=50)
+        self.assertEqual(compressed[300:400].raw_data, original[300:400].raw_data)
+        self.assertLess(compressed[500:510].rms, original[500:510].rms)
+        self.assertEqual(compressed[570:].raw_data, original[570:].raw_data)
+
+    def test_uncompressed_controls(self):
+        tone = Sine(440).to_audio_segment(duration=100)
+        quiet = tone.apply_gain(-24)
+        for original, ratio in ((quiet, 4), (tone, 1), (tone[:0], 4)):
+            self.assertEqual(original.compress_dynamic_range(ratio=ratio).raw_data,
+                             original.raw_data)
+
+
 class SilenceTests(unittest.TestCase):
 
     def setUp(self):
