@@ -1,3 +1,6 @@
+# Unreleased
+- Fix dynamic range compression staying attenuated after audio falls below the threshold (#617)
+
 # v0.25.1
 - Fix crashing bug in new scipy-powered EQ effects
 

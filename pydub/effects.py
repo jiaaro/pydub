@@ -156,6 +156,7 @@ def compress_dynamic_range(seg, threshold=-20.0, ratio=4.0, attack=5.0, release=
 
     # amount to reduce the volume of the audio by (in dB)
     attenuation = 0.0
+    release_attenuation = 0.0
     
     attack_frames = seg.frame_count(ms=attack)
     release_frames = seg.frame_count(ms=release)
@@ -167,7 +168,11 @@ def compress_dynamic_range(seg, threshold=-20.0, ratio=4.0, attack=5.0, release=
         max_attenuation = (1 - (1.0 / ratio)) * db_over_threshold(rms_now)
         
         attenuation_inc = max_attenuation / attack_frames
-        attenuation_dec = max_attenuation / release_frames
+        if rms_now > thresh_rms:
+            attenuation_dec = max_attenuation / release_frames
+        else:
+            # Keep a fixed release rate when the signal falls below threshold.
+            attenuation_dec = release_attenuation / release_frames
         
         if rms_now > thresh_rms and attenuation <= max_attenuation:
             attenuation += attenuation_inc
@@ -176,6 +181,9 @@ def compress_dynamic_range(seg, threshold=-20.0, ratio=4.0, attack=5.0, release=
             attenuation -= attenuation_dec
             attenuation = max(attenuation, 0)
         
+        if rms_now > thresh_rms:
+            release_attenuation = attenuation
+
         frame = seg.get_frame(i)
         if attenuation != 0.0:
             frame = audioop.mul(frame,
