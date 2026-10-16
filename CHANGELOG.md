@@ -1,3 +1,6 @@
+# Unreleased
+- Fix negative scalar index `segment[-1]` returning empty audio instead of the final millisecond
+
 # v0.25.1
 - Fix crashing bug in new scipy-powered EQ effects
 
