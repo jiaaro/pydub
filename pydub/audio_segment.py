@@ -313,7 +313,8 @@ class AudioSegment(object):
             end = min(end, len(self))
         else:
             start = millisecond
-            end = millisecond + 1
+            # The last negative index ends at the segment's end, not position zero.
+            end = len(self) if millisecond == -1 else millisecond + 1
 
         start = self._parse_position(start) * self.frame_width
         end = self._parse_position(end) * self.frame_width

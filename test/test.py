@@ -163,6 +163,35 @@ if sys.version_info >= (3, 6):
                 os.unlink(path)
 
 
+class ScalarIndexingTests(unittest.TestCase):
+
+    def test_last_negative_index_matches_positive_index(self):
+        for frame_rate in (8000, 44100, 48000):
+            for sample_width in (1, 2, 4):
+                for channels in (1, 2):
+                    seg = Sine(440, sample_rate=frame_rate).to_audio_segment(100)
+                    seg = seg.set_sample_width(sample_width).set_channels(channels)
+                    expected = seg[len(seg) - 1]
+                    self.assertEqual(len(seg[-1]), 1)
+                    self.assertEqual(seg[-1].raw_data, expected.raw_data)
+                    self.assertEqual(seg[-1].frame_rate, frame_rate)
+                    self.assertEqual(seg[-1].sample_width, sample_width)
+                    self.assertEqual(seg[-1].channels, channels)
+
+    def test_negative_scalar_indices_match_positive_indices(self):
+        seg = Sine(440).to_audio_segment(10)
+        for offset in range(1, len(seg) + 1):
+            self.assertEqual(seg[-offset].raw_data, seg[len(seg) - offset].raw_data)
+
+    def test_last_negative_index_of_empty_segment_stays_empty(self):
+        self.assertEqual(AudioSegment.empty()[-1].raw_data, b"")
+
+    def test_last_negative_index_of_one_millisecond_segment(self):
+        seg = Sine(440, sample_rate=8000).to_audio_segment(1)
+        self.assertEqual(seg[-1].raw_data, seg[0].raw_data)
+        self.assertEqual(len(seg[-1]), 1)
+
+
 class FileAccessTests(unittest.TestCase):
 
     def setUp(self):
