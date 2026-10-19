@@ -1396,6 +1396,59 @@ class PartialAudioSegmentLoadTests(unittest.TestCase):
         self.assertEqual(partial_seg1._data, partial_seg2._data)
 
 
+class MultiChannelToMonoTests(unittest.TestCase):
+
+    def check_downmix(self, sample_width, channels):
+        minimum = -(1 << (sample_width * 8 - 1))
+        maximum = -minimum - 1
+        frames = [
+            [minimum] * channels,
+            [maximum] * channels,
+            [-1] * (channels - 1) + [channels - 1],
+            [1] * channels,
+            [0] * channels,
+        ]
+        samples = [sample for frame in frames for sample in frame]
+        format = '<' + {1: 'b', 2: 'h', 4: 'i'}[sample_width] * len(samples)
+        raw_data = struct.pack(format, *samples)
+        source = AudioSegment(raw_data, sample_width=sample_width,
+                              frame_rate=8000, channels=channels)
+
+        mono = source.set_channels(1)
+
+        self.assertEqual(list(mono.get_array_of_samples()),
+                         [sum(frame) // channels for frame in frames])
+        self.assertEqual(mono.channels, 1)
+        self.assertEqual(mono.sample_width, sample_width)
+        self.assertEqual(mono.frame_width, sample_width)
+        self.assertEqual(mono.frame_rate, source.frame_rate)
+        self.assertEqual(mono.frame_count(), source.frame_count())
+        self.assertEqual(source.raw_data, raw_data)
+
+    def test_downmix_8_bit(self):
+        for channels in (3, 4, 6):
+            self.check_downmix(1, channels)
+
+    def test_downmix_16_bit(self):
+        for channels in (3, 4, 6):
+            self.check_downmix(2, channels)
+
+    def test_downmix_32_bit(self):
+        for channels in (3, 4, 6):
+            self.check_downmix(4, channels)
+
+    def test_empty_downmix(self):
+        for sample_width in (1, 2, 4):
+            for channels in (3, 4, 6):
+                source = AudioSegment(b'', sample_width=sample_width,
+                                      frame_rate=8000, channels=channels)
+                mono = source.set_channels(1)
+                self.assertEqual(mono.raw_data, b'')
+                self.assertEqual(mono.channels, 1)
+                self.assertEqual(mono.sample_width, sample_width)
+                self.assertEqual(mono.frame_rate, source.frame_rate)
+
+
 if __name__ == "__main__":
     import sys
 
