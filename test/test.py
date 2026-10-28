@@ -9,6 +9,8 @@ from tempfile import (
 )
 import tempfile
 import struct
+import uuid
+from io import BytesIO
 
 from pydub import AudioSegment
 from pydub.audio_segment import extract_wav_headers
@@ -1292,6 +1294,86 @@ class NoConverterTests(unittest.TestCase):
 
         seg = AudioSegment.from_file(self.wave_empty, format="wav")
         self.assertTrue(len(seg) == 0)
+
+
+class ExtensibleWavTests(unittest.TestCase):
+    @staticmethod
+    def wav_bytes(raw, channels=1, bits=32, subtype=1, cb_size=22,
+                  extension_length=24, extensible=True):
+        frame_width = channels * bits // 8
+        fmt = struct.pack('<HHIIHH', 0xfffe if extensible else subtype,
+                          channels, 8000, 8000 * frame_width, frame_width, bits)
+        if extensible:
+            guid = uuid.UUID('000000%02x-0000-0010-8000-00aa00389b71' % subtype)
+            extension = struct.pack('<HHI', cb_size, bits, 0) + guid.bytes_le
+            extension += b'\x00' * max(0, extension_length - len(extension))
+            fmt += extension[:extension_length]
+        chunks = b'fmt ' + struct.pack('<I', len(fmt)) + fmt
+        if subtype == 3:
+            chunks += b'fact' + struct.pack('<II', 4, len(raw) // frame_width)
+        chunks += b'data' + struct.pack('<I', len(raw)) + raw
+        return b'RIFF' + struct.pack('<I', len(chunks) + 4) + b'WAVE' + chunks
+
+    def test_float_subtypes_rejected_by_native_reader(self):
+        for bits, sample_format in ((32, 'f'), (64, 'd')):
+            raw = struct.pack('<' + sample_format * 6, -0.75, -0.25, 0, 0.25, 0.75, 0.5)
+            self.assertRaises(CouldntDecodeError, AudioSegment,
+                              self.wav_bytes(raw, bits=bits, subtype=3))
+
+    def test_float_samples_use_decoder(self):
+        for channels in (1, 2, 6):
+            samples = [-0.75, -0.25, 0, 0.25, 0.75, 0.5] * (20 * channels)
+            raw = struct.pack('<' + 'f' * len(samples), *samples)
+            for extensible in (False, True):
+                wav = self.wav_bytes(raw, channels=channels, subtype=3,
+                                     extensible=extensible)
+                seg = AudioSegment.from_wav(BytesIO(wav))
+                self.assertEqual(list(seg.get_array_of_samples()),
+                                 [int(sample * 2**31) for sample in samples])
+                self.assertEqual(seg.channels, channels)
+                self.assertEqual(seg.sample_width, 4)
+                self.assertEqual(seg.frame_rate, 8000)
+                self.assertEqual(seg.frame_count(), 120)
+
+    def test_pcm_subtype_stays_on_native_path(self):
+        for channels in (1, 2, 6):
+            samples = [-50, -7, 0, 1, 32, 49] * channels
+            for bits in (8, 16, 24, 32):
+                if bits == 8:
+                    raw = bytes(bytearray(sample + 128 for sample in samples))
+                else:
+                    raw = b''.join(struct.pack('<i', sample)[:bits // 8]
+                                   for sample in samples)
+                seg = AudioSegment(self.wav_bytes(raw, channels=channels, bits=bits))
+                standard = AudioSegment(self.wav_bytes(raw, channels=channels,
+                                                      bits=bits, extensible=False))
+                self.assertEqual(seg.raw_data, standard.raw_data)
+                if bits != 24:
+                    self.assertEqual(list(seg.get_array_of_samples()), samples)
+                self.assertEqual(seg.channels, channels)
+                self.assertEqual(seg.frame_count(), 6)
+
+        extended = self.wav_bytes(b'\x00' * 8, cb_size=24, extension_length=26)
+        self.assertEqual(AudioSegment(extended).raw_data, b'\x00' * 8)
+
+    def test_entire_subtype_guid_is_checked(self):
+        wav = self.wav_bytes(b'\x00' * 8)
+        # Keep the PCM format number but change the final GUID byte.
+        pcm_guid = uuid.UUID('00000001-0000-0010-8000-00aa00389b71').bytes_le
+        changed_guid = uuid.UUID('00000001-0000-0010-8000-00aa00389b72').bytes_le
+        self.assertRaises(CouldntDecodeError, AudioSegment,
+                          wav.replace(pcm_guid, changed_guid))
+
+    def test_short_extensions_rejected(self):
+        for length in (0, 2, 8, 23):
+            self.assertRaises(CouldntDecodeError, AudioSegment,
+                              self.wav_bytes(b'\x00' * 8, extension_length=length))
+        for cb_size in (0, 21, 23):
+            self.assertRaises(CouldntDecodeError, AudioSegment,
+                              self.wav_bytes(b'\x00' * 8, cb_size=cb_size))
+        # The fmt chunk still declares 40 bytes, but its payload is truncated.
+        self.assertRaises(CouldntDecodeError, AudioSegment,
+                          self.wav_bytes(b'\x00' * 8)[:38])
 
 
 class FilterTests(unittest.TestCase):

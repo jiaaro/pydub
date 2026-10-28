@@ -1,3 +1,6 @@
+# Unreleased
+- Check extensible WAV subformats before reading samples as integer PCM.
+
 # v0.25.1
 - Fix crashing bug in new scipy-powered EQ effects
 

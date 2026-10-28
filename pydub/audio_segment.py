@@ -119,6 +119,18 @@ def read_wav_audio(data, headers=None):
         raise CouldntDecodeError("Unknown audio format 0x%X in wav data" %
                                  audio_format)
 
+    if audio_format == 0xFFFE:
+        if fmt.size < 40 or pos + fmt.size > len(data):
+            raise CouldntDecodeError("Incomplete extensible WAV format")
+        extension_size = struct.unpack_from('<H', data, pos + 16)[0]
+        if extension_size < 22 or fmt.size < 18 + extension_size:
+            raise CouldntDecodeError("Incomplete extensible WAV format")
+        # KSDATAFORMAT_SUBTYPE_PCM: other subtypes need the external decoder.
+        pcm_guid = struct.pack('<IHH8s', 1, 0, 0x0010,
+                               b'\x80\x00\x00\xaa\x00\x38\x9b\x71')
+        if data[pos + 24:pos + 40] != pcm_guid:
+            raise CouldntDecodeError("Unsupported extensible WAV subformat")
+
     channels = struct.unpack_from('<H', data[pos + 2:pos + 4])[0]
     sample_rate = struct.unpack_from('<I', data[pos + 4:pos + 8])[0]
     bits_per_sample = struct.unpack_from('<H', data[pos + 14:pos + 16])[0]
