@@ -1,3 +1,6 @@
+# Unreleased
+- Preserve empty audio when applying built-in or optional SciPy frequency filters
+
 # v0.25.1
 - Fix crashing bug in new scipy-powered EQ effects
 

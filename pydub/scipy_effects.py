@@ -39,6 +39,8 @@ def _mk_butter_filter(freq, type, order):
             freqs = freq / nyq
 
         sos = butter(order, freqs, btype=type, output='sos')
+        if not seg.frame_count():
+            return seg
         y = sosfilt(sos, seg.get_array_of_samples())
 
         return seg._spawn(y.astype(seg.array_type))

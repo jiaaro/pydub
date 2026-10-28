@@ -234,6 +234,9 @@ def low_pass_filter(seg, cutoff):
     
     frame_count = int(seg.frame_count())
 
+    if not frame_count:
+        return seg
+
     last_val = [0] * seg.channels
     for i in range(seg.channels):
         last_val[i] = filteredArray[i] = original[i]
@@ -264,6 +267,9 @@ def high_pass_filter(seg, cutoff):
     filteredArray = array.array(seg.array_type, original)
     
     frame_count = int(seg.frame_count())
+
+    if not frame_count:
+        return seg
 
     last_val = [0] * seg.channels
     for i in range(seg.channels):

@@ -1294,6 +1294,101 @@ class NoConverterTests(unittest.TestCase):
         self.assertTrue(len(seg) == 0)
 
 
+class EmptyFilterTests(unittest.TestCase):
+
+    def assert_empty_preserved(self, source, filtered):
+        self.assertEqual(filtered.raw_data, b'')
+        self.assertEqual(filtered.frame_count(), 0)
+        self.assertEqual(filtered.channels, source.channels)
+        self.assertEqual(filtered.sample_width, source.sample_width)
+        self.assertEqual(filtered.frame_rate, source.frame_rate)
+
+    def empty_segments(self):
+        yield AudioSegment.empty()
+        for rate in (8000, 44100):
+            for width in (1, 2, 4):
+                for channels in (1, 2, 6):
+                    yield AudioSegment(
+                        b'', sample_width=width, frame_rate=rate,
+                        channels=channels)
+        yield Sine(200).to_audio_segment(duration=10)[5:5]
+
+    def scipy_filters(self):
+        # Importing optional effects registers methods globally. Restore them
+        # immediately so the rest of the suite still uses the built-in filters.
+        missing = object()
+        names = ('low_pass_filter', 'high_pass_filter', 'band_pass_filter', '_eq', 'eq')
+        original = dict((name, getattr(AudioSegment, name, missing)) for name in names)
+        try:
+            __import__('scipy')
+        except ImportError:
+            self.skipTest('scipy is not installed')
+        try:
+            from pydub import scipy_effects
+        finally:
+            for name, value in original.items():
+                if value is missing:
+                    if hasattr(AudioSegment, name):
+                        delattr(AudioSegment, name)
+                else:
+                    setattr(AudioSegment, name, value)
+        return (
+            partial(scipy_effects.low_pass_filter, cutoff_freq=1000),
+            partial(scipy_effects.high_pass_filter, cutoff_freq=1000),
+            partial(scipy_effects.band_pass_filter,
+                    low_cutoff_freq=100, high_cutoff_freq=2000),
+        )
+
+    def test_builtin_empty_filters(self):
+        from pydub import effects
+        for effect in (effects.low_pass_filter, effects.high_pass_filter):
+            for seg in self.empty_segments():
+                self.assert_empty_preserved(seg, effect(seg, 1000))
+
+    def test_builtin_empty_filters_still_validate_cutoff(self):
+        from pydub import effects
+        for effect in (effects.low_pass_filter, effects.high_pass_filter):
+            with self.assertRaises(ZeroDivisionError):
+                effect(AudioSegment.empty(), 0)
+
+    def test_builtin_submillisecond_filters_are_not_skipped(self):
+        from pydub import effects
+        seg = AudioSegment(struct.pack('<hh', 1000, 3000),
+                           sample_width=2, frame_rate=48000, channels=1)
+        self.assertEqual(len(seg), 0)
+        for effect in (effects.low_pass_filter, effects.high_pass_filter):
+            filtered = effect(seg, 1000)
+            self.assertEqual(filtered.frame_count(), 2)
+            self.assertNotEqual(filtered.raw_data, seg.raw_data)
+
+    def test_scipy_empty_filters(self):
+        for effect in self.scipy_filters():
+            for seg in self.empty_segments():
+                # Default AudioSegment.empty() has rate 1, so use a valid rate.
+                if seg.frame_rate == 1:
+                    seg = seg.set_frame_rate(8000)
+                self.assert_empty_preserved(seg, effect(seg))
+
+    def test_scipy_empty_filters_still_validate_cutoff(self):
+        filters = self.scipy_filters()
+        seg = AudioSegment.silent(duration=0, frame_rate=8000)
+        for effect in filters:
+            invalid = effect.keywords.copy()
+            key = 'cutoff_freq' if 'cutoff_freq' in invalid else 'high_cutoff_freq'
+            invalid[key] = 5000
+            with self.assertRaises(ValueError):
+                effect.func(seg, **invalid)
+
+    def test_scipy_submillisecond_filters_are_not_skipped(self):
+        seg = AudioSegment(struct.pack('<hh', 1000, 3000),
+                           sample_width=2, frame_rate=48000, channels=1)
+        self.assertEqual(len(seg), 0)
+        for effect in self.scipy_filters():
+            filtered = effect(seg)
+            self.assertEqual(filtered.frame_count(), 2)
+            self.assertNotEqual(filtered.raw_data, seg.raw_data)
+
+
 class FilterTests(unittest.TestCase):
 
     def setUp(self):
