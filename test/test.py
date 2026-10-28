@@ -1396,6 +1396,43 @@ class PartialAudioSegmentLoadTests(unittest.TestCase):
         self.assertEqual(partial_seg1._data, partial_seg2._data)
 
 
+class NeutralSpeedupTests(unittest.TestCase):
+    def assert_unchanged(self, seg, **kwargs):
+        original_data = seg.raw_data
+        for speed in (1, 1.0):
+            result = seg.speedup(playback_speed=speed, **kwargs)
+            self.assertEqual(result.raw_data, original_data)
+            self.assertEqual(result.frame_count(), seg.frame_count())
+            self.assertEqual(result.frame_rate, seg.frame_rate)
+            self.assertEqual(result.sample_width, seg.sample_width)
+            self.assertEqual(result.channels, seg.channels)
+            self.assertEqual(seg.raw_data, original_data)
+
+    def test_empty_audio(self):
+        self.assert_unchanged(AudioSegment.empty())
+
+    def test_short_audio(self):
+        for frame_count in (1, 400, 1200):
+            data = struct.pack('<' + 'h' * frame_count, *range(frame_count))
+            seg = AudioSegment(data, sample_width=2, frame_rate=8000, channels=1)
+            self.assert_unchanged(seg)
+
+    def test_sample_formats_and_channels(self):
+        for sample_width, sample_format in ((1, 'b'), (2, 'h'), (4, 'i')):
+            for channels in (1, 2, 6):
+                samples = [i % 101 - 50 for i in range(8000 * channels)]
+                data = struct.pack('<' + sample_format * len(samples), *samples)
+                seg = AudioSegment(data, sample_width=sample_width,
+                                   frame_rate=8000, channels=channels)
+                self.assert_unchanged(seg)
+
+    def test_chunk_and_crossfade_settings(self):
+        data = struct.pack('<' + 'h' * 22050, *range(22050))
+        seg = AudioSegment(data, sample_width=2, frame_rate=22050, channels=1)
+        for chunk_size, crossfade in ((25, 0), (150, 25), (2000, 100)):
+            self.assert_unchanged(seg, chunk_size=chunk_size, crossfade=crossfade)
+
+
 if __name__ == "__main__":
     import sys
 

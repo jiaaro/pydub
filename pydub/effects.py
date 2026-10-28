@@ -51,6 +51,10 @@ def normalize(seg, headroom=0.1):
 
 @register_pydub_effect
 def speedup(seg, playback_speed=1.5, chunk_size=150, crossfade=25):
+    """Increase playback speed without changing pitch; a speed of 1 leaves audio unchanged."""
+    if playback_speed == 1.0:
+        return seg
+
     # we will keep audio in 150ms chunks since one waveform at 20Hz is 50ms long
     # (20 Hz is the lowest frequency audible to humans)
 
