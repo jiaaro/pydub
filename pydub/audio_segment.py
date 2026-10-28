@@ -241,13 +241,11 @@ class AudioSegment(object):
             # And in 3.x are ints.
             pack_fmt = 'BBB' if isinstance(self._data[0], int) else 'ccc'
 
-            # This conversion maintains the 24 bit values.  The values are
-            # not scaled up to the 32 bit range.  Other conversions could be
-            # implemented.
+            # Left-align each sample to preserve its normalized amplitude.
+            # The added least-significant byte is zero for either sign.
             i = iter(self._data)
-            padding = {False: b'\x00', True: b'\xFF'}
             for b0, b1, b2 in izip(i, i, i):
-                byte_buffer.write(padding[b2 > b'\x7f'[0]])
+                byte_buffer.write(b'\x00')
                 old_bytes = struct.pack(pack_fmt, b0, b1, b2)
                 byte_buffer.write(old_bytes)
 

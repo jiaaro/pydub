@@ -9,6 +9,7 @@ from tempfile import (
 )
 import tempfile
 import struct
+from io import BytesIO
 
 from pydub import AudioSegment
 from pydub.audio_segment import extract_wav_headers
@@ -1292,6 +1293,59 @@ class NoConverterTests(unittest.TestCase):
 
         seg = AudioSegment.from_file(self.wave_empty, format="wav")
         self.assertTrue(len(seg) == 0)
+
+
+class PCM24ConversionTests(unittest.TestCase):
+    samples = [-8388608, -8388607, -65536, -32768, -257, -256,
+               -255, -128, -7, -1, 0, 1, 7, 255, 256, 257, 32767, 8388607]
+
+    def pcm(self, channels):
+        values = self.samples * channels
+        raw = b''.join(struct.pack('<i', value)[:3] for value in values)
+        expected = struct.pack('<' + 'i' * len(values),
+                               *[value * 256 for value in values])
+        return raw, expected
+
+    def assert_pcm(self, seg, channels, expected):
+        self.assertEqual(seg.raw_data, expected)
+        self.assertEqual(seg.sample_width, 4)
+        self.assertEqual(seg.frame_width, 4 * channels)
+        self.assertEqual(seg.channels, channels)
+        self.assertEqual(seg.frame_rate, 8000)
+        self.assertEqual(seg.frame_count(), len(self.samples))
+
+    def test_raw_samples(self):
+        for channels in (1, 2, 6):
+            raw, expected = self.pcm(channels)
+            seg = AudioSegment(raw, sample_width=3, frame_rate=8000, channels=channels)
+            self.assert_pcm(seg, channels, expected)
+
+    def test_wav_samples(self):
+        import wave
+        for channels in (1, 2, 6):
+            raw, expected = self.pcm(channels)
+            stream = BytesIO()
+            writer = wave.open(stream, 'wb')
+            writer.setparams((channels, 3, 8000, 0, 'NONE', 'not compressed'))
+            writer.writeframes(raw)
+            writer.close()
+            self.assert_pcm(AudioSegment.from_wav(BytesIO(stream.getvalue())),
+                            channels, expected)
+
+    def test_matches_ffmpeg(self):
+        import subprocess
+        for channels in (1, 2, 6):
+            raw, expected = self.pcm(channels)
+            process = subprocess.Popen(
+                [AudioSegment.converter, '-v', 'error', '-f', 's24le',
+                 '-ar', '8000', '-ac', str(channels), '-i', 'pipe:0',
+                 '-f', 's32le', 'pipe:1'],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            converted, errors = process.communicate(raw)
+            self.assertEqual(process.returncode, 0, errors)
+            self.assertEqual(converted, expected)
+            seg = AudioSegment(raw, sample_width=3, frame_rate=8000, channels=channels)
+            self.assert_pcm(seg, channels, converted)
 
 
 class FilterTests(unittest.TestCase):

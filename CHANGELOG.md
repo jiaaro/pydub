@@ -1,3 +1,6 @@
+# Unreleased
+- Preserve negative sample amplitudes when widening 24-bit PCM to 32 bits.
+
 # v0.25.1
 - Fix crashing bug in new scipy-powered EQ effects
 
