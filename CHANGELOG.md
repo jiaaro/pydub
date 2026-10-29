@@ -1,3 +1,6 @@
+# Unreleased
+- Clean up temporary export files when preparation, validation or converter startup fails.
+
 # v0.25.1
 - Fix crashing bug in new scipy-powered EQ effects
 

@@ -880,93 +880,94 @@ class AudioSegment(object):
         else:
             data = NamedTemporaryFile(mode="wb", delete=False)
 
-        pcm_for_wav = self._data
-        if self.sample_width == 1:
-            # convert to unsigned integers for wav
-            pcm_for_wav = audioop.bias(self._data, 1, 128)
-
-        wave_data = wave.open(data, 'wb')
-        wave_data.setnchannels(self.channels)
-        wave_data.setsampwidth(self.sample_width)
-        wave_data.setframerate(self.frame_rate)
-        # For some reason packing the wave header struct with
-        # a float in python 2 doesn't throw an exception
-        wave_data.setnframes(int(self.frame_count()))
-        wave_data.writeframesraw(pcm_for_wav)
-        wave_data.close()
-
-        # for easy wav files, we're done (wav data is written directly to out_f)
-        if easy_wav:
-            out_f.seek(0)
-            return out_f
-
-        output = NamedTemporaryFile(mode="w+b", delete=False)
-
-        # build converter command to export
-        conversion_command = [
-            self.converter,
-            '-y',  # always overwrite existing files
-            "-f", "wav", "-i", data.name,  # input options (filename last)
-        ]
-
-        if codec is None:
-            codec = self.DEFAULT_CODECS.get(format, None)
-
-        if cover is not None:
-            if cover.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff')) and format == "mp3":
-                conversion_command.extend(["-i", cover, "-map", "0", "-map", "1", "-c:v", "mjpeg"])
-            else:
-                raise AttributeError(
-                    "Currently cover images are only supported by MP3 files. The allowed image formats are: .tif, .jpg, .bmp, .jpeg and .png.")
-
-        if codec is not None:
-            # force audio encoder
-            conversion_command.extend(["-acodec", codec])
-
-        if bitrate is not None:
-            conversion_command.extend(["-b:a", bitrate])
-
-        if parameters is not None:
-            # extend arguments with arbitrary set
-            conversion_command.extend(parameters)
-
-        if tags is not None:
-            if not isinstance(tags, dict):
-                raise InvalidTag("Tags must be a dictionary.")
-            else:
-                # Extend converter command with tags
-                # print(tags)
-                for key, value in tags.items():
-                    conversion_command.extend(
-                        ['-metadata', '{0}={1}'.format(key, value)])
-
-                if format == 'mp3':
-                    # set id3v2 tag version
-                    if id3v2_version not in id3v2_allowed_versions:
-                        raise InvalidID3TagVersion(
-                            "id3v2_version not allowed, allowed versions: %s" % id3v2_allowed_versions)
-                    conversion_command.extend([
-                        "-id3v2_version", id3v2_version
-                    ])
-
-        if sys.platform == 'darwin' and codec == 'mp3':
-            conversion_command.extend(["-write_xing", "0"])
-
-        conversion_command.extend([
-            "-f", format, output.name,  # output options (filename last)
-        ])
-
-        log_conversion(conversion_command)
-
-        # read stdin / write stdout
-        with open(os.devnull, 'rb') as devnull:
-            p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        p_out, p_err = p.communicate()
-
-        log_subprocess_output(p_out)
-        log_subprocess_output(p_err)
-
+        output = None
         try:
+            pcm_for_wav = self._data
+            if self.sample_width == 1:
+                # convert to unsigned integers for wav
+                pcm_for_wav = audioop.bias(self._data, 1, 128)
+
+            wave_data = wave.open(data, 'wb')
+            wave_data.setnchannels(self.channels)
+            wave_data.setsampwidth(self.sample_width)
+            wave_data.setframerate(self.frame_rate)
+            # For some reason packing the wave header struct with
+            # a float in python 2 doesn't throw an exception
+            wave_data.setnframes(int(self.frame_count()))
+            wave_data.writeframesraw(pcm_for_wav)
+            wave_data.close()
+
+            # for easy wav files, we're done (wav data is written directly to out_f)
+            if easy_wav:
+                out_f.seek(0)
+                return out_f
+
+            output = NamedTemporaryFile(mode="w+b", delete=False)
+
+            # build converter command to export
+            conversion_command = [
+                self.converter,
+                '-y',  # always overwrite existing files
+                "-f", "wav", "-i", data.name,  # input options (filename last)
+            ]
+
+            if codec is None:
+                codec = self.DEFAULT_CODECS.get(format, None)
+
+            if cover is not None:
+                if cover.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff')) and format == "mp3":
+                    conversion_command.extend(["-i", cover, "-map", "0", "-map", "1", "-c:v", "mjpeg"])
+                else:
+                    raise AttributeError(
+                        "Currently cover images are only supported by MP3 files. The allowed image formats are: .tif, .jpg, .bmp, .jpeg and .png.")
+
+            if codec is not None:
+                # force audio encoder
+                conversion_command.extend(["-acodec", codec])
+
+            if bitrate is not None:
+                conversion_command.extend(["-b:a", bitrate])
+
+            if parameters is not None:
+                # extend arguments with arbitrary set
+                conversion_command.extend(parameters)
+
+            if tags is not None:
+                if not isinstance(tags, dict):
+                    raise InvalidTag("Tags must be a dictionary.")
+                else:
+                    # Extend converter command with tags
+                    # print(tags)
+                    for key, value in tags.items():
+                        conversion_command.extend(
+                            ['-metadata', '{0}={1}'.format(key, value)])
+
+                    if format == 'mp3':
+                        # set id3v2 tag version
+                        if id3v2_version not in id3v2_allowed_versions:
+                            raise InvalidID3TagVersion(
+                                "id3v2_version not allowed, allowed versions: %s" % id3v2_allowed_versions)
+                        conversion_command.extend([
+                            "-id3v2_version", id3v2_version
+                        ])
+
+            if sys.platform == 'darwin' and codec == 'mp3':
+                conversion_command.extend(["-write_xing", "0"])
+
+            conversion_command.extend([
+                "-f", format, output.name,  # output options (filename last)
+            ])
+
+            log_conversion(conversion_command)
+
+            # read stdin / write stdout
+            with open(os.devnull, 'rb') as devnull:
+                p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p_out, p_err = p.communicate()
+
+            log_subprocess_output(p_out)
+            log_subprocess_output(p_err)
+
             if p.returncode != 0:
                 raise CouldntEncodeError(
                     "Encoding failed. ffmpeg/avlib returned error code: {0}\n\nCommand:{1}\n\nOutput from ffmpeg/avlib:\n\n{2}".format(
@@ -976,10 +977,18 @@ class AudioSegment(object):
             out_f.write(output.read())
 
         finally:
-            data.close()
-            output.close()
-            os.unlink(data.name)
-            os.unlink(output.name)
+            try:
+                if not easy_wav:
+                    try:
+                        data.close()
+                    finally:
+                        os.unlink(data.name)
+            finally:
+                if output is not None:
+                    try:
+                        output.close()
+                    finally:
+                        os.unlink(output.name)
 
         out_f.seek(0)
         return out_f

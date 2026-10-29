@@ -9,8 +9,10 @@ from tempfile import (
 )
 import tempfile
 import struct
+from io import BytesIO
 
 from pydub import AudioSegment
+from pydub import audio_segment
 from pydub.audio_segment import extract_wav_headers
 from pydub.utils import (
     db_to_float,
@@ -26,6 +28,7 @@ from pydub.exceptions import (
     InvalidID3TagVersion,
     InvalidDuration,
     CouldntDecodeError,
+    CouldntEncodeError,
     MissingAudioParameter,
 )
 from pydub.silence import (
@@ -1394,6 +1397,115 @@ class PartialAudioSegmentLoadTests(unittest.TestCase):
         partial_seg2 = AudioSegment.from_file(self.raw_path_str, format="raw", sample_width=2, frame_rate=32000, channels=2, start_second=1., duration=1.)
         self.assertEqual(len(partial_seg1), len(partial_seg2))
         self.assertEqual(partial_seg1._data, partial_seg2._data)
+
+
+class ExportCleanupTests(unittest.TestCase):
+
+    def setUp(self):
+        self.directory = mkdtemp()
+        self.files = []
+        self.segment = AudioSegment.silent(duration=10)
+        self.destination = BytesIO()
+        self.original_factory = audio_segment.NamedTemporaryFile
+        self.original_popen = audio_segment.subprocess.Popen
+        self.original_wave_open = audio_segment.wave.open
+        self.fail_creation_at = None
+
+        def create_file(*args, **kwargs):
+            if len(self.files) == self.fail_creation_at:
+                raise IOError('temporary file creation failed')
+            kwargs['dir'] = self.directory
+            file = self.original_factory(*args, **kwargs)
+            self.files.append(file)
+            return file
+
+        audio_segment.NamedTemporaryFile = create_file
+        self.addCleanup(self.cleanup)
+
+    def cleanup(self):
+        audio_segment.NamedTemporaryFile = self.original_factory
+        audio_segment.subprocess.Popen = self.original_popen
+        audio_segment.wave.open = self.original_wave_open
+        self.destination.close()
+        for file in self.files:
+            file.close()
+            if os.path.exists(file.name):
+                os.unlink(file.name)
+        os.rmdir(self.directory)
+
+    def assert_temporary_files_removed(self, count):
+        self.assertEqual(len(self.files), count)
+        for file in self.files:
+            self.assertTrue(file.closed)
+            self.assertFalse(os.path.exists(file.name))
+        self.assertFalse(self.destination.closed)
+
+    def test_invalid_cover(self):
+        with self.assertRaises(AttributeError):
+            self.segment.export(self.destination, cover='cover.gif')
+        self.assert_temporary_files_removed(2)
+
+    def test_invalid_tags(self):
+        with self.assertRaises(InvalidTag):
+            self.segment.export(self.destination, tags=['title'])
+        self.assert_temporary_files_removed(2)
+
+    def test_invalid_id3_version(self):
+        with self.assertRaises(InvalidID3TagVersion):
+            self.segment.export(self.destination, tags={'title': 'test'},
+                                id3v2_version='5')
+        self.assert_temporary_files_removed(2)
+
+    def test_missing_converter(self):
+        self.segment.converter = os.path.join(self.directory, 'missing-converter')
+        with self.assertRaises(OSError):
+            self.segment.export(self.destination)
+        self.assert_temporary_files_removed(2)
+
+    def test_output_creation_failure(self):
+        self.fail_creation_at = 1
+        with self.assertRaises(IOError):
+            self.segment.export(self.destination)
+        self.assert_temporary_files_removed(1)
+
+    def test_wav_writer_failure(self):
+        class BrokenWriter(object):
+            def setnchannels(self, channels):
+                raise IOError('WAV write failed')
+
+        audio_segment.wave.open = lambda *args: BrokenWriter()
+        with self.assertRaises(IOError):
+            self.segment.export(self.destination)
+        self.assert_temporary_files_removed(1)
+
+    def test_communicate_failure(self):
+        class BrokenProcess(object):
+            def communicate(self):
+                raise IOError('communicate failed')
+
+        audio_segment.subprocess.Popen = lambda *args, **kwargs: BrokenProcess()
+        with self.assertRaises(IOError):
+            self.segment.export(self.destination)
+        self.assert_temporary_files_removed(2)
+
+    def test_converter_error(self):
+        class FailedProcess(object):
+            returncode = 1
+
+            def communicate(self):
+                return b'', b'encoding failed'
+
+        audio_segment.subprocess.Popen = lambda *args, **kwargs: FailedProcess()
+        with self.assertRaises(CouldntEncodeError):
+            self.segment.export(self.destination)
+        self.assert_temporary_files_removed(2)
+
+    def test_direct_exports_preserve_caller_stream(self):
+        for format in ('raw', 'wav'):
+            result = self.segment.export(self.destination, format=format)
+            self.assertIs(result, self.destination)
+            self.assertEqual(result.tell(), 0)
+            self.assert_temporary_files_removed(0)
 
 
 if __name__ == "__main__":
