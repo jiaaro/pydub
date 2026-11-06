@@ -79,6 +79,9 @@ def _eq(seg, focus_freq, bandwidth=100, mode="peak", gain_dB=0, order=2):
     filt_mode = ["peak", "low_shelf", "high_shelf"]
     if mode not in filt_mode:
         raise ValueError("Incorrect Mode Selection")
+
+    if gain_dB == 0:
+        return seg
         
     if gain_dB >= 0:
         if mode == "peak":
@@ -130,6 +133,8 @@ def eq(seg, focus_freq, bandwidth=100, channel_mode="L+R", filter_mode="peak", g
             S - Only Side Channel is Filtered
             Mono Audio Segments are completely filtered.
         filter_mode - Mode of Equalization(Peak/Notch(Bell Curve),High Shelf, Low Shelf)
+        gain_dB - Gain of the selected band in dB. The default, 0, leaves
+            the original audio unchanged.
         order - Rolloff factor(1 - 6dB/Octave 2 - 12dB/Octave)
     
     Returns:
@@ -139,7 +144,7 @@ def eq(seg, focus_freq, bandwidth=100, channel_mode="L+R", filter_mode="peak", g
     if channel_mode not in channel_modes:
         raise ValueError("Incorrect Channel Mode Selection")
         
-    if seg.channels == 1:
+    if seg.channels == 1 or gain_dB == 0:
         return _eq(seg, focus_freq, bandwidth, filter_mode, gain_dB, order)
         
     if channel_mode == "L+R":
