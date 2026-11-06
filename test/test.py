@@ -10,6 +10,11 @@ from tempfile import (
 import tempfile
 import struct
 
+try:
+    import scipy
+except ImportError:
+    scipy = None
+
 from pydub import AudioSegment
 from pydub.audio_segment import extract_wav_headers
 from pydub.utils import (
@@ -1329,6 +1334,56 @@ class FilterTests(unittest.TestCase):
         s = Sine(100).to_audio_segment()
         less_treble = s.low_pass_filter(800)
         self.assertAlmostEqual(less_treble.dBFS, s.dBFS, places=0)
+
+
+@unittest.skipIf(scipy is None, "scipy is not installed")
+class ScipyEqualizerTests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # Importing scipy_effects registers its filters on AudioSegment.
+        cls.original_filters = {
+            name: getattr(AudioSegment, name)
+            for name in ("high_pass_filter", "low_pass_filter")
+        }
+        from pydub import scipy_effects
+        cls.eq = staticmethod(scipy_effects.eq)
+
+    @classmethod
+    def tearDownClass(cls):
+        for name, effect in cls.original_filters.items():
+            setattr(AudioSegment, name, effect)
+
+    def setUp(self):
+        self.tone = Sine(400).to_audio_segment(duration=100, volume=-15)
+
+    def test_default_gain_preserves_audio(self):
+        for channels in (1, 2):
+            original = self.tone.set_channels(channels)
+            for channel_mode in ("L+R", "L", "R", "M+S", "M", "S"):
+                result = self.eq(original, 400, channel_mode=channel_mode)
+                self.assertEqual(result.raw_data, original.raw_data)
+                self.assertEqual(result.frame_count(), original.frame_count())
+
+    def test_zero_gain_preserves_audio_for_each_filter(self):
+        for channels in (1, 2):
+            original = self.tone.set_channels(channels)
+            for mode in ("peak", "low_shelf", "high_shelf"):
+                for channel_mode in ("L+R", "L", "R", "M+S", "M", "S"):
+                    result = self.eq(original, 400, channel_mode=channel_mode,
+                                     filter_mode=mode, gain_dB=0.0)
+                    self.assertEqual(result.raw_data, original.raw_data)
+                    self.assertEqual(result.channels, original.channels)
+                    self.assertEqual(result.frame_rate, original.frame_rate)
+                    self.assertEqual(result.sample_width, original.sample_width)
+
+    def test_zero_gain_still_rejects_invalid_filter(self):
+        with self.assertRaises(ValueError):
+            self.eq(self.tone, 400, filter_mode="invalid", gain_dB=0)
+
+    def test_zero_gain_still_rejects_invalid_channel_mode(self):
+        with self.assertRaises(ValueError):
+            self.eq(self.tone, 400, channel_mode="invalid", gain_dB=0)
 
 
 class PartialAudioSegmentLoadTests(unittest.TestCase):
