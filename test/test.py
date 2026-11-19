@@ -182,6 +182,52 @@ class FileAccessTests(unittest.TestCase):
 test1wav = test4wav = test1 = test2 = test3 = testparty = testdcoffset = None
 
 
+class AudioSegmentSliceTests(unittest.TestCase):
+
+    def setUp(self):
+        self.data = struct.pack('10b', *range(1, 11))
+        self.seg = AudioSegment(self.data, sample_width=1,
+                                frame_rate=1000, channels=1)
+
+    def test_slice_start_before_beginning(self):
+        for start in (-11, -15, -20, -100, -10.5):
+            self.assertEqual(self.seg[start:].raw_data, self.data)
+            self.assertEqual(self.seg[start:4].raw_data, self.data[:4])
+
+    def test_slice_end_before_beginning(self):
+        for end in (-11, -15, -20, -100, -10.5):
+            self.assertEqual(self.seg[:end].raw_data, b'')
+            self.assertEqual(self.seg[4:end].raw_data, b'')
+
+    def test_slice_bounds_match_sequence(self):
+        bounds = [None] + list(range(-12, 13))
+        for start in bounds:
+            for end in bounds:
+                self.assertEqual(self.seg[start:end].raw_data,
+                                 self.data[start:end])
+
+    def test_slice_bounds_preserve_pcm_format(self):
+        for frame_rate in (1000, 8000, 44100):
+            for sample_width in (1, 2, 4):
+                for channels in (1, 2, 6):
+                    frame_width = sample_width * channels
+                    frames = frame_rate // 100
+                    data = b'\x01' * (frames * frame_width)
+                    seg = AudioSegment(data, sample_width=sample_width,
+                                       frame_rate=frame_rate, channels=channels)
+                    for result, expected in ((seg[-11:], data),
+                                             (seg[:-11], b''),
+                                             (seg[:0][-1:], b'')):
+                        self.assertEqual(result.raw_data, expected)
+                        self.assertEqual(result.frame_rate, frame_rate)
+                        self.assertEqual(result.sample_width, sample_width)
+                        self.assertEqual(result.channels, channels)
+                        self.assertEqual(result.frame_width, frame_width)
+                        self.assertEqual(result.frame_count(),
+                                         len(expected) // frame_width)
+                    self.assertEqual(seg.raw_data, data)
+
+
 class AudioSegmentTests(unittest.TestCase):
 
     def setUp(self):

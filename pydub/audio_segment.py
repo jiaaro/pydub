@@ -309,8 +309,8 @@ class AudioSegment(object):
             end = millisecond.stop if millisecond.stop is not None \
                 else len(self)
 
-            start = min(start, len(self))
-            end = min(end, len(self))
+            start = max(-len(self), min(start, len(self)))
+            end = max(-len(self), min(end, len(self)))
         else:
             start = millisecond
             end = millisecond + 1
