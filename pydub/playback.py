@@ -12,14 +12,18 @@ from .utils import get_player_name, make_chunks
 
 def _play_with_ffplay(seg):
     PLAYER = get_player_name()
+    temp_file_name = None
     try:
         with NamedTemporaryFile("w+b", suffix=".wav", delete=False) as f:
             temp_file_name = f.name
             seg.export(f.name, "wav")
             subprocess.call([PLAYER, "-nodisp", "-autoexit", "-hide_banner", f.name])
     finally:
-        if os.path.exists(temp_file_name):
-            os.remove(temp_file_name)
+        if not temp_file_name:
+            raise
+        else:
+            if os.path.exists(temp_file_name):
+                os.remove(temp_file_name)
 
 def _play_with_pyaudio(seg):
     import pyaudio
