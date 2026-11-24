@@ -306,11 +306,14 @@ class AudioSegment(object):
                 )
 
             start = millisecond.start if millisecond.start is not None else 0
-            end = millisecond.stop if millisecond.stop is not None \
-                else len(self)
+            if millisecond.stop is None:
+                # len(self) rounds to milliseconds; an open slice ends at the last frame.
+                if start >= self.duration_seconds * 1000:
+                    return self._spawn(b"")
+                return self.get_sample_slice(self._parse_position(start))
 
             start = min(start, len(self))
-            end = min(end, len(self))
+            end = min(millisecond.stop, len(self))
         else:
             start = millisecond
             end = millisecond + 1
@@ -1262,14 +1265,15 @@ class AudioSegment(object):
                 crossfade, len(seg)
             ))
 
-        xf = seg1[-crossfade:].fade(to_gain=-120, start=0, end=float('inf'))
+        # Crossfade boundaries and output duration are measured in milliseconds.
+        xf = seg1[-crossfade:len(seg1)].fade(to_gain=-120, start=0, end=float('inf'))
         xf *= seg2[:crossfade].fade(from_gain=-120, start=0, end=float('inf'))
 
         output = BytesIO()
 
         output.write(seg1[:-crossfade]._data)
         output.write(xf._data)
-        output.write(seg2[crossfade:]._data)
+        output.write(seg2[crossfade:len(seg2)]._data)
 
         output.seek(0)
         obj = seg1._spawn(data=output)
