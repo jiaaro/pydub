@@ -163,6 +163,22 @@ if sys.version_info >= (3, 6):
                 os.unlink(path)
 
 
+class OpenEndedSliceTests(unittest.TestCase):
+
+    def test_open_ended_wav_slices_keep_partial_millisecond(self):
+        # 17 stereo frames at 8 kHz: the last frame starts at 2 ms.
+        segment = AudioSegment.from_wav(os.path.join(data_dir, 'partial-millisecond.wav'))
+        self.assertEqual(segment[:].raw_data, segment.raw_data)
+        self.assertEqual(segment[2:].raw_data, struct.pack('<hh', 17, -17))
+        self.assertEqual(segment[3:].raw_data, b'')
+
+    def test_open_ended_slice_does_not_pad_to_next_millisecond(self):
+        samples = struct.pack('<7h', 1, 2, 3, 4, 5, 6, 7)
+        segment = AudioSegment(samples, sample_width=2, channels=1, frame_rate=8000)
+        self.assertEqual(segment[:].raw_data, samples)
+        self.assertEqual(segment[:1].raw_data, samples + b'\x00\x00')
+
+
 class FileAccessTests(unittest.TestCase):
 
     def setUp(self):
